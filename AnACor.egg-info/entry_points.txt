@@ -1,0 +1,3 @@
+[console_scripts]
+anacor.main = AnACor.main:main
+anacor.preprocess = AnACor.preprocess:main
