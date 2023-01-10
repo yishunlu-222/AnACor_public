@@ -9,7 +9,7 @@ import numpy as np
 
 
 @jit(nopython=True)
-def cal_coord_2(theta ,phi,coord,face,shape,label_list,full_iteration=True):
+def cal_coord_2(theta ,phi,coord,face,shape,label_list,full_iteration=False):
     """
 
     :param theta: the scattering angle in vertical y axis
