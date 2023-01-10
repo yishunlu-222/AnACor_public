@@ -1,0 +1,28 @@
+package:
+  name:  anacor
+  version:  1.0
+
+source:
+  path: .
+
+build:
+  script: python setup.py install
+
+requirements:
+  build:
+    - python
+    - opencv
+    - importlib-metadata
+    - scikit-image
+    - numba
+    - imagecodecs
+    - dials
+    
+  run:
+    - python
+    - opencv
+    - importlib-metadata
+    - scikit-image
+    - numba
+    - imagecodecs
+    - dials
