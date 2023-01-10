@@ -2,6 +2,7 @@ opencv-python
 scikit-image
 numba
 imagecodecs
+dials@ git+https://github.com/yishunlu-222/dials_precalcu.git
 
 [:python_version == "3.8"]
 importlib-metadata
