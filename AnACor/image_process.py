@@ -87,7 +87,7 @@ class Image2Model(object):
         self.reverse=reverse
         self.label=label
         self.crop=crop
-        self.dataset= self.filename.split("_")[0]
+        self.dataset= os.path.basename(self.filename).split("_")[0]
         try:
             self.change_names(prefix = "{}_tomobar".format(self.dataset))
         except:
@@ -110,7 +110,10 @@ class Image2Model(object):
                "loop has pixel value of[2]\n"
                "the other classes (e.g. bubble)has pixel value of [4] or above \n"
                "Please wait for the image of raw segmentation \n")
-        self.find_color( self.exam_image )
+        try:
+            self.find_color( self.exam_image )
+        except:
+            raise  RuntimeError("there is problem on reading the segmentation images, please check")
 
         correct_pixel="no"
         while correct_pixel != 'y' and correct_pixel != 'yes':
@@ -230,8 +233,7 @@ class Image2Model(object):
                     # img_list=os.path.splitext(img_list)[0]
                     # abc = img_list.split('_')[-1][1:]
 
-                    new = os.path.join( self.path, '{}_{}.tiff'.format( prefix , int(
-                        re.findall( r'\d+.' , os.path.basename( img_list ) )[-1][:-1] ) ) )
+                    new = os.path.join( self.path, '{}_{}.tiff'.format( prefix , int(re.findall( r'\d+.' , os.path.basename( img_list ) )[-1][:-1] ) ) )
 
                     os.rename( old , new )
                     # except:

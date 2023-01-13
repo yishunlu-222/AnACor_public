@@ -126,3 +126,5 @@ def main():
     #                                   save_dir = "./results/15980_3p65keV_{}".format( 'auto_o31_an106' ) ,
     #                                   kernel_square = (5 , 5) ,
     #                                   full = False ,thresholding="mean",v_flip=True)
+if __name__ == '__main__':
+    main()

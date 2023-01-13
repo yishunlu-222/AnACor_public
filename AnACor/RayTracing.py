@@ -6,22 +6,41 @@ from numba import jit
 # import json
 # import time
 # import os
-from AnACor.Core_accelerated import  *
+try:
+    from AnACor.Core_accelerated import  *
+except:
+    from Core_accelerated import *
 #
 # spec = [    ('value', int32),               # a simple scalar field
 #     ('array', float32[:]),   ]
 
 
+def kp_rotation(axis,theta, raytracing=True):
+    """
+    https://mathworld.wolfram.com/RodriguesRotationFormula.html
+
+    :param axis:
+    :param theta:
+    :return:
+    """
+
+    x,y,z = axis
+    c =np.cos(theta)
+    s = np.sin(theta)
+    first_row = np.array([ c + (x**2)*(1-c), x*y*(1-c) - z*s, y*s + x*z*(1-c)  ])
+    seconde_row = np.array([z*s + x*y*(1-c),  c + (y**2)*(1-c) , -x*s + y*z*(1-c) ])
+    third_row = np.array([ -y*s + x*z*(1-c), x*s + y*z*(1-c), c + (z**2)*(1-c)  ])
+    matrix = np.stack(( first_row, seconde_row, third_row), axis = 0)
+    return matrix
 
 class RayTracingBasic(object):
     def __init__(self, reflections_table,label_list,coefficients,
-                 sampling=2000 ,offset=0,pixel_size = 0.3e-3,store_path=False ):
+                 sampling_threshold=5000 ,offset=0,pixel_size = 0.3e-3,store_path=False ):
         # super(RayTracingCore,self).__init__()
         self.reflections = reflections_table
         self.label_list = label_list
         self.coefficients = coefficients
         self.offset = offset
-        self.sampling = sampling
         self.pixel_size =pixel_size
         self.store_path=store_path
         # self.save_dir=save_dir
@@ -31,6 +50,7 @@ class RayTracingBasic(object):
         self.rate_list = {'li' : 1 , 'lo' : 2 , 'cr' : 3 , 'bu' : 4}
         zz , yy , xx = np.where( self.label_list == self.rate_list['cr'] )
         self.crystal_coordinate = np.stack( (zz , yy , xx) , axis = 1 )
+        self.sampling = self.ada_sampling ( self.crystal_coordinate , threshold = sampling_threshold)
         seg = int( np.round( len( self.crystal_coordinate ) / self.sampling ) )
         # coordinate_list =range(0,len(crystal_coordinate),seg)  # sample points from the crystal pixel
         self.coordinate_list = np.linspace( 0 , len( self.crystal_coordinate ) , num = seg , endpoint = False , dtype = int )
@@ -75,6 +95,17 @@ class RayTracingBasic(object):
         #            numbers_2 = cal_num22(coord,path_12,path_22,theta,rotation_frame_angle)
         #            absorption = cal_rate(numbers_2, coefficients, pixel_size)
         #            absorp[k] = absorption
+
+    def ada_sampling ( self,crystal_coordinate , threshold = 10000 ) :
+
+        num = len( crystal_coordinate )
+        sampling = 1
+        result = num
+        while result > threshold :
+            sampling = sampling * 2
+            result = num / sampling
+
+        return sampling
 
     def dials_2_thetaphi(self, rotated_s1 , L1 = False ) :
         """

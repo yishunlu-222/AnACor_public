@@ -202,7 +202,11 @@ class AbsorptionCoefficient( object ) :
 
     def pre_process( self ):
         if os.path.exists(self.save_dir) is False:
-            os.makedirs(self.save_dir)
+            pdb.set_trace()
+            try:
+                os.makedirs(self.save_dir)
+            except:
+                os.mkdir(self.save_dir)
         new = self.img_list.mean( axis = 1 )
         # img2 and mask2 are the images from 3D model
         self.img2 = 255 - cv2.normalize( new , None , 0 , 255 , cv2.NORM_MINMAX ).astype( 'uint8' )
