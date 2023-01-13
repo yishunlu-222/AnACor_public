@@ -204,6 +204,7 @@ class Image2Model(object):
         self.save_npy( label = True , crop = False )
         print("finish the 3D model generation")
 
+        return self.filename
     def find_color (self, path) :
         # which_pic = str(int(len(os.listdir(m_root))/2))
         # if which_pic in self.dataset:

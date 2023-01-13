@@ -38,6 +38,12 @@ def set_parser():
         help="the filenames of the reflection table",
     )
     parser.add_argument(
+        "--expt-filename",
+        type=str,
+        default='16010_ompk_10_3p5keV_AUTOMATIC_DEFAULT_SAD_SWEEP1.refl.json',
+        help="the filenames of the reflection table",
+    )
+    parser.add_argument(
         "--vflip",
         type=bool,
         default=False,
@@ -116,3 +122,7 @@ def main():
     data = preprocess_dial(reflections,args.refl_filename,save_dir,args)
     print("total number of reflections is {}".format(len(data)))
     print("reflection table has been preprocessed... \n")
+    # model = RunAbsorptionCoefficient( tomo_img_path , filename ,auto = True,
+    #                                   save_dir = "./results/15980_3p65keV_{}".format( 'auto_o31_an106' ) ,
+    #                                   kernel_square = (5 , 5) ,
+    #                                   full = False ,thresholding="mean",v_flip=True)
