@@ -152,10 +152,10 @@ def main():
         print( "reflection table is loaded... \n" )
     except:
         try:
-            with open(expt_filename) as f2:
+            with open(args.expt_filename) as f2:
                 axes_data = json.load(f2)
             print( "experimental data is loaded... \n" )
-            with open(refl_filename) as f1:
+            with open(args.refl_filename) as f1:
                 data = json.load(f1)
             print( "reflection table is loaded... \n" )
         except:

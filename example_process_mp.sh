@@ -1,13 +1,15 @@
 #!/bin/sh 
-cd /home/yishun/projectcode/AnACor/AnACor/
-python mp_lite.py --store-dir /data/absorption_correction_results/ \
+cd /home/eaf28336/absorption_correction/cluster/AnACor/
+python3 mp_lite.py --store-dir /home/eaf28336/absorption_correction/ \
 --dataset  16846 \
 --num-cores 20 \
--store-lengths False \
---crac 0.01918 \
---loac 0.01772 \
---liac 0.01981 \
-
+--store-lengths False \
+--crac 0.01918e3 \
+--loac 0.01772e3 \
+--liac 0.01981e3 \
+--time 3 0 0  \
+--dependancies "module load global/cluster" "source /dls/science/groups/i23/yishun/dials_yishun/dials" \
+--python-dependancy "source /dls/science/groups/i23/yishun/dials_yishun/dials"
 
 #--refl-filename  /home/yishun/projectcode/dials_develop/16010_ompk_10/dials/DataFiles/16010_ompk_10_3p5keV_AUTOMATIC_DEFAULT_SAD_SWEEP1.refl \
 #--expt-filename  /home/yishun/projectcode/dials_develop/16010_ompk_10/dials/DataFiles/16010_ompk_10_3p5keV_AUTOMATIC_DEFAULT_SAD_SWEEP1.expt \

@@ -112,7 +112,7 @@ a_file.close()
 expt = load.experiment_list(expt_filename, check_format=False)[0]
 axes =expt.goniometer.to_dict()
 beam=expt.beam.to_dict()
-scaling=expt.scaling_model.to_dict()
+
 expt_=os.path.basename( expt_filename)
 with open( os.path.join(args.save_dir, expt_ + args.dataset+"_"+str(args.full)+'.json'), "w") as fz:  # Pickling
     json.dump([axes,beam], fz, indent=2)

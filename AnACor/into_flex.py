@@ -2,111 +2,128 @@ import json
 import numpy as np
 import pdb
 import random
-import  argparse
+import argparse
 from dials.util.filter_reflections import *
 from dials.algorithms.scaling.scaler_factory import *
 from dials.array_family import flex
 import os
-parser = argparse.ArgumentParser(description="putting corrected values files into flex files")
+
+parser = argparse.ArgumentParser( description = "putting corrected values files into flex files" )
+
+
+def str2bool ( v ) :
+    if isinstance( v , bool ) :
+        return v
+    if v.lower( ) in ('yes' , 'true' , 't' , 'y' , '1') :
+        return True
+    elif v.lower( ) in ('no' , 'false' , 'f' , 'n' , '0') :
+        return False
+    else :
+        raise argparse.ArgumentTypeError( 'Boolean value expected.' )
+
 
 parser.add_argument(
-    "--save-number",
-    type=str,
-    default=0,
-    help="save-dir for stacking",
+    "--save-number" ,
+    type = str ,
+    default = 0 ,
+    help = "save-dir for stacking" ,
 )
 
 parser.add_argument(
-    "--dataset",
-    type=str,
-    default=0,
-    help="save-dir for stacking",
+    "--dataset" ,
+    type = str ,
+    default = 0 ,
+    help = "save-dir for stacking" ,
 )
 parser.add_argument(
-    "--refl-filename",
-    type=str,
-    default="",
-    help="save-dir for stacking",
+    "--refl-filename" ,
+    type = str ,
+    default = "" ,
+    help = "save-dir for stacking" ,
 )
 parser.add_argument(
-    "--full",
-    type=int,
-    default=0,
-    help="prerejection for better computational efficiency no: 1, yes: 1",
+    "--full" ,
+    type = str2bool ,
+    default = False ,
+    help = "prerejection for better computational efficiency no: 1, yes: 1" ,
 )
 parser.add_argument(
-    "--with-scaling",
-    type=int,
-    default=1,
-    help="absorption correcction within the scaling process true: 1 , false: 0",
+    "--with-scaling" ,
+    type = str2bool ,
+    default = False ,
+    help = "absorption correcction within the scaling process true: 1 , false: 0" ,
+)
+
+parser.add_argument(
+    "--store-dir" ,
+    type = str ,
+    default = "./" ,
+    help = "the previous data store directory " ,
 )
 parser.add_argument(
-    "--data-pth",
-    type=str,
-    default = "./",
-    help="the data directory ",
-)
-parser.add_argument(
-    "--store-pth",
-    type=str,
-    default = "./",
-    help="the store directory ",
+    "--target-pth" ,
+    type = str ,
+    default = "./" ,
+    help = "the target store directory " ,
 )
 global args
-args = parser.parse_args()
+args = parser.parse_args( )
 
 from dials.array_family import flex
-#refl_filename=args.refl_fileanme
-reflections= flex.reflection_table.from_file(os.path.join(args.store_pth,args.refl_filename))
 
-print("len(reflections)")
-print(len(reflections))
-corr = np.ones(len(reflections))
-p=[]
-dataset=args.dataset
-filename=os.path.join(args.data_pth,'{}_refl_overall.json'.format(dataset))
+# refl_filename=args.refl_fileanme
+reflections = flex.reflection_table.from_file( args.refl_filename )
 
-if args.full ==1:
+print( "len(reflections)" )
+print( len( reflections ) )
+corr = np.ones( len( reflections ) )
+p = []
+dataset = args.dataset
+save_dir = os.path.join( args.store_dir , '{}_save_data'.format( dataset ) )
+result_path = os.path.join( save_dir , 'ResultData' , 'absorption_factors' )
+filename = os.path.join( result_path , '{}_refl_overall.json'.format( dataset ) )
+
+if args.full is True :
     pass
-else:  
-  scaler = ScalerFactory()
-  refls =  scaler.filter_bad_reflections(reflections)
-  excluded_for_scaling =  refls.get_flags( refls.flags.excluded_for_scaling)
-  refls.del_selected(excluded_for_scaling)
-  
-corr = np.ones(len(reflections))
-with open(filename) as f1:
-  data = json.load(f1)
-for i,row in enumerate(data):
-    corr[i] =row
+else :
+    scaler = ScalerFactory( )
+    refls = scaler.filter_bad_reflections( reflections )
+    excluded_for_scaling = refls.get_flags( refls.flags.excluded_for_scaling )
+    refls.del_selected( excluded_for_scaling )
 
-print(len(data))
-#pdb.set_trace()
+corr = np.ones( len( reflections ) )
+with open( filename ) as f1 :
+    data = json.load( f1 )
+for i , row in enumerate( data ) :
+    corr[i] = row
 
-#print("len(reflections)")
-#print(len(reflections))
-if args.with_scaling ==1 :
-  print("\n the absorption correction factors are combined with scaling \n ")
-  ac = flex.double(list(corr))
-  reflections["analytical_absorption_correction"] = ac
-  reflections.as_file(os.path.join(args.store_pth,"test_{}.refl".format(args.save_number)))
-else:
-  print("\n  the absorption correction factors are applied directly on the reflection table \n ")
-  after = np.array(reflections['intensity.sum.value'])/corr
-  #varafter = np.array(reflections['intensity.sum.variance'])/corr
-  varafter = np.array(reflections['intensity.sum.variance'])/np.square(corr)
-  prf_after = np.array(reflections['intensity.prf.value'])/corr
-  #prf_varafter = np.array(reflections['intensity.prf.variance'])/corr
-  prf_varafter = np.array(reflections['intensity.prf.variance'])/np.square(corr)
-  afterr=flex.double(list(after))
-  varafterr = flex.double(list(varafter))
-  prf_afterr=flex.double(list(prf_after))
-  prf_varafterr = flex.double(list(prf_varafter))
-  reflections['intensity.sum.value'] = afterr
-  reflections['intensity.sum.variance'] = varafterr
-  reflections['intensity.prf.value'] = prf_afterr
-  reflections['intensity.prf.variance'] = prf_varafterr
-  reflections.as_file(os.path.join(args.store_pth,"test_in_{}.refl".format(args.save_number)))
+print( len( data ) )
+# pdb.set_trace()
+
+# print("len(reflections)")
+# print(len(reflections))
+if args.with_scaling == 1 :
+    print( "\n the absorption correction factors are combined with scaling \n " )
+    ac = flex.double( list( corr ) )
+    reflections["analytical_correction"] = ac
+    reflections.as_file( os.path.join( args.target_pth , "test_{}.refl".format( args.save_number ) ) )
+else :
+    print( "\n  the absorption correction factors are applied directly on the reflection table \n " )
+    after = np.array( reflections['intensity.sum.value'] ) / corr
+    # varafter = np.array(reflections['intensity.sum.variance'])/corr
+    varafter = np.array( reflections['intensity.sum.variance'] ) / np.square( corr )
+    prf_after = np.array( reflections['intensity.prf.value'] ) / corr
+    # prf_varafter = np.array(reflections['intensity.prf.variance'])/corr
+    prf_varafter = np.array( reflections['intensity.prf.variance'] ) / np.square( corr )
+    afterr = flex.double( list( after ) )
+    varafterr = flex.double( list( varafter ) )
+    prf_afterr = flex.double( list( prf_after ) )
+    prf_varafterr = flex.double( list( prf_varafter ) )
+    reflections['intensity.sum.value'] = afterr
+    reflections['intensity.sum.variance'] = varafterr
+    reflections['intensity.prf.value'] = prf_afterr
+    reflections['intensity.prf.variance'] = prf_varafterr
+    reflections.as_file( os.path.join( args.target_pth , "test_in_{}.refl".format( args.save_number ) ) )
 
 
 

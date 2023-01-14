@@ -1,5 +1,5 @@
 #!/bin/sh 
-cd /home/yishun/projectcode/AnACor/AnACor/
+cd /home/eaf28336/absorption_correction/cluster/AnACor/
 python main_lite.py --store-dir /data/absorption_correction_results/ \
 --dataset  16846 \
 -store-lengths False \

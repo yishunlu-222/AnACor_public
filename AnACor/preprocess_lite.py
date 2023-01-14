@@ -163,10 +163,10 @@ def preprocess_dial_lite ( args , save_dir ) :
         f.write( "store_dir={} \n".format( save_dir ) )
         f.write( "dataset={} \n".format( args.dataset ) )
         f.write( "full={} \n".format( args.full_reflection ) )
-        f.write( "dials.python /home/yishun/projectcode/AnACor/AnACor/lite/refl_2_json.py "
-                 " --dataset ${dataset}  --refl-filename ${refl_pth} "
-                 "--expt-filename ${expt_pth} --full ${full} "
-                 "--save-dir ${store_dir}\n" )
+        f.write( "dials.python {}  --dataset ${{dataset}} " 
+                 " --refl-filename ${{refl_pth}} " 
+                 "--expt-filename ${{expt_pth}} --full ${{full}} "
+                 "--save-dir ${{store_dir}}\n".format(os.path.join(os.path.dirname(os.path.abspath(__file__)),'lite/refl_2_json.py')) )
 
     subprocess.run( ["chmod" , "+x" , os.path.join( save_dir , "preprocess_script.sh" )] )
     try :
