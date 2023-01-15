@@ -15,7 +15,7 @@ setup(
              'anacor.postprocess = AnACor.postprocess:main',
              'anacor.preprocess_lite = AnACor.preprocess_lite:main',
              'anacor.main_lite = AnACor.main_lite:main',
-             'anacor.mp_lite = AnACor.main_lite:mp',
+             'anacor.mp_lite = AnACor.mp_lite:main',
              'anacor.postprocess_lite = AnACor.postprocess_lite:main',],
     },
 
