@@ -11,15 +11,21 @@ setup(
     entry_points = {
         'console_scripts' :
             ['anacor.preprocess = AnACor.preprocess:main',
-             'anacor.main = AnACor.main:main',],
-    }
-)
-#    install_requires=[
-#        'importlib-metadata; python_version == "3.8"',
-#        'opencv-python',
-#        'scikit-image',
-#        'numba',
-#        'imagecodecs',
-#        'dials @ https://github.com/yishunlu-222/dials_precalcu/tree/precalc_abs_model',
-#
-#    ],
+             'anacor.main = AnACor.main:main',
+             'anacor.postprocess = AnACor.postprocess:main',
+             'anacor.preprocess_lite = AnACor.preprocess_lite:main',
+             'anacor.main_lite = AnACor.main_lite:main',
+             'anacor.mp_lite = AnACor.main_lite:mp',
+             'anacor.postprocess_lite = AnACor.postprocess_lite:main',],
+    },
+
+    install_requires=[
+        'importlib-metadata; python_version == "3.8"',
+        'opencv-python',
+        'scikit-image',
+        'numba',
+        'imagecodecs',
+
+
+    ],)
+            #'dials @ https://github.com/yishunlu-222/dials_precalcu/tree/precalc_abs_model',
