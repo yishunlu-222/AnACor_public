@@ -220,6 +220,8 @@ def main ( ) :
         os.makedirs( os.path.join( save_dir , 'ResultData' ) )
         os.makedirs( os.path.join( result_path , "reflections" ) )
         os.makedirs( os.path.join( result_path , "absorption_factors" ) )
+        os.makedirs( os.path.join( result_path , "absorption_coefficient" ) )
+        os.makedirs( os.path.join( result_path , "dials_output" ) )
     print( "\nResultData directory is created... \n" )
 
     # this process can be passed in the future
@@ -235,7 +237,7 @@ def main ( ) :
         if model_storepath is None :
             raise RuntimeError( "The 3D model is not defined and run by create3D by this program" )
 
-        pdb.set_trace( )
+
         coefficient_model = RunAbsorptionCoefficient( args.rawimg_path , model_storepath , auto = True ,
                                                       save_dir = os.path.join( result_path ,
                                                                                "absorption_coefficient" ) ,

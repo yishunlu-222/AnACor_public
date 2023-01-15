@@ -207,7 +207,7 @@ def main ( ) :
     command = ""
     for c in all_command :
         command += c + " " + ";" + " "
-    pdb.set_trace( )
+
     result = subprocess.run( command , shell = True , stdout = subprocess.PIPE , stderr = subprocess.PIPE )
     # result = subprocess.run( ["qsub ","-S","","","h_rt={}:{}:{}".format(args.time[0],args.time[1],args.time[2]),
     #                           "-pe","smp", "{}".format(args.num_cores),

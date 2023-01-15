@@ -1,6 +1,10 @@
 #!/bin/sh 
-cd /home/eaf28336/absorption_correction/cluster/AnACor/
-python3 mp_lite.py --store-dir /home/eaf28336/absorption_correction/ \
+#cd /home/eaf28336/absorption_correction/cluster/AnACor/
+#python3 mp_lite.py \
+
+source /dls/science/groups/i23/yishun/dials_yishun/dials
+anacor.mp_lite \
+--store-dir /dls/science/groups/i23/yishun/save_data/ \
 --dataset  16846 \
 --num-cores 20 \
 --store-lengths False \
