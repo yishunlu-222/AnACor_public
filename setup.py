@@ -19,13 +19,14 @@ setup(
              'anacor.postprocess_lite = AnACor.postprocess_lite:main',],
     },
 
-    install_requires=[
-        'importlib-metadata; python_version == "3.8"',
-        'opencv-python',
-        'scikit-image',
-        'numba',
-        'imagecodecs',
-
-
-    ],)
+)
             #'dials @ https://github.com/yishunlu-222/dials_precalcu/tree/precalc_abs_model',
+#                install_requires=[
+#        'importlib-metadata; python_version == "3.8"',
+#        'opencv-python',
+#        'scikit-image',
+#        'numba',
+#        'imagecodecs',
+#
+#
+#    ],
