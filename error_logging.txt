@@ -1,0 +1,1217 @@
+     ©°©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©´
+     ©¦                        ? MobaXterm 20.6 ?                          ©¦
+     ©¦            (SSH client, X-server and networking tools)             ©¦
+     ©¦                                                                    ©¦
+     ©¦ ? SSH session to yishun@astraios.oerc.ox.ac.uk                     ©¦
+     ©¦   ? SSH compression : ?                                            ©¦
+     ©¦   ? SSH-browser     : ?                                            ©¦
+     ©¦   ? X11-forwarding  : ?  (remote display is forwarded through SSH) ©¦
+     ©¦   ? DISPLAY         : ?  (automatically set on remote server)      ©¦
+     ©¦                                                                    ©¦
+     ©¦ ? For more info, ctrl+click on help or visit our website           ©¦
+     ©¸©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¼
+
+Last login: Sat Jan 21 17:35:20 2023 from 129.67.119.120
+[yishun ~$] cd /home/yishun/projectcode/AnACor/
+[yishun AnACor$] conda activate anacor_test
+(anacor_test) conda-mambabuild -c conda-forge .
+Updating build index: /yishun/anaconda3/envs/anacor_test/conda-bld
+
+No numpy version specified in conda_build_config.yaml.  Falling back to default numpy value of 1.16
+WARNING:conda_build.metadata:No numpy version specified in conda_build_config.yaml.  Falling back to default numpy value of 1.16
+Adding in variants from internal_defaults
+INFO:conda_build.variants:Adding in variants from internal_defaults
+Attempting to finalize metadata for anacor
+INFO:conda_build.metadata:Attempting to finalize metadata for anacor
+conda-forge/linux-64                                        Using cache
+conda-forge/noarch                                          Using cache
+pkgs/r/noarch                                        1.3MB @   2.4MB/s  0.5s
+pkgs/r/linux-64                                      1.4MB @   2.5MB/s  0.6s
+pkgs/main/noarch                                   818.6kB @   1.2MB/s  0.7s
+pkgs/main/linux-64                                   5.1MB @   3.8MB/s  1.4s
+Reloading output folder: /yishun/anaconda3/envs/anacor_test/conda-bld
+yishun/anaconda3/envs/anacor_test/conda-bld/linu.. @   5.9MB/s  0.0s
+yishun/anaconda3/envs/anacor_test/conda-bld/noarch 679.0 B @  52.2MB/s  0.0s
+Reloading output folder: /yishun/anaconda3/envs/anacor_test/conda-bld
+yishun/anaconda3/envs/anacor_test/conda-bld/linu.. 129.0 B @   3.4MB/s  0.0s
+yishun/anaconda3/envs/anacor_test/conda-bld/noarch 679.0 B @   1.3MB/s  0.0s
+BUILD START: ['anacor-1.0-py_0.tar.bz2']
+Reloading output folder: /yishun/anaconda3/envs/anacor_test/conda-bld
+yishun/anaconda3/envs/anacor_test/conda-bld/linu.. 129.0 B @   3.1MB/s  0.0s
+yishun/anaconda3/envs/anacor_test/conda-bld/noarch 679.0 B @   1.9MB/s  0.0s
+Reloading output folder: /yishun/anaconda3/envs/anacor_test/conda-bld
+yishun/anaconda3/envs/anacor_test/conda-bld/linu.. 129.0 B @   3.5MB/s  0.0s
+yishun/anaconda3/envs/anacor_test/conda-bld/noarch 679.0 B @   1.4MB/s  0.0s
+
+## Package Plan ##
+
+  environment location: /yishun/anaconda3/envs/anacor_test/conda-bld/anacor_1674322739251/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pl
+
+
+The following NEW packages will be INSTALLED:
+
+    _libgcc_mutex:    0.1-conda_forge           conda-forge
+    _openmp_mutex:    4.5-2_gnu                 conda-forge
+    bzip2:            1.0.8-h7f98852_4          conda-forge
+    ca-certificates:  2022.12.7-ha878542_0      conda-forge
+    ld_impl_linux-64: 2.39-hcc3a1bd_1           conda-forge
+    libffi:           3.4.2-h7f98852_5          conda-forge
+    libgcc-ng:        12.2.0-h65d4601_19        conda-forge
+    libgomp:          12.2.0-h65d4601_19        conda-forge
+    libnsl:           2.0.0-h7f98852_0          conda-forge
+    libsqlite:        3.40.0-h753d276_0         conda-forge
+    libuuid:          2.32.1-h7f98852_1000      conda-forge
+    libzlib:          1.2.13-h166bdaf_4         conda-forge
+    ncurses:          6.3-h27087fc_1            conda-forge
+    openssl:          3.0.7-h0b41bf4_1          conda-forge
+    pip:              22.3.1-pyhd8ed1ab_0       conda-forge
+    python:           3.11.0-he550d4f_1_cpython conda-forge
+    readline:         8.1.2-h0f457ee_0          conda-forge
+    setuptools:       66.1.1-pyhd8ed1ab_0       conda-forge
+    tk:               8.6.12-h27826a3_0         conda-forge
+    tzdata:           2022g-h191b570_0          conda-forge
+    wheel:            0.38.4-pyhd8ed1ab_0       conda-forge
+    xz:               5.2.6-h166bdaf_0          conda-forge
+
+Preparing transaction: ...working... done
+Verifying transaction: ...working... done
+Executing transaction: ...working... done
+Copying /home/yishun/projectcode/AnACor to /yishun/anaconda3/envs/anacor_test/conda-bld/anacor_1674322739251/work/
+source tree in: /yishun/anaconda3/envs/anacor_test/conda-bld/anacor_1674322739251/work
+export PREFIX=/yishun/anaconda3/envs/anacor_test/conda-bld/anacor_1674322739251/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pl
+export SRC_DIR=/yishun/anaconda3/envs/anacor_test/conda-bld/anacor_1674322739251/work
+Using pip 22.3.1 from $PREFIX/lib/python3.11/site-packages/pip (python 3.11)
+Non-user install because user site-packages disabled
+Ignoring indexes: https://pypi.org/simple
+Created temporary directory: /tmp/pip-build-tracker-i9tcwbjg
+Initialized build tracking at /tmp/pip-build-tracker-i9tcwbjg
+Created build tracker: /tmp/pip-build-tracker-i9tcwbjg
+Entered build tracker: /tmp/pip-build-tracker-i9tcwbjg
+Created temporary directory: /tmp/pip-install-jbmlszmy
+Created temporary directory: /tmp/pip-ephem-wheel-cache-j8668zq2
+Processing $SRC_DIR
+  Added file://$SRC_DIR to build tracker '/tmp/pip-build-tracker-i9tcwbjg'
+  Running setup.py (path:$SRC_DIR/setup.py) egg_info for package from file://$SRC_DIR
+  Created temporary directory: /tmp/pip-pip-egg-info-xvs_wdcn
+  Preparing metadata (setup.py): started
+  Running command python setup.py egg_info
+  running egg_info
+  creating /tmp/pip-pip-egg-info-xvs_wdcn/AnACor.egg-info
+  writing /tmp/pip-pip-egg-info-xvs_wdcn/AnACor.egg-info/PKG-INFO
+  writing dependency_links to /tmp/pip-pip-egg-info-xvs_wdcn/AnACor.egg-info/dependency_links.txt
+  writing entry points to /tmp/pip-pip-egg-info-xvs_wdcn/AnACor.egg-info/entry_points.txt
+  writing top-level names to /tmp/pip-pip-egg-info-xvs_wdcn/AnACor.egg-info/top_level.txt
+  writing manifest file '/tmp/pip-pip-egg-info-xvs_wdcn/AnACor.egg-info/SOURCES.txt'
+  reading manifest file '/tmp/pip-pip-egg-info-xvs_wdcn/AnACor.egg-info/SOURCES.txt'
+  writing manifest file '/tmp/pip-pip-egg-info-xvs_wdcn/AnACor.egg-info/SOURCES.txt'
+  Preparing metadata (setup.py): finished with status 'done'
+  Source in $SRC_DIR has version 1.0, which satisfies requirement AnACor==1.0 from file://$SRC_DIR
+  Removed AnACor==1.0 from file://$SRC_DIR from build tracker '/tmp/pip-build-tracker-i9tcwbjg'
+Created temporary directory: /tmp/pip-unpack-qpjianv4
+Building wheels for collected packages: AnACor
+  Created temporary directory: /tmp/pip-wheel-ltz9s_r1
+  Building wheel for AnACor (setup.py): started
+  Destination directory: /tmp/pip-wheel-ltz9s_r1
+  Running command python setup.py bdist_wheel
+  running bdist_wheel
+  running build
+  running build_py
+  creating build
+  creating build/lib
+  creating build/lib/AnACor
+  copying AnACor/mp_lite.py -> build/lib/AnACor
+  copying AnACor/postprocess_lite.py -> build/lib/AnACor
+  copying AnACor/image_process.py -> build/lib/AnACor
+  copying AnACor/main.py -> build/lib/AnACor
+  copying AnACor/into_flex.py -> build/lib/AnACor
+  copying AnACor/size_of_reflection.py -> build/lib/AnACor
+  copying AnACor/preprocess.py -> build/lib/AnACor
+  copying AnACor/__init__.py -> build/lib/AnACor
+  copying AnACor/Core_accelerated.py -> build/lib/AnACor
+  copying AnACor/absorption_coefficient.py -> build/lib/AnACor
+  copying AnACor/RayTracing.py -> build/lib/AnACor
+  copying AnACor/absorption_surface.py -> build/lib/AnACor
+  copying AnACor/preprocess_lite.py -> build/lib/AnACor
+  copying AnACor/adapative_sampling.py -> build/lib/AnACor
+  copying AnACor/main_lite.py -> build/lib/AnACor
+  copying AnACor/stacking.py -> build/lib/AnACor
+  creating build/lib/AnACor/lite
+  copying AnACor/lite/refl_2_json.py -> build/lib/AnACor/lite
+  warning: build_py: byte-compiling is disabled, skipping.
+
+  /yishun/anaconda3/envs/anacor_test/conda-bld/anacor_1674322739251/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pl/lib/python3.11/site-packages/setuptools/command/install.py:34: SetuptoolsDeprecationWarning: setup.py install is deprecated. Use build and pip and other standards-based tools.
+    warnings.warn(
+  installing to build/bdist.linux-x86_64/wheel
+  running install
+  running install_lib
+  creating build/bdist.linux-x86_64
+  creating build/bdist.linux-x86_64/wheel
+  creating build/bdist.linux-x86_64/wheel/AnACor
+  copying build/lib/AnACor/mp_lite.py -> build/bdist.linux-x86_64/wheel/AnACor
+  copying build/lib/AnACor/postprocess_lite.py -> build/bdist.linux-x86_64/wheel/AnACor
+  copying build/lib/AnACor/image_process.py -> build/bdist.linux-x86_64/wheel/AnACor
+  copying build/lib/AnACor/main.py -> build/bdist.linux-x86_64/wheel/AnACor
+  copying build/lib/AnACor/into_flex.py -> build/bdist.linux-x86_64/wheel/AnACor
+  copying build/lib/AnACor/size_of_reflection.py -> build/bdist.linux-x86_64/wheel/AnACor
+  copying build/lib/AnACor/preprocess.py -> build/bdist.linux-x86_64/wheel/AnACor
+  copying build/lib/AnACor/__init__.py -> build/bdist.linux-x86_64/wheel/AnACor
+  copying build/lib/AnACor/Core_accelerated.py -> build/bdist.linux-x86_64/wheel/AnACor
+  copying build/lib/AnACor/absorption_coefficient.py -> build/bdist.linux-x86_64/wheel/AnACor
+  copying build/lib/AnACor/RayTracing.py -> build/bdist.linux-x86_64/wheel/AnACor
+  copying build/lib/AnACor/absorption_surface.py -> build/bdist.linux-x86_64/wheel/AnACor
+  copying build/lib/AnACor/preprocess_lite.py -> build/bdist.linux-x86_64/wheel/AnACor
+  copying build/lib/AnACor/adapative_sampling.py -> build/bdist.linux-x86_64/wheel/AnACor
+  copying build/lib/AnACor/main_lite.py -> build/bdist.linux-x86_64/wheel/AnACor
+  copying build/lib/AnACor/stacking.py -> build/bdist.linux-x86_64/wheel/AnACor
+  creating build/bdist.linux-x86_64/wheel/AnACor/lite
+  copying build/lib/AnACor/lite/refl_2_json.py -> build/bdist.linux-x86_64/wheel/AnACor/lite
+  warning: install_lib: byte-compiling is disabled, skipping.
+
+  running install_egg_info
+  running egg_info
+  creating AnACor.egg-info
+  writing AnACor.egg-info/PKG-INFO
+  writing dependency_links to AnACor.egg-info/dependency_links.txt
+  writing entry points to AnACor.egg-info/entry_points.txt
+  writing top-level names to AnACor.egg-info/top_level.txt
+  writing manifest file 'AnACor.egg-info/SOURCES.txt'
+  reading manifest file 'AnACor.egg-info/SOURCES.txt'
+  writing manifest file 'AnACor.egg-info/SOURCES.txt'
+  Copying AnACor.egg-info to build/bdist.linux-x86_64/wheel/AnACor-1.0-py3.11.egg-info
+  running install_scripts
+  creating build/bdist.linux-x86_64/wheel/AnACor-1.0.dist-info/WHEEL
+  creating '/tmp/pip-wheel-ltz9s_r1/AnACor-1.0-py3-none-any.whl' and adding 'build/bdist.linux-x86_64/wheel' to it
+  adding 'AnACor/Core_accelerated.py'
+  adding 'AnACor/RayTracing.py'
+  adding 'AnACor/__init__.py'
+  adding 'AnACor/absorption_coefficient.py'
+  adding 'AnACor/absorption_surface.py'
+  adding 'AnACor/adapative_sampling.py'
+  adding 'AnACor/image_process.py'
+  adding 'AnACor/into_flex.py'
+  adding 'AnACor/main.py'
+  adding 'AnACor/main_lite.py'
+  adding 'AnACor/mp_lite.py'
+  adding 'AnACor/postprocess_lite.py'
+  adding 'AnACor/preprocess.py'
+  adding 'AnACor/preprocess_lite.py'
+  adding 'AnACor/size_of_reflection.py'
+  adding 'AnACor/stacking.py'
+  adding 'AnACor/lite/refl_2_json.py'
+  adding 'AnACor-1.0.dist-info/METADATA'
+  adding 'AnACor-1.0.dist-info/WHEEL'
+  adding 'AnACor-1.0.dist-info/entry_points.txt'
+  adding 'AnACor-1.0.dist-info/top_level.txt'
+  adding 'AnACor-1.0.dist-info/RECORD'
+  removing build/bdist.linux-x86_64/wheel
+  Building wheel for AnACor (setup.py): finished with status 'done'
+  Created wheel for AnACor: filename=AnACor-1.0-py3-none-any.whl size=47952 sha256=4a03a9d53c6f6b98f266bdb5dfbefb5bcbbae137f62093f7e663d1a9bc1747a3
+  Stored in directory: /tmp/pip-ephem-wheel-cache-j8668zq2/wheels/af/ab/76/d303fa2cae500ffd0d618b563cd68ab325bc059d8e8a4b04cf
+Successfully built AnACor
+Installing collected packages: AnACor
+
+  changing mode of $PREFIX/bin/anacor.main to 775
+  changing mode of $PREFIX/bin/anacor.main_lite to 775
+  changing mode of $PREFIX/bin/anacor.mp_lite to 775
+  changing mode of $PREFIX/bin/anacor.postprocess to 775
+  changing mode of $PREFIX/bin/anacor.postprocess_lite to 775
+  changing mode of $PREFIX/bin/anacor.preprocess to 775
+  changing mode of $PREFIX/bin/anacor.preprocess_lite to 775
+Successfully installed AnACor-1.0
+Removed build tracker: '/tmp/pip-build-tracker-i9tcwbjg'
+
+Resource usage statistics from building anacor:
+   Process count: 1
+   CPU time: Sys=-, User=-
+   Memory: 3.2M
+   Disk usage: 3.6K
+   Time elapsed: 0:00:02.0
+
+
+Packaging anacor
+INFO:conda_build.build:Packaging anacor
+Packaging anacor-1.0-py_0
+INFO:conda_build.build:Packaging anacor-1.0-py_0
+number of files: 32
+Fixing permissions
+INFO :: Time taken to mark (prefix)
+        0 replacements in 0 files was 0.01 seconds
+Files containing CONDA_PREFIX
+-----------------------------
+python-scripts/anacor.main (text): Patching
+python-scripts/anacor.main_lite (text): Patching
+python-scripts/anacor.mp_lite (text): Patching
+python-scripts/anacor.postprocess (text): Patching
+python-scripts/anacor.postprocess_lite (text): Patching
+python-scripts/anacor.preprocess (text): Patching
+python-scripts/anacor.preprocess_lite (text): Patching
+Importing conda-verify failed.  Please be sure to test your packages.  conda install conda-verify to make this message go away.
+WARNING:conda_build.build:Importing conda-verify failed.  Please be sure to test your packages.  conda install conda-verify to make this message go away.
+TEST START: /yishun/anaconda3/envs/anacor_test/conda-bld/noarch/anacor-1.0-py_0.tar.bz2
+Adding in variants from /tmp/tmp5ql6vlfl/info/recipe/conda_build_config.yaml
+INFO:conda_build.variants:Adding in variants from /tmp/tmp5ql6vlfl/info/recipe/conda_build_config.yaml
+Nothing to test for: /yishun/anaconda3/envs/anacor_test/conda-bld/noarch/anacor-1.0-py_0.tar.bz2
+Renaming work directory '/yishun/anaconda3/envs/anacor_test/conda-bld/anacor_1674322739251/work' to '/yishun/anaconda3/envs/anacor_test/conda-bld/anacor_1674322739251/work_moved_anacor-1.0-py_0_linux-64_main_build_loop'
+INFO:conda_build.utils:Renaming work directory '/yishun/anaconda3/envs/anacor_test/conda-bld/anacor_1674322739251/work' to '/yishun/anaconda3/envs/anacor_test/conda-bld/anacor_1674322739251/work_moved_anacor-1.0-py_0_linux-64_main_build_loop'
+shutil.move(work)=/yishun/anaconda3/envs/anacor_test/conda-bld/anacor_1674322739251/work, dest=/yishun/anaconda3/envs/anacor_test/conda-bld/anacor_1674322739251/work_moved_anacor-1.0-py_0_linux-64_main_build_loop)
+INFO:conda_build.utils:shutil.move(work)=/yishun/anaconda3/envs/anacor_test/conda-bld/anacor_1674322739251/work, dest=/yishun/anaconda3/envs/anacor_test/conda-bld/anacor_1674322739251/work_moved_anacor-1.0-py_0_linux-64_main_build_loop)
+# Automatic uploading is disabled
+# If you want to upload package(s) to anaconda.org later, type:
+
+
+# To have conda build upload to anaconda.org automatically, use
+# conda config --set anaconda_upload yes
+anaconda upload \
+    /yishun/anaconda3/envs/anacor_test/conda-bld/noarch/anacor-1.0-py_0.tar.bz2
+anaconda_upload is not set.  Not uploading wheels: []
+
+INFO :: The inputs making up the hashes for the built packages are as follows:
+{
+  "anacor-1.0-py_0": {
+    "recipe": {}
+  }
+}
+
+
+####################################################################################
+Resource usage summary:
+
+Total time: 0:01:50.5
+CPU usage: sys=0:00:00.0, user=0:00:00.0
+Maximum memory usage observed: 3.2M
+Total disk usage observed (not including envs): 3.6K
+(anacor_test) conda install --use-local  /yishun/anaconda3/envs/anacor_test/conda-bld/noarch/anacor-1.0-py_0.tar.bz2 -c conda-forge
+Preparing transaction: done
+Verifying transaction: done
+Executing transaction: done
+Retrieving notices: ...working... done
+(anacor_test) conda install  /yishun/anaconda3/envs/anacor_test/conda-bld/noarch/anacor-1.0-py_0.tar.bz2 -c conda-forge
+Preparing transaction: done
+Verifying transaction: done
+Executing transaction: done
+Retrieving notices: ...working... done
+(anacor_test) conda install -c conda-forge  /yishun/anaconda3/envs/anacor_test/conda-bld/noarch/anacor-1.0-py_0.tar.bz2
+Preparing transaction: done
+Verifying transaction: done
+Executing transaction: done
+Retrieving notices: ...working... done
+(anacor_test) anacor.main
+Traceback (most recent call last):
+  File "/yishun/anaconda3/envs/anacor_test/bin/anacor.main", line 7, in <module>
+    from AnACor.main import main
+  File "/yishun/anaconda3/envs/anacor_test/lib/python3.11/site-packages/AnACor/main.py", line 5, in <module>
+    import numpy as np
+ModuleNotFoundError: No module named 'numpy'
+(anacor_test) conda install numpy
+Collecting package metadata (current_repodata.json): done
+Solving environment: failed with initial frozen solve. Retrying with flexible solve.
+Solving environment: failed with repodata from current_repodata.json, will retry with next repodata source.
+Collecting package metadata (repodata.json): done
+Solving environment: failed with initial frozen solve. Retrying with flexible solve.
+Solving environment: \
+Found conflicts! Looking for incompatible packages.
+This can take several minutes.  Press CTRL-C to abort.                                               failed
+
+UnsatisfiableError: The following specifications were found
+to be incompatible with the existing python installation in your environment:
+
+Specifications:
+
+  - numpy -> python[version='>=2.7,<2.8.0a0|>=3.10,<3.11.0a0|>=3.9,<3.10.0a0|>=3.8,<3.9.0a0|>=3.7,<3.8.0a0|>=3.6,<3.7.0a0|>=3.5,<3.6.0a0']
+
+Your python: python=3.11
+
+If python is on the left-most side of the chain, that's the version you've asked for.
+When python appears to the right, that indicates that the thing on the left is somehow
+not available for the python version you are constrained to. Note that conda will not
+change your python version to a different minor version unless you explicitly specify
+that.
+
+The following specifications were found to be incompatible with your system:
+
+  - feature:/linux-64::__glibc==2.29=0
+  - numpy -> libgcc-ng[version='>=11.2.0'] -> __glibc[version='>=2.17']
+  - python=3.11 -> libgcc-ng[version='>=11.2.0'] -> __glibc[version='>=2.17']
+
+Your installed version is: 2.29
+
+
+(anacor_test) conda install numpy
+Collecting package metadata (current_repodata.json): done
+Solving environment: | ^Z
+[1]+  Stopped                 ( "$CONDA_EXE" $_CE_M $_CE_CONDA "$@" )
+(anacor_test) ^C
+(anacor_test) anacor.main
+Traceback (most recent call last):
+  File "/yishun/anaconda3/envs/anacor_test/bin/anacor.main", line 7, in <module>
+    from AnACor.main import main
+  File "/yishun/anaconda3/envs/anacor_test/lib/python3.11/site-packages/AnACor/main.py", line 5, in <module>
+    import numpy as np
+ModuleNotFoundError: No module named 'numpy'
+(anacor_test) python
+Python 3.11.0 | packaged by conda-forge | (main, Jan 14 2023, 12:27:40) [GCC 11.3.0] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import numpy
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+ModuleNotFoundError: No module named 'numpy'
+>>> quit()
+(anacor_test) conda create --name  anacor_t python=3.10
+Collecting package metadata (current_repodata.json): done
+Solving environment: done
+
+
+==> WARNING: A newer version of conda exists. <==
+  current version: 22.9.0
+  latest version: 22.11.1
+
+Please update conda by running
+
+    $ conda update -n base -c defaults conda
+
+
+
+## Package Plan ##
+
+  environment location: /yishun/anaconda3/envs/anacor_t
+
+  added / updated specs:
+    - python=3.10
+
+
+The following packages will be downloaded:
+
+    package                    |            build
+    ---------------------------|-----------------
+    bzip2-1.0.8                |       h7b6447c_0          78 KB
+    certifi-2022.12.7          |  py310h06a4308_0         150 KB
+    pip-22.3.1                 |  py310h06a4308_0         2.8 MB
+    python-3.10.9              |       h7a1cb2a_0        26.8 MB
+    setuptools-65.6.3          |  py310h06a4308_0         1.2 MB
+    xz-5.2.10                  |       h5eee18b_1         429 KB
+    ------------------------------------------------------------
+                                           Total:        31.4 MB
+
+The following NEW packages will be INSTALLED:
+
+  _libgcc_mutex      pkgs/main/linux-64::_libgcc_mutex-0.1-main None
+  _openmp_mutex      pkgs/main/linux-64::_openmp_mutex-5.1-1_gnu None
+  bzip2              pkgs/main/linux-64::bzip2-1.0.8-h7b6447c_0 None
+  ca-certificates    pkgs/main/linux-64::ca-certificates-2022.10.11-h06a4308_0 None
+  certifi            pkgs/main/linux-64::certifi-2022.12.7-py310h06a4308_0 None
+  ld_impl_linux-64   pkgs/main/linux-64::ld_impl_linux-64-2.38-h1181459_1 None
+  libffi             pkgs/main/linux-64::libffi-3.4.2-h6a678d5_6 None
+  libgcc-ng          pkgs/main/linux-64::libgcc-ng-11.2.0-h1234567_1 None
+  libgomp            pkgs/main/linux-64::libgomp-11.2.0-h1234567_1 None
+  libstdcxx-ng       pkgs/main/linux-64::libstdcxx-ng-11.2.0-h1234567_1 None
+  libuuid            pkgs/main/linux-64::libuuid-1.41.5-h5eee18b_0 None
+  ncurses            pkgs/main/linux-64::ncurses-6.3-h5eee18b_3 None
+  openssl            pkgs/main/linux-64::openssl-1.1.1s-h7f8727e_0 None
+  pip                pkgs/main/linux-64::pip-22.3.1-py310h06a4308_0 None
+  python             pkgs/main/linux-64::python-3.10.9-h7a1cb2a_0 None
+  readline           pkgs/main/linux-64::readline-8.2-h5eee18b_0 None
+  setuptools         pkgs/main/linux-64::setuptools-65.6.3-py310h06a4308_0 None
+  sqlite             pkgs/main/linux-64::sqlite-3.40.1-h5082296_0 None
+  tk                 pkgs/main/linux-64::tk-8.6.12-h1ccaba5_0 None
+  tzdata             pkgs/main/noarch::tzdata-2022g-h04d1e81_0 None
+  wheel              pkgs/main/noarch::wheel-0.37.1-pyhd3eb1b0_0 None
+  xz                 pkgs/main/linux-64::xz-5.2.10-h5eee18b_1 None
+  zlib               pkgs/main/linux-64::zlib-1.2.13-h5eee18b_0 None
+
+
+Proceed ([y]/n)? y
+
+
+Downloading and Extracting Packages
+bzip2-1.0.8          | 78 KB     | ############################################################ | 100%
+setuptools-65.6.3    | 1.2 MB    | ############################################################ | 100%
+xz-5.2.10            | 429 KB    | ############################################################ | 100%
+pip-22.3.1           | 2.8 MB    | ############################################################ | 100%
+python-3.10.9        | 26.8 MB   | ############################################################ | 100%
+certifi-2022.12.7    | 150 KB    | ############################################################ | 100%
+Preparing transaction: done
+Verifying transaction: done
+Executing transaction: done
+#
+# To activate this environment, use
+#
+#     $ conda activate anacor_t
+#
+# To deactivate an active environment, use
+#
+#     $ conda deactivate
+
+Retrieving notices: ...working... done
+(anacor_test) conda activate anacor_t
+(anacor_t) conda install -c conda-forge boa
+Collecting package metadata (current_repodata.json): done
+Solving environment: failed with initial frozen solve. Retrying with flexible solve.
+Solving environment: failed with repodata from current_repodata.json, will retry with next repodata source.
+Collecting package metadata (repodata.json): done
+Solving environment: done
+
+
+==> WARNING: A newer version of conda exists. <==
+  current version: 22.9.0
+  latest version: 22.11.1
+
+Please update conda by running
+
+    $ conda update -n base -c defaults conda
+
+
+
+## Package Plan ##
+
+  environment location: /yishun/anaconda3/envs/anacor_t
+
+  added / updated specs:
+    - boa
+
+
+The following packages will be downloaded:
+
+    package                    |            build
+    ---------------------------|-----------------
+    boa-0.11.0                 |     pyha770c72_4          54 KB  conda-forge
+    brotlipy-0.7.0             |py310h5764c6d_1004         342 KB  conda-forge
+    cffi-1.15.0                |  py310h0fdd8cc_0         433 KB  conda-forge
+    chardet-5.1.0              |  py310hff52083_0         233 KB  conda-forge
+    conda-4.12.0               |  py310hff52083_0         1.0 MB  conda-forge
+    conda-build-3.22.0         |  py310hff52083_3         571 KB  conda-forge
+    conda-package-handling-1.8.1|  py310h5764c6d_1        1015 KB  conda-forge
+    cryptography-37.0.2        |  py310h597c629_0         1.5 MB  conda-forge
+    icu-68.2                   |       h9c3ff4c_0        13.1 MB  conda-forge
+    krb5-1.19.3                |       h3790be6_0         1.4 MB  conda-forge
+    libarchive-3.5.2           |       hccf745f_1         1.6 MB  conda-forge
+    libcurl-7.87.0             |       h91b91d3_0         373 KB
+    liblief-0.11.5             |       h9c3ff4c_1         2.2 MB  conda-forge
+    libmamba-0.23.1            |       hd8a31e3_1         1.4 MB  conda-forge
+    libmambapy-0.23.1          |  py310hab0e683_1         287 KB  conda-forge
+    libsolv-0.7.22             |       he621ea3_0         436 KB
+    libssh2-1.10.0             |       ha56f1ee_2         233 KB  conda-forge
+    libxml2-2.9.12             |       h72842e0_0         772 KB  conda-forge
+    mamba-0.23.1               |  py310hf87f941_1          46 KB  conda-forge
+    markupsafe-2.1.1           |  py310h5764c6d_1          22 KB  conda-forge
+    pcre2-10.37                |       h032f7d1_0         1.1 MB  conda-forge
+    psutil-5.9.1               |  py310h5764c6d_0         350 KB  conda-forge
+    py-lief-0.11.5             |  py310h122e73d_1         1.5 MB  conda-forge
+    pycosat-0.6.3              |py310h5764c6d_1010         108 KB  conda-forge
+    pyopenssl-22.0.0           |     pyhd8ed1ab_1         120 KB  conda-forge
+    pyrsistent-0.18.1          |  py310h5764c6d_1          92 KB  conda-forge
+    python-libarchive-c-4.0    |  py310hff52083_2          63 KB  conda-forge
+    python_abi-3.10            |          2_cp310           4 KB  conda-forge
+    pyyaml-6.0                 |  py310h5764c6d_4         178 KB  conda-forge
+    reproc-14.2.3              |       h7f98852_0          28 KB  conda-forge
+    reproc-cpp-14.2.3          |       h9c3ff4c_0          20 KB  conda-forge
+    ruamel.yaml-0.17.21        |  py310h5764c6d_1         175 KB  conda-forge
+    ruamel.yaml.clib-0.2.6     |  py310h5764c6d_1         148 KB  conda-forge
+    ruamel_yaml-0.15.80        |py310h6acc77f_1006         724 KB  conda-forge
+    yaml-cpp-0.6.3             |       he1b5a44_4         208 KB  conda-forge
+    zstd-1.5.0                 |       ha95c52a_0         490 KB  conda-forge
+    ------------------------------------------------------------
+                                           Total:        32.2 MB
+
+The following NEW packages will be INSTALLED:
+
+  anyio              conda-forge/noarch::anyio-3.6.2-pyhd8ed1ab_0 None
+  attrs              conda-forge/noarch::attrs-22.2.0-pyh71513ae_0 None
+  backports          conda-forge/noarch::backports-1.0-pyhd8ed1ab_3 None
+  backports.functoo~ conda-forge/noarch::backports.functools_lru_cache-1.6.4-pyhd8ed1ab_0 None
+  beautifulsoup4     conda-forge/noarch::beautifulsoup4-4.11.1-pyha770c72_0 None
+  boa                conda-forge/noarch::boa-0.11.0-pyha770c72_4 None
+  brotlipy           conda-forge/linux-64::brotlipy-0.7.0-py310h5764c6d_1004 None
+  c-ares             conda-forge/linux-64::c-ares-1.18.1-h7f98852_0 None
+  cffi               conda-forge/linux-64::cffi-1.15.0-py310h0fdd8cc_0 None
+  chardet            conda-forge/linux-64::chardet-5.1.0-py310hff52083_0 None
+  charset-normalizer conda-forge/noarch::charset-normalizer-2.1.1-pyhd8ed1ab_0 None
+  colorama           conda-forge/noarch::colorama-0.4.6-pyhd8ed1ab_0 None
+  conda              conda-forge/linux-64::conda-4.12.0-py310hff52083_0 None
+  conda-build        conda-forge/linux-64::conda-build-3.22.0-py310hff52083_3 None
+  conda-package-han~ conda-forge/linux-64::conda-package-handling-1.8.1-py310h5764c6d_1 None
+  cryptography       conda-forge/linux-64::cryptography-37.0.2-py310h597c629_0 None
+  dataclasses        conda-forge/noarch::dataclasses-0.8-pyhc8e2a94_3 None
+  filelock           conda-forge/noarch::filelock-3.9.0-pyhd8ed1ab_0 None
+  glob2              conda-forge/noarch::glob2-0.7-py_0 None
+  icu                conda-forge/linux-64::icu-68.2-h9c3ff4c_0 None
+  idna               conda-forge/noarch::idna-3.4-pyhd8ed1ab_0 None
+  importlib-metadata conda-forge/noarch::importlib-metadata-6.0.0-pyha770c72_0 None
+  importlib_resourc~ conda-forge/noarch::importlib_resources-5.10.2-pyhd8ed1ab_0 None
+  jinja2             conda-forge/noarch::jinja2-3.1.2-pyhd8ed1ab_1 None
+  joblib             conda-forge/noarch::joblib-1.2.0-pyhd8ed1ab_0 None
+  json5              conda-forge/noarch::json5-0.9.5-pyh9f0ad1d_0 None
+  jsonschema         conda-forge/noarch::jsonschema-4.17.3-pyhd8ed1ab_0 None
+  keyutils           conda-forge/linux-64::keyutils-1.6.1-h166bdaf_0 None
+  krb5               conda-forge/linux-64::krb5-1.19.3-h3790be6_0 None
+  libarchive         conda-forge/linux-64::libarchive-3.5.2-hccf745f_1 None
+  libcurl            pkgs/main/linux-64::libcurl-7.87.0-h91b91d3_0 None
+  libedit            conda-forge/linux-64::libedit-3.1.20191231-he28a2e2_2 None
+  libev              conda-forge/linux-64::libev-4.33-h516909a_1 None
+  libiconv           conda-forge/linux-64::libiconv-1.17-h166bdaf_0 None
+  liblief            conda-forge/linux-64::liblief-0.11.5-h9c3ff4c_1 None
+  libmamba           conda-forge/linux-64::libmamba-0.23.1-hd8a31e3_1 None
+  libmambapy         conda-forge/linux-64::libmambapy-0.23.1-py310hab0e683_1 None
+  libnghttp2         pkgs/main/linux-64::libnghttp2-1.46.0-hce63b2e_0 None
+  libsolv            pkgs/main/linux-64::libsolv-0.7.22-he621ea3_0 None
+  libssh2            conda-forge/linux-64::libssh2-1.10.0-ha56f1ee_2 None
+  libxml2            conda-forge/linux-64::libxml2-2.9.12-h72842e0_0 None
+  lz4-c              conda-forge/linux-64::lz4-c-1.9.3-h9c3ff4c_1 None
+  lzo                conda-forge/linux-64::lzo-2.10-h516909a_1000 None
+  mamba              conda-forge/linux-64::mamba-0.23.1-py310hf87f941_1 None
+  markdown-it-py     conda-forge/noarch::markdown-it-py-2.1.0-pyhd8ed1ab_0 None
+  markupsafe         conda-forge/linux-64::markupsafe-2.1.1-py310h5764c6d_1 None
+  mdurl              conda-forge/noarch::mdurl-0.1.0-pyhd8ed1ab_0 None
+  patch              conda-forge/linux-64::patch-2.7.6-h7f98852_1002 None
+  patchelf           conda-forge/linux-64::patchelf-0.17.2-h58526e2_0 None
+  pcre2              conda-forge/linux-64::pcre2-10.37-h032f7d1_0 None
+  pkginfo            conda-forge/noarch::pkginfo-1.9.6-pyhd8ed1ab_0 None
+  pkgutil-resolve-n~ conda-forge/noarch::pkgutil-resolve-name-1.3.10-pyhd8ed1ab_0 None
+  prompt-toolkit     conda-forge/noarch::prompt-toolkit-3.0.36-pyha770c72_0 None
+  prompt_toolkit     conda-forge/noarch::prompt_toolkit-3.0.36-hd8ed1ab_0 None
+  psutil             conda-forge/linux-64::psutil-5.9.1-py310h5764c6d_0 None
+  py-lief            conda-forge/linux-64::py-lief-0.11.5-py310h122e73d_1 None
+  pybind11-abi       conda-forge/noarch::pybind11-abi-4-hd8ed1ab_3 None
+  pycosat            conda-forge/linux-64::pycosat-0.6.3-py310h5764c6d_1010 None
+  pycparser          conda-forge/noarch::pycparser-2.21-pyhd8ed1ab_0 None
+  pygments           conda-forge/noarch::pygments-2.14.0-pyhd8ed1ab_0 None
+  pyopenssl          conda-forge/noarch::pyopenssl-22.0.0-pyhd8ed1ab_1 None
+  pyrsistent         conda-forge/linux-64::pyrsistent-0.18.1-py310h5764c6d_1 None
+  pysocks            conda-forge/noarch::pysocks-1.7.1-pyha2e5f31_6 None
+  python-libarchive~ conda-forge/linux-64::python-libarchive-c-4.0-py310hff52083_2 None
+  python_abi         conda-forge/linux-64::python_abi-3.10-2_cp310 None
+  pytz               conda-forge/noarch::pytz-2022.7.1-pyhd8ed1ab_0 None
+  pyyaml             conda-forge/linux-64::pyyaml-6.0-py310h5764c6d_4 None
+  reproc             conda-forge/linux-64::reproc-14.2.3-h7f98852_0 None
+  reproc-cpp         conda-forge/linux-64::reproc-cpp-14.2.3-h9c3ff4c_0 None
+  requests           conda-forge/noarch::requests-2.28.2-pyhd8ed1ab_0 None
+  rich               conda-forge/noarch::rich-13.2.0-pyhd8ed1ab_1 None
+  ripgrep            conda-forge/linux-64::ripgrep-13.0.0-h2f28480_2 None
+  ruamel.yaml        conda-forge/linux-64::ruamel.yaml-0.17.21-py310h5764c6d_1 None
+  ruamel.yaml.clib   conda-forge/linux-64::ruamel.yaml.clib-0.2.6-py310h5764c6d_1 None
+  ruamel_yaml        conda-forge/linux-64::ruamel_yaml-0.15.80-py310h6acc77f_1006 None
+  six                conda-forge/noarch::six-1.16.0-pyh6c4a22f_0 None
+  sniffio            conda-forge/noarch::sniffio-1.3.0-pyhd8ed1ab_0 None
+  soupsieve          conda-forge/noarch::soupsieve-2.3.2.post1-pyhd8ed1ab_0 None
+  toml               conda-forge/noarch::toml-0.10.2-pyhd8ed1ab_0 None
+  tqdm               conda-forge/noarch::tqdm-4.64.1-pyhd8ed1ab_0 None
+  typing_extensions  conda-forge/noarch::typing_extensions-4.4.0-pyha770c72_0 None
+  urllib3            conda-forge/noarch::urllib3-1.26.14-pyhd8ed1ab_0 None
+  watchgod           conda-forge/noarch::watchgod-0.8.2-pyhd8ed1ab_0 None
+  wcwidth            conda-forge/noarch::wcwidth-0.2.6-pyhd8ed1ab_0 None
+  yaml               conda-forge/linux-64::yaml-0.2.5-h7f98852_2 None
+  yaml-cpp           conda-forge/linux-64::yaml-cpp-0.6.3-he1b5a44_4 None
+  zipp               conda-forge/noarch::zipp-3.11.0-pyhd8ed1ab_0 None
+  zstd               conda-forge/linux-64::zstd-1.5.0-ha95c52a_0 None
+
+The following packages will be UPDATED:
+
+  ca-certificates    pkgs/main::ca-certificates-2022.10.11~ --> conda-forge::ca-certificates-2022.12.7-ha878542_0 None
+
+The following packages will be SUPERSEDED by a higher-priority channel:
+
+  certifi            pkgs/main/linux-64::certifi-2022.12.7~ --> conda-forge/noarch::certifi-2022.12.7-pyhd8ed1ab_0 None
+
+
+Proceed ([y]/n)? y
+Network error: Software caused connection abort
+
+©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+
+Session stopped
+    - Press <return> to exit tab
+    - Press R to restart session
+    - Press S to save terminal output to file
+     ©°©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©´
+     ©¦                        ? MobaXterm 20.6 ?                          ©¦
+     ©¦            (SSH client, X-server and networking tools)             ©¦
+     ©¦                                                                    ©¦
+     ©¦ ? SSH session to yishun@astraios.oerc.ox.ac.uk                     ©¦
+     ©¦   ? SSH compression : ?                                            ©¦
+     ©¦   ? SSH-browser     : ?                                            ©¦
+     ©¦   ? X11-forwarding  : ?  (remote display is forwarded through SSH) ©¦
+     ©¦   ? DISPLAY         : ?  (automatically set on remote server)      ©¦
+     ©¦                                                                    ©¦
+     ©¦ ? For more info, ctrl+click on help or visit our website           ©¦
+     ©¸©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¼
+
+Last login: Sat Jan 21 17:38:23 2023 from 129.67.116.9
+[yishun ~$] conda install -c conda-forge boa
+Collecting package metadata (current_repodata.json): \ ^Z
+[1]+  Stopped                 ( "$CONDA_EXE" $_CE_M $_CE_CONDA "$@" )
+[yishun ~$] ^C
+[yishun ~$] cd /home/yishun/projectcode/AnACor/
+[yishun AnACor$] conda activate anacor_t
+(anacor_t) conda install -c conda-forge boa
+Collecting package metadata (current_repodata.json): done
+Solving environment: failed with initial frozen solve. Retrying with flexible solve.
+Solving environment: failed with repodata from current_repodata.json, will retry with next repodata source.
+Collecting package metadata (repodata.json): done
+Solving environment: done
+
+
+==> WARNING: A newer version of conda exists. <==
+  current version: 22.9.0
+  latest version: 22.11.1
+
+Please update conda by running
+
+    $ conda update -n base -c defaults conda
+
+
+
+## Package Plan ##
+
+  environment location: /yishun/anaconda3/envs/anacor_t
+
+  added / updated specs:
+    - boa
+
+
+The following packages will be downloaded:
+
+    package                    |            build
+    ---------------------------|-----------------
+    boa-0.11.0                 |     pyha770c72_4          54 KB  conda-forge
+    brotlipy-0.7.0             |py310h5764c6d_1004         342 KB  conda-forge
+    cffi-1.15.0                |  py310h0fdd8cc_0         433 KB  conda-forge
+    chardet-5.1.0              |  py310hff52083_0         233 KB  conda-forge
+    conda-4.12.0               |  py310hff52083_0         1.0 MB  conda-forge
+    conda-build-3.22.0         |  py310hff52083_3         571 KB  conda-forge
+    conda-package-handling-1.8.1|  py310h5764c6d_1        1015 KB  conda-forge
+    cryptography-37.0.2        |  py310h597c629_0         1.5 MB  conda-forge
+    icu-68.2                   |       h9c3ff4c_0        13.1 MB  conda-forge
+    krb5-1.19.3                |       h3790be6_0         1.4 MB  conda-forge
+    libarchive-3.5.2           |       hccf745f_1         1.6 MB  conda-forge
+    libcurl-7.87.0             |       h91b91d3_0         373 KB
+    liblief-0.11.5             |       h9c3ff4c_1         2.2 MB  conda-forge
+    libmamba-0.23.1            |       hd8a31e3_1         1.4 MB  conda-forge
+    libmambapy-0.23.1          |  py310hab0e683_1         287 KB  conda-forge
+    libsolv-0.7.22             |       he621ea3_0         436 KB
+    libssh2-1.10.0             |       ha56f1ee_2         233 KB  conda-forge
+    libxml2-2.9.12             |       h72842e0_0         772 KB  conda-forge
+    mamba-0.23.1               |  py310hf87f941_1          46 KB  conda-forge
+    markupsafe-2.1.1           |  py310h5764c6d_1          22 KB  conda-forge
+    pcre2-10.37                |       h032f7d1_0         1.1 MB  conda-forge
+    psutil-5.9.1               |  py310h5764c6d_0         350 KB  conda-forge
+    py-lief-0.11.5             |  py310h122e73d_1         1.5 MB  conda-forge
+    pycosat-0.6.3              |py310h5764c6d_1010         108 KB  conda-forge
+    pyopenssl-22.0.0           |     pyhd8ed1ab_1         120 KB  conda-forge
+    pyrsistent-0.18.1          |  py310h5764c6d_1          92 KB  conda-forge
+    python-libarchive-c-4.0    |  py310hff52083_2          63 KB  conda-forge
+    python_abi-3.10            |          2_cp310           4 KB  conda-forge
+    pyyaml-6.0                 |  py310h5764c6d_4         178 KB  conda-forge
+    reproc-14.2.3              |       h7f98852_0          28 KB  conda-forge
+    reproc-cpp-14.2.3          |       h9c3ff4c_0          20 KB  conda-forge
+    ruamel.yaml-0.17.21        |  py310h5764c6d_1         175 KB  conda-forge
+    ruamel.yaml.clib-0.2.6     |  py310h5764c6d_1         148 KB  conda-forge
+    ruamel_yaml-0.15.80        |py310h6acc77f_1006         724 KB  conda-forge
+    yaml-cpp-0.6.3             |       he1b5a44_4         208 KB  conda-forge
+    zstd-1.5.0                 |       ha95c52a_0         490 KB  conda-forge
+    ------------------------------------------------------------
+                                           Total:        32.2 MB
+
+The following NEW packages will be INSTALLED:
+
+  anyio              conda-forge/noarch::anyio-3.6.2-pyhd8ed1ab_0 None
+  attrs              conda-forge/noarch::attrs-22.2.0-pyh71513ae_0 None
+  backports          conda-forge/noarch::backports-1.0-pyhd8ed1ab_3 None
+  backports.functoo~ conda-forge/noarch::backports.functools_lru_cache-1.6.4-pyhd8ed1ab_0 None
+  beautifulsoup4     conda-forge/noarch::beautifulsoup4-4.11.1-pyha770c72_0 None
+  boa                conda-forge/noarch::boa-0.11.0-pyha770c72_4 None
+  brotlipy           conda-forge/linux-64::brotlipy-0.7.0-py310h5764c6d_1004 None
+  c-ares             conda-forge/linux-64::c-ares-1.18.1-h7f98852_0 None
+  cffi               conda-forge/linux-64::cffi-1.15.0-py310h0fdd8cc_0 None
+  chardet            conda-forge/linux-64::chardet-5.1.0-py310hff52083_0 None
+  charset-normalizer conda-forge/noarch::charset-normalizer-2.1.1-pyhd8ed1ab_0 None
+  colorama           conda-forge/noarch::colorama-0.4.6-pyhd8ed1ab_0 None
+  conda              conda-forge/linux-64::conda-4.12.0-py310hff52083_0 None
+  conda-build        conda-forge/linux-64::conda-build-3.22.0-py310hff52083_3 None
+  conda-package-han~ conda-forge/linux-64::conda-package-handling-1.8.1-py310h5764c6d_1 None
+  cryptography       conda-forge/linux-64::cryptography-37.0.2-py310h597c629_0 None
+  dataclasses        conda-forge/noarch::dataclasses-0.8-pyhc8e2a94_3 None
+  filelock           conda-forge/noarch::filelock-3.9.0-pyhd8ed1ab_0 None
+  glob2              conda-forge/noarch::glob2-0.7-py_0 None
+  icu                conda-forge/linux-64::icu-68.2-h9c3ff4c_0 None
+  idna               conda-forge/noarch::idna-3.4-pyhd8ed1ab_0 None
+  importlib-metadata conda-forge/noarch::importlib-metadata-6.0.0-pyha770c72_0 None
+  importlib_resourc~ conda-forge/noarch::importlib_resources-5.10.2-pyhd8ed1ab_0 None
+  jinja2             conda-forge/noarch::jinja2-3.1.2-pyhd8ed1ab_1 None
+  joblib             conda-forge/noarch::joblib-1.2.0-pyhd8ed1ab_0 None
+  json5              conda-forge/noarch::json5-0.9.5-pyh9f0ad1d_0 None
+  jsonschema         conda-forge/noarch::jsonschema-4.17.3-pyhd8ed1ab_0 None
+  keyutils           conda-forge/linux-64::keyutils-1.6.1-h166bdaf_0 None
+  krb5               conda-forge/linux-64::krb5-1.19.3-h3790be6_0 None
+  libarchive         conda-forge/linux-64::libarchive-3.5.2-hccf745f_1 None
+  libcurl            pkgs/main/linux-64::libcurl-7.87.0-h91b91d3_0 None
+  libedit            conda-forge/linux-64::libedit-3.1.20191231-he28a2e2_2 None
+  libev              conda-forge/linux-64::libev-4.33-h516909a_1 None
+  libiconv           conda-forge/linux-64::libiconv-1.17-h166bdaf_0 None
+  liblief            conda-forge/linux-64::liblief-0.11.5-h9c3ff4c_1 None
+  libmamba           conda-forge/linux-64::libmamba-0.23.1-hd8a31e3_1 None
+  libmambapy         conda-forge/linux-64::libmambapy-0.23.1-py310hab0e683_1 None
+  libnghttp2         pkgs/main/linux-64::libnghttp2-1.46.0-hce63b2e_0 None
+  libsolv            pkgs/main/linux-64::libsolv-0.7.22-he621ea3_0 None
+  libssh2            conda-forge/linux-64::libssh2-1.10.0-ha56f1ee_2 None
+  libxml2            conda-forge/linux-64::libxml2-2.9.12-h72842e0_0 None
+  lz4-c              conda-forge/linux-64::lz4-c-1.9.3-h9c3ff4c_1 None
+  lzo                conda-forge/linux-64::lzo-2.10-h516909a_1000 None
+  mamba              conda-forge/linux-64::mamba-0.23.1-py310hf87f941_1 None
+  markdown-it-py     conda-forge/noarch::markdown-it-py-2.1.0-pyhd8ed1ab_0 None
+  markupsafe         conda-forge/linux-64::markupsafe-2.1.1-py310h5764c6d_1 None
+  mdurl              conda-forge/noarch::mdurl-0.1.0-pyhd8ed1ab_0 None
+  patch              conda-forge/linux-64::patch-2.7.6-h7f98852_1002 None
+  patchelf           conda-forge/linux-64::patchelf-0.17.2-h58526e2_0 None
+  pcre2              conda-forge/linux-64::pcre2-10.37-h032f7d1_0 None
+  pkginfo            conda-forge/noarch::pkginfo-1.9.6-pyhd8ed1ab_0 None
+  pkgutil-resolve-n~ conda-forge/noarch::pkgutil-resolve-name-1.3.10-pyhd8ed1ab_0 None
+  prompt-toolkit     conda-forge/noarch::prompt-toolkit-3.0.36-pyha770c72_0 None
+  prompt_toolkit     conda-forge/noarch::prompt_toolkit-3.0.36-hd8ed1ab_0 None
+  psutil             conda-forge/linux-64::psutil-5.9.1-py310h5764c6d_0 None
+  py-lief            conda-forge/linux-64::py-lief-0.11.5-py310h122e73d_1 None
+  pybind11-abi       conda-forge/noarch::pybind11-abi-4-hd8ed1ab_3 None
+  pycosat            conda-forge/linux-64::pycosat-0.6.3-py310h5764c6d_1010 None
+  pycparser          conda-forge/noarch::pycparser-2.21-pyhd8ed1ab_0 None
+  pygments           conda-forge/noarch::pygments-2.14.0-pyhd8ed1ab_0 None
+  pyopenssl          conda-forge/noarch::pyopenssl-22.0.0-pyhd8ed1ab_1 None
+  pyrsistent         conda-forge/linux-64::pyrsistent-0.18.1-py310h5764c6d_1 None
+  pysocks            conda-forge/noarch::pysocks-1.7.1-pyha2e5f31_6 None
+  python-libarchive~ conda-forge/linux-64::python-libarchive-c-4.0-py310hff52083_2 None
+  python_abi         conda-forge/linux-64::python_abi-3.10-2_cp310 None
+  pytz               conda-forge/noarch::pytz-2022.7.1-pyhd8ed1ab_0 None
+  pyyaml             conda-forge/linux-64::pyyaml-6.0-py310h5764c6d_4 None
+  reproc             conda-forge/linux-64::reproc-14.2.3-h7f98852_0 None
+  reproc-cpp         conda-forge/linux-64::reproc-cpp-14.2.3-h9c3ff4c_0 None
+  requests           conda-forge/noarch::requests-2.28.2-pyhd8ed1ab_0 None
+  rich               conda-forge/noarch::rich-13.2.0-pyhd8ed1ab_1 None
+  ripgrep            conda-forge/linux-64::ripgrep-13.0.0-h2f28480_2 None
+  ruamel.yaml        conda-forge/linux-64::ruamel.yaml-0.17.21-py310h5764c6d_1 None
+  ruamel.yaml.clib   conda-forge/linux-64::ruamel.yaml.clib-0.2.6-py310h5764c6d_1 None
+  ruamel_yaml        conda-forge/linux-64::ruamel_yaml-0.15.80-py310h6acc77f_1006 None
+  six                conda-forge/noarch::six-1.16.0-pyh6c4a22f_0 None
+  sniffio            conda-forge/noarch::sniffio-1.3.0-pyhd8ed1ab_0 None
+  soupsieve          conda-forge/noarch::soupsieve-2.3.2.post1-pyhd8ed1ab_0 None
+  toml               conda-forge/noarch::toml-0.10.2-pyhd8ed1ab_0 None
+  tqdm               conda-forge/noarch::tqdm-4.64.1-pyhd8ed1ab_0 None
+  typing_extensions  conda-forge/noarch::typing_extensions-4.4.0-pyha770c72_0 None
+  urllib3            conda-forge/noarch::urllib3-1.26.14-pyhd8ed1ab_0 None
+  watchgod           conda-forge/noarch::watchgod-0.8.2-pyhd8ed1ab_0 None
+  wcwidth            conda-forge/noarch::wcwidth-0.2.6-pyhd8ed1ab_0 None
+  yaml               conda-forge/linux-64::yaml-0.2.5-h7f98852_2 None
+  yaml-cpp           conda-forge/linux-64::yaml-cpp-0.6.3-he1b5a44_4 None
+  zipp               conda-forge/noarch::zipp-3.11.0-pyhd8ed1ab_0 None
+  zstd               conda-forge/linux-64::zstd-1.5.0-ha95c52a_0 None
+
+The following packages will be UPDATED:
+
+  ca-certificates    pkgs/main::ca-certificates-2022.10.11~ --> conda-forge::ca-certificates-2022.12.7-ha878542_0 None
+
+The following packages will be SUPERSEDED by a higher-priority channel:
+
+  certifi            pkgs/main/linux-64::certifi-2022.12.7~ --> conda-forge/noarch::certifi-2022.12.7-pyhd8ed1ab_0 None
+
+
+Proceed ([y]/n)? y
+
+
+Downloading and Extracting Packages
+reproc-14.2.3        | 28 KB     | ############################################################ | 100%
+python-libarchive-c- | 63 KB     | ############################################################ | 100%
+pcre2-10.37          | 1.1 MB    | ############################################################ | 100%
+mamba-0.23.1         | 46 KB     | ############################################################ | 100%
+libssh2-1.10.0       | 233 KB    | ############################################################ | 100%
+boa-0.11.0           | 54 KB     | ############################################################ | 100%
+pycosat-0.6.3        | 108 KB    | ############################################################ | 100%
+icu-68.2             | 13.1 MB   | ############################################################ | 100%
+krb5-1.19.3          | 1.4 MB    | ############################################################ | 100%
+reproc-cpp-14.2.3    | 20 KB     | ############################################################ | 100%
+conda-package-handli | 1015 KB   | ############################################################ | 100%
+psutil-5.9.1         | 350 KB    | ############################################################ | 100%
+pyrsistent-0.18.1    | 92 KB     | ############################################################ | 100%
+libmambapy-0.23.1    | 287 KB    | ############################################################ | 100%
+conda-4.12.0         | 1.0 MB    | ############################################################ | 100%
+brotlipy-0.7.0       | 342 KB    | ############################################################ | 100%
+liblief-0.11.5       | 2.2 MB    | ############################################################ | 100%
+ruamel.yaml-0.17.21  | 175 KB    | ############################################################ | 100%
+yaml-cpp-0.6.3       | 208 KB    | ############################################################ | 100%
+pyyaml-6.0           | 178 KB    | ############################################################ | 100%
+cryptography-37.0.2  | 1.5 MB    | ############################################################ | 100%
+libarchive-3.5.2     | 1.6 MB    | ############################################################ | 100%
+markupsafe-2.1.1     | 22 KB     | ############################################################ | 100%
+pyopenssl-22.0.0     | 120 KB    | ############################################################ | 100%
+conda-build-3.22.0   | 571 KB    | ############################################################ | 100%
+ruamel_yaml-0.15.80  | 724 KB    | ############################################################ | 100%
+zstd-1.5.0           | 490 KB    | ############################################################ | 100%
+python_abi-3.10      | 4 KB      | ############################################################ | 100%
+py-lief-0.11.5       | 1.5 MB    | ############################################################ | 100%
+cffi-1.15.0          | 433 KB    | ############################################################ | 100%
+chardet-5.1.0        | 233 KB    | ############################################################ | 100%
+libsolv-0.7.22       | 436 KB    | ############################################################ | 100%
+ruamel.yaml.clib-0.2 | 148 KB    | ############################################################ | 100%
+libmamba-0.23.1      | 1.4 MB    | ############################################################ | 100%
+libcurl-7.87.0       | 373 KB    | ############################################################ | 100%
+libxml2-2.9.12       | 772 KB    | ############################################################ | 100%
+Preparing transaction: done
+Verifying transaction: done
+Executing transaction: done
+Retrieving notices: ...working... done
+(anacor_t) cd /home/yishun/projectcode/AnACor/
+(anacor_t) conda-mambabuild -c conda-forge .
+Updating build index: /yishun/anaconda3/envs/anacor_t/conda-bld
+
+No numpy version specified in conda_build_config.yaml.  Falling back to default numpy value of 1.16
+WARNING:conda_build.metadata:No numpy version specified in conda_build_config.yaml.  Falling back to default numpy value of 1.16
+Adding in variants from internal_defaults
+INFO:conda_build.variants:Adding in variants from internal_defaults
+Attempting to finalize metadata for anacor
+INFO:conda_build.metadata:Attempting to finalize metadata for anacor
+pkgs/main/noarch                                   818.6kB @   2.3MB/s  0.4s
+pkgs/r/linux-64                                      1.4MB @   2.1MB/s  0.7s
+pkgs/r/noarch                                        1.3MB @   1.9MB/s  0.4s
+pkgs/main/linux-64                                   5.1MB @   4.5MB/s  1.2s
+conda-forge/noarch                                  10.9MB @   4.3MB/s  2.6s
+conda-forge/linux-64                                29.1MB @   4.6MB/s  6.5s
+Reloading output folder: /yishun/anaconda3/envs/anacor_t/conda-bld
+yishun/anaconda3/envs/anacor_t/conda-bld/linux-64   ??.?MB @  ??.?MB/s 0 failed  0.0s
+yishun/anaconda3/envs/anacor_t/conda-bld/noarch    127.0 B @ 262.9kB/s  0.0s
+Reloading output folder: /yishun/anaconda3/envs/anacor_t/conda-bld
+yishun/anaconda3/envs/anacor_t/conda-bld/linux-64  129.0 B @   5.2MB/s  0.0s
+yishun/anaconda3/envs/anacor_t/conda-bld/noarch    127.0 B @ 255.5kB/s  0.0s
+BUILD START: ['anacor-1.0-py_0.tar.bz2']
+Reloading output folder: /yishun/anaconda3/envs/anacor_t/conda-bld
+yishun/anaconda3/envs/anacor_t/conda-bld/linux-64  129.0 B @   4.0MB/s  0.0s
+yishun/anaconda3/envs/anacor_t/conda-bld/noarch    127.0 B @ 252.5kB/s  0.0s
+Reloading output folder: /yishun/anaconda3/envs/anacor_t/conda-bld
+yishun/anaconda3/envs/anacor_t/conda-bld/linux-64  129.0 B @   6.8MB/s  0.0s
+yishun/anaconda3/envs/anacor_t/conda-bld/noarch    127.0 B @ 299.5kB/s  0.0s
+
+## Package Plan ##
+
+  environment location: /yishun/anaconda3/envs/anacor_t/conda-bld/anacor_1674323719790/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_place
+
+
+The following NEW packages will be INSTALLED:
+
+    _libgcc_mutex:    0.1-conda_forge           conda-forge
+    _openmp_mutex:    4.5-2_gnu                 conda-forge
+    bzip2:            1.0.8-h7f98852_4          conda-forge
+    ca-certificates:  2022.12.7-ha878542_0      conda-forge
+    ld_impl_linux-64: 2.39-hcc3a1bd_1           conda-forge
+    libffi:           3.4.2-h7f98852_5          conda-forge
+    libgcc-ng:        12.2.0-h65d4601_19        conda-forge
+    libgomp:          12.2.0-h65d4601_19        conda-forge
+    libnsl:           2.0.0-h7f98852_0          conda-forge
+    libsqlite:        3.40.0-h753d276_0         conda-forge
+    libuuid:          2.32.1-h7f98852_1000      conda-forge
+    libzlib:          1.2.13-h166bdaf_4         conda-forge
+    ncurses:          6.3-h27087fc_1            conda-forge
+    openssl:          3.0.7-h0b41bf4_1          conda-forge
+    pip:              22.3.1-pyhd8ed1ab_0       conda-forge
+    python:           3.10.8-h4a9ceb5_0_cpython conda-forge
+    readline:         8.1.2-h0f457ee_0          conda-forge
+    setuptools:       66.1.1-pyhd8ed1ab_0       conda-forge
+    tk:               8.6.12-h27826a3_0         conda-forge
+    tzdata:           2022g-h191b570_0          conda-forge
+    wheel:            0.38.4-pyhd8ed1ab_0       conda-forge
+    xz:               5.2.6-h166bdaf_0          conda-forge
+
+Preparing transaction: ...working... done
+Verifying transaction: ...working... done
+Executing transaction: ...working... done
+Copying /home/yishun/projectcode/AnACor to /yishun/anaconda3/envs/anacor_t/conda-bld/anacor_1674323719790/work/
+source tree in: /yishun/anaconda3/envs/anacor_t/conda-bld/anacor_1674323719790/work
+export PREFIX=/yishun/anaconda3/envs/anacor_t/conda-bld/anacor_1674323719790/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_place
+export SRC_DIR=/yishun/anaconda3/envs/anacor_t/conda-bld/anacor_1674323719790/work
+Using pip 22.3.1 from $PREFIX/lib/python3.10/site-packages/pip (python 3.10)
+Non-user install because user site-packages disabled
+Ignoring indexes: https://pypi.org/simple
+Created temporary directory: /tmp/pip-build-tracker-_72mzr4h
+Initialized build tracking at /tmp/pip-build-tracker-_72mzr4h
+Created build tracker: /tmp/pip-build-tracker-_72mzr4h
+Entered build tracker: /tmp/pip-build-tracker-_72mzr4h
+Created temporary directory: /tmp/pip-install-0cl9pzjg
+Created temporary directory: /tmp/pip-ephem-wheel-cache-fu7b5bql
+Processing $SRC_DIR
+  Added file://$SRC_DIR to build tracker '/tmp/pip-build-tracker-_72mzr4h'
+  Running setup.py (path:$SRC_DIR/setup.py) egg_info for package from file://$SRC_DIR
+  Created temporary directory: /tmp/pip-pip-egg-info-2va61xn2
+  Preparing metadata (setup.py): started
+  Running command python setup.py egg_info
+  running egg_info
+  creating /tmp/pip-pip-egg-info-2va61xn2/AnACor.egg-info
+  writing /tmp/pip-pip-egg-info-2va61xn2/AnACor.egg-info/PKG-INFO
+  writing dependency_links to /tmp/pip-pip-egg-info-2va61xn2/AnACor.egg-info/dependency_links.txt
+  writing entry points to /tmp/pip-pip-egg-info-2va61xn2/AnACor.egg-info/entry_points.txt
+  writing top-level names to /tmp/pip-pip-egg-info-2va61xn2/AnACor.egg-info/top_level.txt
+  writing manifest file '/tmp/pip-pip-egg-info-2va61xn2/AnACor.egg-info/SOURCES.txt'
+  reading manifest file '/tmp/pip-pip-egg-info-2va61xn2/AnACor.egg-info/SOURCES.txt'
+  writing manifest file '/tmp/pip-pip-egg-info-2va61xn2/AnACor.egg-info/SOURCES.txt'
+  Preparing metadata (setup.py): finished with status 'done'
+  Source in $SRC_DIR has version 1.0, which satisfies requirement AnACor==1.0 from file://$SRC_DIR
+  Removed AnACor==1.0 from file://$SRC_DIR from build tracker '/tmp/pip-build-tracker-_72mzr4h'
+Created temporary directory: /tmp/pip-unpack-9b1lmt_4
+Building wheels for collected packages: AnACor
+  Created temporary directory: /tmp/pip-wheel-b7zqgylf
+  Building wheel for AnACor (setup.py): started
+  Destination directory: /tmp/pip-wheel-b7zqgylf
+  Running command python setup.py bdist_wheel
+  running bdist_wheel
+  running build
+  running build_py
+  creating build
+  creating build/lib
+  creating build/lib/AnACor
+  copying AnACor/mp_lite.py -> build/lib/AnACor
+  copying AnACor/postprocess_lite.py -> build/lib/AnACor
+  copying AnACor/image_process.py -> build/lib/AnACor
+  copying AnACor/main.py -> build/lib/AnACor
+  copying AnACor/into_flex.py -> build/lib/AnACor
+  copying AnACor/size_of_reflection.py -> build/lib/AnACor
+  copying AnACor/preprocess.py -> build/lib/AnACor
+  copying AnACor/__init__.py -> build/lib/AnACor
+  copying AnACor/Core_accelerated.py -> build/lib/AnACor
+  copying AnACor/absorption_coefficient.py -> build/lib/AnACor
+  copying AnACor/RayTracing.py -> build/lib/AnACor
+  copying AnACor/absorption_surface.py -> build/lib/AnACor
+  copying AnACor/preprocess_lite.py -> build/lib/AnACor
+  copying AnACor/adapative_sampling.py -> build/lib/AnACor
+  copying AnACor/main_lite.py -> build/lib/AnACor
+  copying AnACor/stacking.py -> build/lib/AnACor
+  creating build/lib/AnACor/lite
+  copying AnACor/lite/refl_2_json.py -> build/lib/AnACor/lite
+  warning: build_py: byte-compiling is disabled, skipping.
+
+  /yishun/anaconda3/envs/anacor_t/conda-bld/anacor_1674323719790/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_place/lib/python3.10/site-packages/setuptools/command/install.py:34: SetuptoolsDeprecationWarning: setup.py install is deprecated. Use build and pip and other standards-based tools.
+    warnings.warn(
+  installing to build/bdist.linux-x86_64/wheel
+  running install
+  running install_lib
+  creating build/bdist.linux-x86_64
+  creating build/bdist.linux-x86_64/wheel
+  creating build/bdist.linux-x86_64/wheel/AnACor
+  copying build/lib/AnACor/mp_lite.py -> build/bdist.linux-x86_64/wheel/AnACor
+  copying build/lib/AnACor/postprocess_lite.py -> build/bdist.linux-x86_64/wheel/AnACor
+  copying build/lib/AnACor/image_process.py -> build/bdist.linux-x86_64/wheel/AnACor
+  copying build/lib/AnACor/main.py -> build/bdist.linux-x86_64/wheel/AnACor
+  copying build/lib/AnACor/into_flex.py -> build/bdist.linux-x86_64/wheel/AnACor
+  copying build/lib/AnACor/size_of_reflection.py -> build/bdist.linux-x86_64/wheel/AnACor
+  copying build/lib/AnACor/preprocess.py -> build/bdist.linux-x86_64/wheel/AnACor
+  copying build/lib/AnACor/__init__.py -> build/bdist.linux-x86_64/wheel/AnACor
+  copying build/lib/AnACor/Core_accelerated.py -> build/bdist.linux-x86_64/wheel/AnACor
+  copying build/lib/AnACor/absorption_coefficient.py -> build/bdist.linux-x86_64/wheel/AnACor
+  copying build/lib/AnACor/RayTracing.py -> build/bdist.linux-x86_64/wheel/AnACor
+  copying build/lib/AnACor/absorption_surface.py -> build/bdist.linux-x86_64/wheel/AnACor
+  copying build/lib/AnACor/preprocess_lite.py -> build/bdist.linux-x86_64/wheel/AnACor
+  copying build/lib/AnACor/adapative_sampling.py -> build/bdist.linux-x86_64/wheel/AnACor
+  copying build/lib/AnACor/main_lite.py -> build/bdist.linux-x86_64/wheel/AnACor
+  copying build/lib/AnACor/stacking.py -> build/bdist.linux-x86_64/wheel/AnACor
+  creating build/bdist.linux-x86_64/wheel/AnACor/lite
+  copying build/lib/AnACor/lite/refl_2_json.py -> build/bdist.linux-x86_64/wheel/AnACor/lite
+  warning: install_lib: byte-compiling is disabled, skipping.
+
+  running install_egg_info
+  running egg_info
+  creating AnACor.egg-info
+  writing AnACor.egg-info/PKG-INFO
+  writing dependency_links to AnACor.egg-info/dependency_links.txt
+  writing entry points to AnACor.egg-info/entry_points.txt
+  writing top-level names to AnACor.egg-info/top_level.txt
+  writing manifest file 'AnACor.egg-info/SOURCES.txt'
+  reading manifest file 'AnACor.egg-info/SOURCES.txt'
+  writing manifest file 'AnACor.egg-info/SOURCES.txt'
+  Copying AnACor.egg-info to build/bdist.linux-x86_64/wheel/AnACor-1.0-py3.10.egg-info
+  running install_scripts
+  creating build/bdist.linux-x86_64/wheel/AnACor-1.0.dist-info/WHEEL
+  creating '/tmp/pip-wheel-b7zqgylf/AnACor-1.0-py3-none-any.whl' and adding 'build/bdist.linux-x86_64/wheel' to it
+  adding 'AnACor/Core_accelerated.py'
+  adding 'AnACor/RayTracing.py'
+  adding 'AnACor/__init__.py'
+  adding 'AnACor/absorption_coefficient.py'
+  adding 'AnACor/absorption_surface.py'
+  adding 'AnACor/adapative_sampling.py'
+  adding 'AnACor/image_process.py'
+  adding 'AnACor/into_flex.py'
+  adding 'AnACor/main.py'
+  adding 'AnACor/main_lite.py'
+  adding 'AnACor/mp_lite.py'
+  adding 'AnACor/postprocess_lite.py'
+  adding 'AnACor/preprocess.py'
+  adding 'AnACor/preprocess_lite.py'
+  adding 'AnACor/size_of_reflection.py'
+  adding 'AnACor/stacking.py'
+  adding 'AnACor/lite/refl_2_json.py'
+  adding 'AnACor-1.0.dist-info/METADATA'
+  adding 'AnACor-1.0.dist-info/WHEEL'
+  adding 'AnACor-1.0.dist-info/entry_points.txt'
+  adding 'AnACor-1.0.dist-info/top_level.txt'
+  adding 'AnACor-1.0.dist-info/RECORD'
+  removing build/bdist.linux-x86_64/wheel
+  Building wheel for AnACor (setup.py): finished with status 'done'
+  Created wheel for AnACor: filename=AnACor-1.0-py3-none-any.whl size=47952 sha256=8f3b75d76e0ff4826face52afcb9dd1e6ba3ad8e754b0b8d7bf9c4b0be97e6e4
+  Stored in directory: /tmp/pip-ephem-wheel-cache-fu7b5bql/wheels/1e/46/01/7e93c73a941ca3ae67a65670cb26d2953be07e09ce900a7070
+Successfully built AnACor
+Installing collected packages: AnACor
+
+  changing mode of $PREFIX/bin/anacor.main to 775
+  changing mode of $PREFIX/bin/anacor.main_lite to 775
+  changing mode of $PREFIX/bin/anacor.mp_lite to 775
+  changing mode of $PREFIX/bin/anacor.postprocess to 775
+  changing mode of $PREFIX/bin/anacor.postprocess_lite to 775
+  changing mode of $PREFIX/bin/anacor.preprocess to 775
+  changing mode of $PREFIX/bin/anacor.preprocess_lite to 775
+Successfully installed AnACor-1.0
+Removed build tracker: '/tmp/pip-build-tracker-_72mzr4h'
+
+Resource usage statistics from building anacor:
+   Process count: 1
+   CPU time: Sys=-, User=-
+   Memory: 3.2M
+   Disk usage: 3.6K
+   Time elapsed: 0:00:02.0
+
+
+Packaging anacor
+INFO:conda_build.build:Packaging anacor
+Packaging anacor-1.0-py_0
+INFO:conda_build.build:Packaging anacor-1.0-py_0
+number of files: 32
+Fixing permissions
+INFO :: Time taken to mark (prefix)
+        0 replacements in 0 files was 0.01 seconds
+Files containing CONDA_PREFIX
+-----------------------------
+python-scripts/anacor.main (text): Patching
+python-scripts/anacor.main_lite (text): Patching
+python-scripts/anacor.mp_lite (text): Patching
+python-scripts/anacor.postprocess (text): Patching
+python-scripts/anacor.postprocess_lite (text): Patching
+python-scripts/anacor.preprocess (text): Patching
+python-scripts/anacor.preprocess_lite (text): Patching
+Importing conda-verify failed.  Please be sure to test your packages.  conda install conda-verify to make this message go away.
+WARNING:conda_build.build:Importing conda-verify failed.  Please be sure to test your packages.  conda install conda-verify to make this message go away.
+TEST START: /yishun/anaconda3/envs/anacor_t/conda-bld/noarch/anacor-1.0-py_0.tar.bz2
+Adding in variants from /tmp/tmpk2g3xazw/info/recipe/conda_build_config.yaml
+INFO:conda_build.variants:Adding in variants from /tmp/tmpk2g3xazw/info/recipe/conda_build_config.yaml
+Nothing to test for: /yishun/anaconda3/envs/anacor_t/conda-bld/noarch/anacor-1.0-py_0.tar.bz2
+Renaming work directory '/yishun/anaconda3/envs/anacor_t/conda-bld/anacor_1674323719790/work' to '/yishun/anaconda3/envs/anacor_t/conda-bld/anacor_1674323719790/work_moved_anacor-1.0-py_0_linux-64_main_build_loop'
+INFO:conda_build.utils:Renaming work directory '/yishun/anaconda3/envs/anacor_t/conda-bld/anacor_1674323719790/work' to '/yishun/anaconda3/envs/anacor_t/conda-bld/anacor_1674323719790/work_moved_anacor-1.0-py_0_linux-64_main_build_loop'
+shutil.move(work)=/yishun/anaconda3/envs/anacor_t/conda-bld/anacor_1674323719790/work, dest=/yishun/anaconda3/envs/anacor_t/conda-bld/anacor_1674323719790/work_moved_anacor-1.0-py_0_linux-64_main_build_loop)
+INFO:conda_build.utils:shutil.move(work)=/yishun/anaconda3/envs/anacor_t/conda-bld/anacor_1674323719790/work, dest=/yishun/anaconda3/envs/anacor_t/conda-bld/anacor_1674323719790/work_moved_anacor-1.0-py_0_linux-64_main_build_loop)
+# Automatic uploading is disabled
+# If you want to upload package(s) to anaconda.org later, type:
+
+
+# To have conda build upload to anaconda.org automatically, use
+# conda config --set anaconda_upload yes
+anaconda upload \
+    /yishun/anaconda3/envs/anacor_t/conda-bld/noarch/anacor-1.0-py_0.tar.bz2
+anaconda_upload is not set.  Not uploading wheels: []
+
+INFO :: The inputs making up the hashes for the built packages are as follows:
+{
+  "anacor-1.0-py_0": {
+    "recipe": {}
+  }
+}
+
+
+####################################################################################
+Resource usage summary:
+
+Total time: 0:02:16.4
+CPU usage: sys=0:00:00.0, user=0:00:00.0
+Maximum memory usage observed: 3.2M
+Total disk usage observed (not including envs): 3.6K
+(anacor_t) conda install numpy
+Collecting package metadata (current_repodata.json): done
+Solving environment: done
+
+
+==> WARNING: A newer version of conda exists. <==
+  current version: 22.9.0
+  latest version: 22.11.1
+
+Please update conda by running
+
+    $ conda update -n base -c defaults conda
+
+
+
+## Package Plan ##
+
+  environment location: /yishun/anaconda3/envs/anacor_t
+
+  added / updated specs:
+    - numpy
+
+
+The following packages will be downloaded:
+
+    package                    |            build
+    ---------------------------|-----------------
+    blas-1.0                   |              mkl           6 KB
+    intel-openmp-2021.4.0      |    h06a4308_3561         4.2 MB
+    mkl-2021.4.0               |     h06a4308_640       142.6 MB
+    mkl-service-2.4.0          |  py310h7f8727e_0         177 KB
+    mkl_fft-1.3.1              |  py310hd6ae3a3_0         567 KB
+    mkl_random-1.2.2           |  py310h00e6091_0        1009 KB
+    numpy-1.23.5               |  py310hd5efca6_0          10 KB
+    numpy-base-1.23.5          |  py310h8e6c178_0         6.7 MB
+    ------------------------------------------------------------
+                                           Total:       155.2 MB
+
+The following NEW packages will be INSTALLED:
+
+  blas               pkgs/main/linux-64::blas-1.0-mkl None
+  intel-openmp       pkgs/main/linux-64::intel-openmp-2021.4.0-h06a4308_3561 None
+  mkl                pkgs/main/linux-64::mkl-2021.4.0-h06a4308_640 None
+  mkl-service        pkgs/main/linux-64::mkl-service-2.4.0-py310h7f8727e_0 None
+  mkl_fft            pkgs/main/linux-64::mkl_fft-1.3.1-py310hd6ae3a3_0 None
+  mkl_random         pkgs/main/linux-64::mkl_random-1.2.2-py310h00e6091_0 None
+  numpy              pkgs/main/linux-64::numpy-1.23.5-py310hd5efca6_0 None
+  numpy-base         pkgs/main/linux-64::numpy-base-1.23.5-py310h8e6c178_0 None
+
+The following packages will be SUPERSEDED by a higher-priority channel:
+
+  ca-certificates    conda-forge::ca-certificates-2022.12.~ --> pkgs/main::ca-certificates-2022.10.11-h06a4308_0 None
+  certifi            conda-forge/noarch::certifi-2022.12.7~ --> pkgs/main/linux-64::certifi-2022.12.7-py310h06a4308_0 None
+
+
+Proceed ([y]/n)? y
+
+
+Downloading and Extracting Packages
+intel-openmp-2021.4. | 4.2 MB    | ############################################################ | 100%
+mkl-service-2.4.0    | 177 KB    | ############################################################ | 100%
+blas-1.0             | 6 KB      | ############################################################ | 100%
+numpy-1.23.5         | 10 KB     | ############################################################ | 100%
+mkl-2021.4.0         | 142.6 MB  | ############################################################ | 100%
+mkl_random-1.2.2     | 1009 KB   | ############################################################ | 100%
+mkl_fft-1.3.1        | 567 KB    | ############################################################ | 100%
+numpy-base-1.23.5    | 6.7 MB    | ############################################################ | 100%
+Preparing transaction: done
+Verifying transaction: done
+Executing transaction: done
+Retrieving notices: ...working... done
+(anacor_t) anacor.main
+bash: anacor.main: command not found...
+^Z
+[2]+  Stopped                 anacor.main
+(anacor_t) ^C
+(anacor_t) conda install -c conda-forge /yishun/anaconda3/envs/anacor_t/conda-bld/noarch/anacor-1.0-py_0.tar.bz2
+
+Downloading and Extracting Packages
+anacor-1.0           | ######################################################################## | 100%
+Preparing transaction: done
+Verifying transaction: done
+Executing transaction: done
+Retrieving notices: ...working... done
+(anacor_t) anacor.main
+Traceback (most recent call last):
+  File "/yishun/anaconda3/envs/anacor_t/bin/anacor.main", line 7, in <module>
+    from AnACor.main import main
+  File "/yishun/anaconda3/envs/anacor_t/lib/python3.10/site-packages/AnACor/main.py", line 9, in <module>
+    from AnACor.RayTracing import RayTracingBasic
+  File "/yishun/anaconda3/envs/anacor_t/lib/python3.10/site-packages/AnACor/RayTracing.py", line 3, in <module>
+    from numba import jit
+ModuleNotFoundError: No module named 'numba'
+
