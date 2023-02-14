@@ -17,7 +17,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--dataset",
-    type=int,
+    type=str,
     default=16010,
     help="dataset number default is 16010",
 )

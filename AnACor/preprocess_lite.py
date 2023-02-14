@@ -98,7 +98,7 @@ def set_parser ( ) :
         "--coefficient-orientation" ,
         type = int ,
         default = 0 ,
-        help = "the orientation of the flat-field image to match the 3D model in degree"
+        help = "the orientation offset of the flat-field image to match the 3D model in degree"
                "normally this is 0 degree" ,
     )
     parser.add_argument(
@@ -238,7 +238,7 @@ def main ( ) :
             raise RuntimeError( "The 3D model is not defined and run by create3D by this program" )
 
 
-        coefficient_model = RunAbsorptionCoefficient( args.rawimg_path , model_storepath , auto = True ,
+        coefficient_model = RunAbsorptionCoefficient( args.rawimg_path , model_storepath , auto = args.coefficient_auto ,
                                                       save_dir = os.path.join( result_path ,
                                                                                "absorption_coefficient" ) ,
                                                       offset = args.coefficient_orientation ,

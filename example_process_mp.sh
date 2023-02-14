@@ -6,11 +6,11 @@ source /dls/science/groups/i23/yishun/dials_yishun/dials
 anacor.mp_lite \
 --store-dir /dls/science/groups/i23/yishun/save_data/ \
 --dataset  16846 \
---num-cores 20 \
---store-lengths False \
 --crac 0.01918e3 \
 --loac 0.01772e3 \
 --liac 0.01981e3 \
+--num-cores 20 \
+--store-lengths False \
 --time 3 0 0  \
 --dependancies "module load global/cluster" "source /dls/science/groups/i23/yishun/dials_yishun/dials" \
 --python-dependancy "source /dls/science/groups/i23/yishun/dials_yishun/dials"
