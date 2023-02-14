@@ -3,7 +3,7 @@ import subprocess
 import json
 import os
 import pdb
-
+import yaml
 
 def str2bool ( v ) :
     if isinstance( v , bool ) :
@@ -18,59 +18,66 @@ def str2bool ( v ) :
 
 def set_parser ( ) :
     parser = argparse.ArgumentParser( description = "analytical absorption correction data preprocessing" )
+    directory = os.getcwd( )
+    # Load the YAML configuration file
+    with open( os.path.join(directory,'default_postprocess_input.yaml') , 'r' ) as f :
+        config = yaml.safe_load( f )
 
-    parser.add_argument(
-        "--store-dir" ,
-        type = str ,
-        default = "./" ,
-        help = "the store directory " ,
-    )
-    parser.add_argument(
-        "--dataset" ,
-        type = str , required = True ,
-        help = "dataset number " ,
-    )
-    parser.add_argument(
-        "--save-note" ,
-        type = str , default = 'anacor',
-        help = "note of the saving" ,
-    )
-    parser.add_argument(
-        "--refl-filename" ,
-        type = str ,
-        default = '' ,
-        help = "the filenames of the reflection table" ,
-    )
-    parser.add_argument(
-        "--expt-filename" ,
-        type = str ,
-        default = '' ,
-        help = "the filenames of the experimental table" ,
-    )
-    parser.add_argument(
-        "--dials-dependancy" ,
-        type = str ,
-        default = '' ,
-        help = "the dials version that is to be executed" ,
-    )
-    parser.add_argument(
-        "--mtz2sca-dependancy" ,
-        type = str ,
-        default = '' ,
-        help = "the dependancy to convert mtz into sca files" ,
-    )
-    parser.add_argument(
-        "--full" ,
-        type = str2bool ,
-        default = False ,
-        help = "prerejection for better computational efficiency no: 1, yes: 1" ,
-    )
-    parser.add_argument(
-        "--with-scaling" ,
-        type = str2bool ,
-        default = True ,
-        help = "absorption correcction within the scaling process true: 1 , false: 0" ,
-    )
+    # Add an argument for each key in the YAML file
+    for key , value in config.items( ) :
+        parser.add_argument( '--{}'.format( key ) , default = value )
+    # parser.add_argument(
+    #     "--store-dir" ,
+    #     type = str ,
+    #     default = "./" ,
+    #     help = "the store directory " ,
+    # )
+    # parser.add_argument(
+    #     "--dataset" ,
+    #     type = str , required = True ,
+    #     help = "dataset number " ,
+    # )
+    # parser.add_argument(
+    #     "--save-note" ,
+    #     type = str , default = 'anacor',
+    #     help = "note of the saving" ,
+    # )
+    # parser.add_argument(
+    #     "--refl-filename" ,
+    #     type = str ,
+    #     default = '' ,
+    #     help = "the filenames of the reflection table" ,
+    # )
+    # parser.add_argument(
+    #     "--expt-filename" ,
+    #     type = str ,
+    #     default = '' ,
+    #     help = "the filenames of the experimental table" ,
+    # )
+    # parser.add_argument(
+    #     "--dials-dependancy" ,
+    #     type = str ,
+    #     default = '' ,
+    #     help = "the dials version that is to be executed" ,
+    # )
+    # parser.add_argument(
+    #     "--mtz2sca-dependancy" ,
+    #     type = str ,
+    #     default = '' ,
+    #     help = "the dependancy to convert mtz into sca files" ,
+    # )
+    # parser.add_argument(
+    #     "--full-reflection" ,
+    #     type = str2bool ,
+    #     default = False ,
+    #     help = "prerejection for better computational efficiency no: 1, yes: 1" ,
+    # )
+    # parser.add_argument(
+    #     "--with-scaling" ,
+    #     type = str2bool ,
+    #     default = True ,
+    #     help = "absorption correcction within the scaling process true: 1 , false: 0" ,
+    # )
     global args
     args = parser.parse_args( )
 
@@ -101,7 +108,7 @@ def main ( ) :
                  "--save-number {1}  --refl-filename {2}  "
                  "--full {3} --with-scaling {4} "
                  "--dataset {5} "
-                 "--target-pth {6} --store-dir {7}  \n".format( intoflexpy_pth,args.save_note,args.refl_filename,args.full,
+                 "--target-pth {6} --store-dir {7}  \n".format( intoflexpy_pth,args.save_note,args.refl_filename,args.full_reflection,
                                              args.with_scaling, dataset, dials_dir, args.store_dir
                                                   ) )
         f.write( "cd {} \n".format(dials_dir) )

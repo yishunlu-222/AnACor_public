@@ -1,6 +1,6 @@
 import os
 import json
-import time
+import yaml
 import pdb
 import numpy as np
 import argparse
@@ -10,7 +10,7 @@ try:
 except:
     from image_process import Image2Model
     from absorption_coefficient import RunAbsorptionCoefficient
-import sys
+
 
 
 def str2bool ( v ) :
@@ -27,109 +27,113 @@ def str2bool ( v ) :
 def set_parser ( ) :
     parser = argparse.ArgumentParser( description = "analytical absorption correction data preprocessing" )
 
-    parser.add_argument(
-        "--dataset" ,
-        type = str ,
-        help = "dataset number " ,
-    )
-    parser.add_argument(
-        "--store-dir" ,
-        type = str ,
-        default = "./" ,
-        help = "the store directory " ,
-    )
-    parser.add_argument(
-        "--segimg-path" ,
-        type = str ,
-        required = True ,
-        help = "the path of segmentation images" ,
-    )
-    parser.add_argument(
-        "--rawimg-path" ,
-        type = str ,
-        default = None ,
-        help = "the path of raw flat-field images" ,
-    )
-    parser.add_argument(
-        "--store-calculation" ,
-        type = str2bool ,
-        default = False ,
-        help = "whether store the path lengths to calculate with different absorption coefficients" ,
-    )
+    directory = os.getcwd( )
+    # Load the YAML configuration file
+    with open( os.path.join(directory,'default_preprocess_input.yaml') , 'r' ) as f :
+        config = yaml.safe_load( f )
 
-    parser.add_argument(
-        "--refl-filename" ,
-        type = str ,
-        required = True ,
-        help = "the path of the reflection table" ,
-    )
-    parser.add_argument(
-        "--expt-filename" ,
-        type = str ,
-        required = True ,
-        help = "the path of the experimental file" ,
-    )
-    parser.add_argument(
-        "--model-storepath" ,
-        type = str ,
-        default = None ,
-        help = "the storepath of the 3D model built by other sources in .npy" ,
-    )
-    parser.add_argument(
-        "--create3D" ,
-        type = str2bool ,
-        default = True ,
-        help = "whether the reconstruction slices need to be vertically filpped to match that in the real experiment" ,
-    )
-    parser.add_argument(
-        "--coefficient" ,
-        type = str2bool ,
-        default = False ,
-        help = "whether the reconstruction slices need to be vertically filpped to match that in the real experiment" ,
-    )
-    parser.add_argument(
-        "--coefficient-auto" ,
-        type = str2bool ,
-        default = True ,
-        help = "whether calculating the best estimate of the flat-field image to calculate absorption coefficient "
-               "automatically" ,
-    )
-    parser.add_argument(
-        "--coefficient-orientation" ,
-        type = int ,
-        default = 0 ,
-        help = "the orientation offset of the flat-field image to match the 3D model in degree"
-               "normally this is 0 degree" ,
-    )
-    parser.add_argument(
-        "--coefficient-viewing" ,
-        type = int ,
-        default = 0 ,
-        help = "the viewing angle of the 3D model to have the best region to determine absorption coefficient"
-               "in degree" ,
-    )
-    parser.add_argument(
-        "--model-name" ,
-        type = str ,
-        default = None ,
-        help = "the optional 3D model name, otherwise it would be {dataset}_.npy" ,
-    )
-
-    parser.add_argument(
-        "--full-reflection" ,
-        type = str2bool ,
-        default = False ,
-        help = "whether cutting some unwanted data of the reflection table"
-               "before calculating" ,
-    )
-    parser.add_argument(
-        "--dials-dependancy" ,
-        type = str ,
-        required = True ,
-        help = "the path to execute dials package"
-               "e.g. module load dials"
-               "e.g. source /home/yishun/dials_develop_version/dials" ,
-    )
+    # Add an argument for each key in the YAML file
+    for key , value in config.items( ) :
+        parser.add_argument( '--{}'.format( key ) , default = value )
+    # parser.add_argument(
+    #     "--dataset" ,
+    #     type = str ,
+    #     help = "dataset number " ,
+    # )
+    # parser.add_argument(
+    #     "--store-dir" ,
+    #     type = str ,
+    #     default = "./" ,
+    #     help = "the store directory " ,
+    # )
+    # parser.add_argument(
+    #     "--segimg-path" ,
+    #     type = str ,
+    #     help = "the path of segmentation images" ,
+    # )
+    # parser.add_argument(
+    #     "--rawimg-path" ,
+    #     type = str ,
+    #     default = None ,
+    #     help = "the path of raw flat-field images" ,
+    # )
+    # parser.add_argument(
+    #     "--store-calculation" ,
+    #     type = str2bool ,
+    #     default = False ,
+    #     help = "whether store the path lengths to calculate with different absorption coefficients" ,
+    # )
+    #
+    # parser.add_argument(
+    #     "--refl-filename" ,
+    #     type = str ,
+    #     help = "the path of the reflection table" ,
+    # )
+    # parser.add_argument(
+    #     "--expt-filename" ,
+    #     type = str ,
+    #     help = "the path of the experimental file" ,
+    # )
+    # parser.add_argument(
+    #     "--model-storepath" ,
+    #     type = str ,
+    #     default = None ,
+    #     help = "the storepath of the 3D model built by other sources in .npy" ,
+    # )
+    # parser.add_argument(
+    #     "--create3D" ,
+    #     type = str2bool ,
+    #     default = True ,
+    #     help = "whether the reconstruction slices need to be vertically filpped to match that in the real experiment" ,
+    # )
+    # parser.add_argument(
+    #     "--coefficient" ,
+    #     type = str2bool ,
+    #     default = False ,
+    #     help = "whether the reconstruction slices need to be vertically filpped to match that in the real experiment" ,
+    # )
+    # parser.add_argument(
+    #     "--coefficient-auto" ,
+    #     type = str2bool ,
+    #     default = True ,
+    #     help = "whether calculating the best estimate of the flat-field image to calculate absorption coefficient "
+    #            "automatically" ,
+    # )
+    # parser.add_argument(
+    #     "--coefficient-orientation" ,
+    #     type = int ,
+    #     default = 0 ,
+    #     help = "the orientation offset of the flat-field image to match the 3D model in degree"
+    #            "normally this is 0 degree" ,
+    # )
+    # parser.add_argument(
+    #     "--coefficient-viewing" ,
+    #     type = int ,
+    #     default = 0 ,
+    #     help = "the viewing angle of the 3D model to have the best region to determine absorption coefficient"
+    #            "in degree" ,
+    # )
+    # parser.add_argument(
+    #     "--model-name" ,
+    #     type = str ,
+    #     default = None ,
+    #     help = "the optional 3D model name, otherwise it would be {dataset}_.npy" ,
+    # )
+    #
+    # parser.add_argument(
+    #     "--full-reflection" ,
+    #     type = str2bool ,
+    #     default = False ,
+    #     help = "whether cutting some unwanted data of the reflection table"
+    #            "before calculating" ,
+    # )
+    # parser.add_argument(
+    #     "--dials-dependancy" ,
+    #     type = str ,
+    #     help = "the path to execute dials package"
+    #            "e.g. module load dials"
+    #            "e.g. source /home/yishun/dials_develop_version/dials" ,
+    # )
     global args
     args = parser.parse_args( )
 
@@ -196,10 +200,13 @@ def preprocess_dial ( reflections , reflection_path , save_dir , args ) :
     return refls
 
 
+
+
 # if __name__ == "__main__":
 def main ( ) :
     args = set_parser( )
     dataset = args.dataset
+
     #    if args.vflip :
     #        model_name = './{}_tomobar_cropped_f.npy'.format( dataset )
     #    else :
@@ -252,13 +259,4 @@ def main ( ) :
 
 if __name__ == '__main__' :
     main( )
-    # try:
-    #     from dials.array_family import flex
-    # except:
-    #     RuntimeError("Fail to load dials modules please check")
-    # print("\nDIALS environment is confirmed... \n")
-    #
-    # reflections = flex.reflection_table.from_file(os.path.join(save_dir,"reflections", args.refl_filename ))
-    # data = preprocess_dial(reflections,args.refl_filename,save_dir,args)
-    # print("total number of reflections is {}".format(len(data)))
-    # print("reflection table has been preprocessed... \n")
+

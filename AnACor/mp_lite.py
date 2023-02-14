@@ -3,7 +3,7 @@ import subprocess
 import json
 import os
 import pdb
-
+import yaml
 
 def str2bool ( v ) :
     if isinstance( v , bool ) :
@@ -18,84 +18,94 @@ def str2bool ( v ) :
 
 def set_parser ( ) :
     parser = argparse.ArgumentParser( description = "analytical absorption correction data preprocessing" )
+    directory = os.getcwd( )
+    # Load the YAML configuration file
+    with open( os.path.join(directory,'default_mpprocess_input.yaml') , 'r' ) as f :
+        config = yaml.safe_load( f )
 
-    parser.add_argument(
-        "--num-cores" ,
-        type = int ,
-        default = 20 ,
-        help = "the number of cores to be distributed" ,
-    )
-    parser.add_argument(
-        "--store-dir" ,
-        type = str ,
-        default = "./" ,
-        help = "the store directory " ,
-    )
-    parser.add_argument(
-        "--dataset" ,
-        type = str , required = True ,
-        help = "dataset number default is 13304" ,
-    )
-    parser.add_argument(
-        "--offset" ,
-        type = float ,
-        default = 0 ,
-        help = "the orientation offset" ,
-    )
-    parser.add_argument(
-        "--sampling" ,
-        type = int ,
-        default = 5000 ,
-        help = "sampling for picking crystal point to calculate" ,
-    )
-
-    parser.add_argument(
-        "--store-lengths" ,
-        type = str2bool ,
-        default = False ,
-        help = "whether store the path lengths to calculate with different absorption coefficients" ,
-    )
-    parser.add_argument(
-        "--crac" ,
-        type = float , required = True ,
-        help = "the absorption coefficient of the crystal and it is needed" ,
-    )
-    parser.add_argument(
-        "--loac" ,
-        type = float , required = True ,
-        help = "the absorption coefficient of the loop and it is needed" ,
-    )
-    parser.add_argument(
-        "--liac" ,
-        type = float , required = True ,
-        help = "the absorption coefficient of the liquor and it is needed" ,
-    )
-    parser.add_argument(
-        "--buac" ,
-        type = float , default = 0 ,
-        help = "the absorption coefficient of the bubble and it is not necessarily needed" ,
-    )
-    parser.add_argument(
-        "--refl-filename" ,
-        type = str ,
-        default = '' ,
-        help = "the filenames of the reflection table" ,
-    )
-    parser.add_argument(
-        "--expt-filename" ,
-        type = str ,
-        default = '' ,
-        help = "the filenames of the experimental table" ,
-    )
-    parser.add_argument(
-        "--python-dependancy" ,
-        type = str ,
-        default = '' ,
-        help = "the python version that is to be executed" ,
-    )
-    parser.add_argument( "--dependancies" , nargs = '*' , type = str ,
-                         help = "List of dependancies to execute, they can be entered at the same time"
-                                "e.g. 'module load dials' 'module load global/cluster' " )
+    # Add an argument for each key in the YAML file
+    for key , value in config.items( ) :
+        parser.add_argument( '--{}'.format( key ) , default = value )
+    # parser.add_argument(
+    #     "--num-cores" ,
+    #     type = int ,
+    #     default = 20 ,
+    #     help = "the number of cores to be distributed" ,
+    # )
+    # parser.add_argument(
+    #     "--store-dir" ,
+    #     type = str ,
+    #     default = "./" ,
+    #     help = "the store directory " ,
+    # )
+    # parser.add_argument(
+    #     "--dataset" ,
+    #     type = str , required = True ,
+    #     help = "dataset number default is 13304" ,
+    # )
+    # parser.add_argument(
+    #     "--offset" ,
+    #     type = float ,
+    #     default = 0 ,
+    #     help = "the orientation offset" ,
+    # )
+    # parser.add_argument(
+    #     "--sampling" ,
+    #     type = int ,
+    #     default = 5000 ,
+    #     help = "sampling for picking crystal point to calculate" ,
+    # )
+    #
+    # parser.add_argument(
+    #     "--store-lengths" ,
+    #     type = str2bool ,
+    #     default = False ,
+    #     help = "whether store the path lengths to calculate with different absorption coefficients" ,
+    # )
+    # parser.add_argument(
+    #     "--crac" ,
+    #     type = float , required = True ,
+    #     help = "the absorption coefficient of the crystal and it is needed" ,
+    # )
+    # parser.add_argument(
+    #     "--loac" ,
+    #     type = float , required = True ,
+    #     help = "the absorption coefficient of the loop and it is needed" ,
+    # )
+    # parser.add_argument(
+    #     "--liac" ,
+    #     type = float , required = True ,
+    #     help = "the absorption coefficient of the liquor and it is needed" ,
+    # )
+    # parser.add_argument(
+    #     "--buac" ,
+    #     type = float , default = 0 ,
+    #     help = "the absorption coefficient of the bubble and it is not necessarily needed" ,
+    # )
+    # parser.add_argument(
+    #     "--refl-filename" ,
+    #     type = str ,
+    #     default = '' ,
+    #     help = "the filenames of the reflection table" ,
+    # )
+    # parser.add_argument(
+    #     "--expt-filename" ,
+    #     type = str ,
+    #     default = '' ,
+    #     help = "the filenames of the experimental table" ,
+    # )
+    # parser.add_argument(
+    #     "--dials-dependancy" ,
+    #     type = str ,
+    #     default = '' ,
+    #     help = "the python version that is to be executed" ,
+    # )
+    # # parser.add_argument( "--dependancies" , nargs = '*' , type = str ,
+    # #                      help = "List of dependancies to execute, they can be entered at the same time"
+    # #                             "e.g. 'module load dials' 'module load global/cluster' " )
+    # parser.add_argument( "--hpc-dependancies" , nargs = '*' , type = str ,
+    #                      help = "List of hpc_dependancies to execute, they can be entered at the same time"
+    #                             "e.g. 'module load dials' 'module load global/cluster' " )
     # parser.add_argument(
     #     "--dials-dependancy",
     #     type=str,
@@ -145,7 +155,7 @@ def main ( ) :
     with open( os.path.join( save_dir , "mpprocess_script.sh" ) , "w" ) as f :
 
         f.write( "#!/bin/sh\n" )
-        f.write( "{}\n".format( args.python_dependancy ) )
+        f.write( "{}\n".format( args.dials_dependancy ) )
         f.write( "num={}\n".format( args.num_cores ) )
         f.write( "sampling={}\n".format( args.sampling ) )
         f.write( "dataset={}\n".format( args.dataset ) )
@@ -200,8 +210,8 @@ def main ( ) :
         os.path.join( save_dir , "mpprocess_script.sh" ) ,
         os.path.join( save_dir , "Logging" ) ,
         os.path.join( save_dir , "Logging" ) )
-    if args.dependancies is not None :
-        all_command = args.dependancies + [cluster_command]
+    if args.hpc_dependancies is not None :
+        all_command = args.hpc_dependancies + [cluster_command]
     else :
         all_command = cluster_command
     command = ""
