@@ -16,7 +16,9 @@ setup(
              'anacor.preprocess_lite = AnACor.preprocess_lite:main',
              'anacor.main_lite = AnACor.main_lite:main',
              'anacor.mp_lite = AnACor.mp_lite:main',
-             'anacor.postprocess_lite = AnACor.postprocess_lite:main',],
+             'anacor.postprocess_lite = AnACor.postprocess_lite:main',
+             'anacor.init = AnACor.initialization:main' ,
+             ],
     },
 
     install_requires=[
