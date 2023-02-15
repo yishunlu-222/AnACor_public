@@ -27,14 +27,6 @@ def str2bool ( v ) :
 def set_parser ( ) :
     parser = argparse.ArgumentParser( description = "analytical absorption correction data preprocessing" )
 
-    directory = os.getcwd( )
-    # Load the YAML configuration file
-    with open( os.path.join(directory,'default_preprocess_input.yaml') , 'r' ) as f :
-        config = yaml.safe_load( f )
-
-    # Add an argument for each key in the YAML file
-    for key , value in config.items( ) :
-        parser.add_argument( '--{}'.format( key ) , default = value )
     # parser.add_argument(
     #     "--dataset" ,
     #     type = str ,
@@ -87,13 +79,20 @@ def set_parser ( ) :
     #     help = "whether the reconstruction slices need to be vertically filpped to match that in the real experiment" ,
     # )
     # parser.add_argument(
-    #     "--coefficient" ,
+    #     "--coefficient-calculation" ,
     #     type = str2bool ,
     #     default = False ,
     #     help = "whether the reconstruction slices need to be vertically filpped to match that in the real experiment" ,
     # )
     # parser.add_argument(
-    #     "--coefficient-auto" ,
+    #     "--coefficient-auto-orientation" ,
+    #     type = str2bool ,
+    #     default = True ,
+    #     help = "whether calculating the best estimate of the flat-field image to calculate absorption coefficient "
+    #            "automatically" ,
+    # )
+    # parser.add_argument(
+    #     "--coefficient-auto-viewing" ,
     #     type = str2bool ,
     #     default = True ,
     #     help = "whether calculating the best estimate of the flat-field image to calculate absorption coefficient "
@@ -134,16 +133,35 @@ def set_parser ( ) :
     #            "e.g. module load dials"
     #            "e.g. source /home/yishun/dials_develop_version/dials" ,
     # )
+    # parser.add_argument(
+    #     "--flat-field" ,
+    #     type = str ,
+    #       default=None,
+    #     help = "the path to execute dials package"
+    #            "e.g. module load dials"
+    #            "e.g. source /home/yishun/dials_develop_version/dials" ,
+    # )
+
+
+    directory = os.getcwd( )
+    # Load the YAML configuration file
+    with open( os.path.join(directory,'default_preprocess_input.yaml') , 'r' ) as f :
+        config = yaml.safe_load( f )
+
+    # Add an argument for each key in the YAML file
+    for key , value in config.items( ) :
+        parser.add_argument( '--{}'.format( key ) , default = value )
+
     global args
     args = parser.parse_args( )
 
-    if args.coefficient is True and args.rawimg_path is None :
-        parser.error( "If it calculates the absorption coefficient, "
-                      "the raw image path is needed" )
-
-    if args.coefficient_auto is False and args.coefficient_viewing is None :
-        parser.error( "if the orientation of coefficient_auto is not automatically found"
-                      "then --coefficient-viewing is needed" )
+    # if args.coefficient is True and args.rawimg_path is None :
+    #     parser.error( "If it calculates the absorption coefficient, "
+    #                   "the raw image path is needed" )
+    #
+    # if args.coefficient_auto is False and args.coefficient_viewing is None :
+    #     parser.error( "if the orientation of coefficient_auto is not automatically found"
+    #                   "then --coefficient-viewing is needed" )
 
     return args
 
@@ -241,17 +259,28 @@ def main ( ) :
     print( "\n3D model file is already created... \n" )
 
     if args.coefficient is True :
+        models_list=[]
+        for file in os.listdir(save_dir ):
+              if dataset in file and ".npy" in file:
+                  models_list.append(file)
+
+
+        model_storepath = os.path.join( save_dir, models_list[0] )
+
         if model_storepath is None :
             raise RuntimeError( "The 3D model is not defined and run by create3D by this program" )
 
 
-        coefficient_model = RunAbsorptionCoefficient( args.rawimg_path , model_storepath , auto = args.coefficient_auto ,
+        coefficient_model = RunAbsorptionCoefficient( args.rawimg_path , model_storepath ,
+                                                      auto_orientation = args.coefficient_auto_orientation ,
+                                                      auto_viewing= args.coefficient_auto_viewing ,
                                                       save_dir = os.path.join( result_path ,
                                                                                "absorption_coefficient" ) ,
                                                       offset = args.coefficient_orientation ,
                                                       angle = args.coefficient_viewing ,
                                                       kernel_square = (5 , 5) ,
-                                                      full = False , thresholding = "mean" )
+                                                      full = False , thresholding = args.coefficient_thresholding,
+                                                      flat_fielded=args.flat_field_name)
         coefficient_model.run( )
 
     preprocess_dial_lite( args , save_dir )

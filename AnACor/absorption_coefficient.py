@@ -87,7 +87,7 @@ def save_npy(path,reverse,filename='13304_label_1C.npy',label=True,crop=False,vf
 
     # sort the list according to the last index of the filename
     na.sort(key=take_num,reverse=reverse)
-    # pdb.set_trace()
+
 
     for i,file in enumerate(na):
 
@@ -142,9 +142,9 @@ def save_npy(path,reverse,filename='13304_label_1C.npy',label=True,crop=False,vf
 
 
 class AbsorptionCoefficient( object ) :
-    def __init__ ( self , tomo_img_path , ModelFilename ,auto,crop=None,thresholding='mean', angle=0, save_dir="./",pixel_size = 0.3,
+    def __init__ ( self , tomo_img_path , ModelFilename ,auto_orientation, auto_viewing,crop=None,thresholding='mean', angle=0, save_dir="./",pixel_size = 0.3,
                    kernel_square = (15 , 15),full=False,offset=0,v_flip=False,h_flip=False,
-                   ModelRotate=-90) :
+                   ModelRotate=-90,flat_fielded=None,*args) :
         """
 
         :param tomo_img_path:
@@ -169,12 +169,16 @@ class AbsorptionCoefficient( object ) :
         # the flipping of flat-field-corrected image
         self.v_flip=v_flip
         self.h_flip=h_flip
+        self.auto_orientation=auto_orientation
+        self.auto_viewing=auto_viewing
         # current the first image is where the gonionmeter is 0
-        if auto is True:
-            self.orientation_auto()
-            self.differet_orientation( self.angle )
-        else:
-            self.differet_orientation(angle)
+        if  self.auto_orientation is True:
+            self.cal_orientation_auto()
+
+        if  self.auto_viewing is True:
+            self.cal_viewing_auto()
+
+        self.differet_orientation( self.angle,flat_fielded = flat_fielded )
         self.pixel_size = pixel_size
         self.upper_lim_li = 0.1
         self.lower_lim_li =0
@@ -506,7 +510,7 @@ class AbsorptionCoefficient( object ) :
 
         self.img = cv2.imread( file , 2 )
 
-    def orientation_auto ( self ) :
+    def thresholding_method( self ):
         if self.thresholding == 'triangle' :
             thresh_method = threshold_triangle
         elif self.thresholding == 'li' :
@@ -522,9 +526,86 @@ class AbsorptionCoefficient( object ) :
         elif self.thresholding == 'isodata' :
             thresh_method =  threshold_isodata
 
+        return thresh_method
+
+    def cal_orientation_auto( self ) :
+        def extract_number ( s ) :
+            # Helper function to extract the number from a string using regular expressions
+            match = re.findall( r'\d+' , s )[-1]
+
+            if match :
+                return match
+            else :
+                return None
+
+        # thresh_method = self.thresholding_method( )
+        # prefix = re.findall( r'\d+' , os.listdir( self.tomo_img_path )[0] )[-1]
+        #
+        # prefix = os.listdir( self.tomo_img_path )[0].replace( prefix , "candidate" )
+        # afterfix = len( os.listdir( self.tomo_img_path ) ) // 180
+        imgfile_list=os.listdir( self.tomo_img_path )
+        sorted_imgfile_list = sorted( imgfile_list , key = extract_number )
+        self.img_list = np.load( self.ModelFilename )
+        new1 = self.img_list.mean( axis = 1 )
+        img_label = 255 - cv2.normalize( new1 , None , 0 , 255 , cv2.NORM_MINMAX ).astype( 'uint8' )
+        mask_label = self.mask_generation( img_label , thresh = 255 )
+
+
+        def calculate_difference ( start , end ,sorted_imgfile_list , num , mask_label ) :
+            increment=int(len(sorted_imgfile_list)/180)
+            difference = []
+            contents = []
+            for i,angle in enumerate(np.linspace( start , end , num = num , dtype = int )) :
+
+                # fileindex = str( int( angle * afterfix ) ).zfill( 5 )
+                # filename = prefix.replace( 'candidate' , fileindex )
+                filename=sorted_imgfile_list[int(increment*angle)]
+                # print( filename )
+
+                file = os.path.join( self.tomo_img_path , filename )
+
+                candidate_img = cv2.normalize( cv2.imread( file , 2 ) , None , 0 , 255 , cv2.NORM_MINMAX ).astype(
+                    'uint8' )
+                if self.v_flip :
+                    candidate_img = cv2.flip( candidate_img , 0 )
+                thresh =  self.thresholding_method( )( candidate_img )
+                candidate_mask = self.mask_generation( candidate_img , thresh = thresh )
+                candidate_mask , mask_label = self.padding( candidate_mask , mask_label )
+                contents.append( len( candidate_mask[candidate_mask > 0] ) )
+                shifted_mask , xyshift = self.skimage_translation_matching( candidate_mask , mask_label )
+
+                difference.append( np.abs( candidate_mask - shifted_mask ).mean( ) )
+
+            return difference , contents
+
+        angle_start = 0
+        angle_end = 180
+        number = int( (angle_end - angle_start) / 10 + 1 )
+        difference_1 , contents_1 = np.array(
+            calculate_difference(sorted_imgfile_list =sorted_imgfile_list , start = angle_start , end = angle_end , num = number , mask_label = mask_label ) )
+        peak = np.where( difference_1 == np.min( difference_1 ) )[0][0]
+
+
+        angle_start = (peak - 1) * 10
+        angle_end = (peak + 1) * 10
+        number = 21
+        # print("the zone is at around {}".format(peak*10))
+
+        difference_2 , contents_2 = np.array(
+            calculate_difference(sorted_imgfile_list =sorted_imgfile_list, start = angle_start , end = angle_end , num = number , mask_label = mask_label ) )
+        peak2 = np.where( difference_2 == np.min( difference_2 ) )[0][0]
+
+        print( "the zone is at  {} which is the offset".format( angle_start + peak2 ) )
+        self.offset = -(angle_start + peak2)
+
+    def cal_orientation_auto_v1 ( self ) :
+        thresh_method=self.thresholding_method()
+
         prefix=re.findall( r'\d+' ,os.listdir( self.tomo_img_path )[0])[-1]
+
         prefix=os.listdir( self.tomo_img_path )[0].replace(prefix,"candidate")
         afterfix = len( os.listdir( self.tomo_img_path ) ) // 180
+
         self.img_list = np.load( self.ModelFilename )
         new1 = self.img_list.mean( axis = 1 )
         img_label = 255 - cv2.normalize( new1 , None , 0 , 255 , cv2.NORM_MINMAX ).astype( 'uint8' )
@@ -581,10 +662,73 @@ class AbsorptionCoefficient( object ) :
         print("the biggest zone is at  {} which is the rotation angle".format(angle_start+peak2))
         self.angle=(angle_start+peak2)
 
+    def cal_viewing_auto ( self ) :
+        def extract_number ( s ) :
+            # Helper function to extract the number from a string using regular expressions
+            match = re.findall( r'\d+' , s )[-1]
+
+            if match :
+                return match
+            else :
+                return None
+
+        thresh_method = self.thresholding_method( )
+        # prefix = re.findall( r'\d+' , os.listdir( self.tomo_img_path )[0] )[-1]
+        #
+        # prefix = os.listdir( self.tomo_img_path )[0].replace( prefix , "candidate" )
+        # afterfix = len( os.listdir( self.tomo_img_path ) ) // 180
+        imgfile_list = os.listdir( self.tomo_img_path )
+        sorted_imgfile_list = sorted( imgfile_list , key = extract_number )
+        self.img_list = np.load( self.ModelFilename )
+        new1 = self.img_list.mean( axis = 1 )
+        img_label = 255 - cv2.normalize( new1 , None , 0 , 255 , cv2.NORM_MINMAX ).astype( 'uint8' )
+        mask_label = self.mask_generation( img_label , thresh = 255 )
+
+        def calculate_difference ( start , end , sorted_imgfile_list , num , mask_label ) :
+            increment = int( len( sorted_imgfile_list ) / 180 )
+            difference = []
+            contents = []
+            for i , angle in enumerate( np.linspace( start , end , num = num , dtype = int ) ) :
+
+
+                filename = sorted_imgfile_list[int( increment * angle )]
+                # print( filename )
+
+                file = os.path.join( self.tomo_img_path , filename )
+
+                candidate_img = cv2.normalize( cv2.imread( file , 2 ) , None , 0 , 255 , cv2.NORM_MINMAX ).astype(
+                    'uint8' )
+                if self.v_flip :
+                    candidate_img = cv2.flip( candidate_img , 0 )
+                thresh = thresh_method( candidate_img )
+                candidate_mask = self.mask_generation( candidate_img , thresh = thresh )
+                candidate_mask , mask_label = self.padding( candidate_mask , mask_label )
+                contents.append( len( candidate_mask[candidate_mask > 0] ) )
+                shifted_mask , xyshift = self.skimage_translation_matching( candidate_mask , mask_label )
+                difference.append( np.abs( candidate_mask - shifted_mask ).mean( ) )
+
+            return difference , contents
+
+        angle_start=0
+        angle_end=180
+        number=int((angle_end-angle_start)/10 +1)
+        difference_1,contents_1=np.array(calculate_difference(sorted_imgfile_list =sorted_imgfile_list,
+                                                              start = angle_start,end = angle_end,num = number,mask_label =mask_label))
+        peak = np.where(contents_1==np.max(contents_1))[0][0]
+
+        angle_start=(peak-1)*10
+        angle_end=(peak+1)*10
+        number=21
+        # print("the biggest region is at around {}".format(peak*10))
+        difference_3,contents_3 = np.array( calculate_difference(sorted_imgfile_list =sorted_imgfile_list,
+                                                                 start = angle_start , end = angle_end , num = number,mask_label =mask_label ) )
+        peak2 =  np.where(contents_3==np.max(contents_3))[0][0]
+        print("the biggest zone is at  {} which is the rotation angle".format(angle_start+peak2))
+        self.angle=(angle_start+peak2)
 
 
 
-    def differet_orientation ( self,angle ) :
+    def differet_orientation ( self,angle,flat_fielded=None) :
 
         angle_inv = -( angle+self.offset)
         self.img_list = np.load( self.ModelFilename )
@@ -598,15 +742,17 @@ class AbsorptionCoefficient( object ) :
             for i , slice in enumerate( self.img_list ) :
                 result =self. rotate_image( slice , angle_inv )
                 self.img_list[i] = result
-
-        afterfix = len(os.listdir(self.tomo_img_path)) //180
-        fileindex =int( angle * afterfix )
-        for f in os.listdir(self.tomo_img_path):
-            index= int(re.findall( r'\d+' ,f)[-1])
-            if index ==fileindex:
-                filename=f
-                break
-        file = os.path.join( self.tomo_img_path , filename )
+        if self.auto_viewing is not True:
+            file = os.path.join( self.tomo_img_path , flat_fielded)
+        else:
+            afterfix = len(os.listdir(self.tomo_img_path)) //180
+            fileindex =int( angle * afterfix )
+            for f in os.listdir(self.tomo_img_path):
+                index= int(re.findall( r'\d+' ,f)[-1])
+                if index ==fileindex:
+                    filename=f
+                    break
+            file = os.path.join( self.tomo_img_path , filename )
 
         new1 = self.img_list.mean( axis = 1 )
         self.img = cv2.imread( file , 2 )
@@ -619,6 +765,7 @@ class AbsorptionCoefficient( object ) :
         # pdb.set_trace()
 
     def cropping( self,img, label_img,crop=None ):
+
         if self.crop is not None:
             top,bot,left,right=self.crop
             y_max,x_max=self.img.shape
@@ -929,7 +1076,7 @@ class AbsorptionCoefficient( object ) :
         handles , labels = plt.gca( ).get_legend_handles_labels( )
         by_label = dict( zip( labels , handles ) )
         plt.legend( by_label.values( ) , by_label.keys( ) , fontsize = 18 )
-        plt.savefig( '{}/Hist {} with acceptance percentage of {}.png'.format( self.save_dir,cls , percent ) )
+        plt.savefig( '{}/Hist_{}_with_acceptance_percentage_of_{}.png'.format( self.save_dir,cls , percent ) )
         # plt.show()
         if determine_peaks:
             return bins , edges , patches
@@ -1322,12 +1469,17 @@ class TestAbsorptionCoefficient(AbsorptionCoefficient):
         pdb.set_trace()
 
 class RunAbsorptionCoefficient(AbsorptionCoefficient):
-    def __init__(self,tomo_img_path , ModelFilename , angle=0 , save_dir='./',pixel_size = 0.3,
+    def __init__(self,tomo_img_path , ModelFilename , auto_viewing,auto_orientation,
+                 angle=0 , save_dir='./',pixel_size = 0.3,
                    kernel_square = (15 , 15),full=False,offset=0,v_flip=False,h_flip=False,
-                   ModelRotate=-90,auto=True,crop=None,thresholding='triangle'):
-        super().__init__( tomo_img_path , ModelFilename , angle=angle ,auto=auto,save_dir= save_dir,pixel_size = pixel_size,
-                   kernel_square = kernel_square,full=full,offset=offset,v_flip=v_flip,h_flip=h_flip,
-                   ModelRotate=ModelRotate,crop=crop,thresholding=thresholding)
+                   ModelRotate=-90,crop=None,thresholding='triangle',flat_fielded=None):
+        super().__init__( tomo_img_path , ModelFilename , angle=angle ,
+                          auto_viewing=auto_viewing,auto_orientation=auto_orientation,
+                          save_dir= save_dir,pixel_size = pixel_size,
+                          kernel_square = kernel_square,full=full,
+                          offset=offset,v_flip=v_flip,h_flip=h_flip,
+                          ModelRotate=ModelRotate,crop=crop,thresholding=thresholding,
+                          flat_fielded=flat_fielded)
 
     def run ( self ) :
         # new = self.img_list.mean( axis = 1 )
@@ -1360,15 +1512,15 @@ class RunAbsorptionCoefficient(AbsorptionCoefficient):
         except:
             pass
         self.imagemask_overlapping( self.img1 , np.roll( self.li_region_back , self.yxshift ) ,
-                                    title = '{} region of interest overall after erosion '.format( 'li' ) )
+                                    title = '{}_region_of_interest_overall_after_erosion'.format( 'li' ) )
 
         self.imagemask_overlapping( self.img1 , np.roll( self.lo_region_back , self.yxshift ) ,
-                                    title = '{} region of interest overall after erosion '.format( 'lo' ) )
+                                    title = '{}_region_of_interest_overall_after_erosion'.format( 'lo' ) )
         self.imagemask_overlapping( self.img1 , np.roll( self.cr_region_back , self.yxshift ) ,
-                                    title = '{} region of interest overall after erosion '.format( 'cr' ) )
+                                    title = '{}_region_of_interest_overall_after_erosion'.format( 'cr' ) )
         try:
             self.imagemask_overlapping( self.img1 , np.roll( self.bu_region_back , self.yxshift ) ,
-                                    title = '{} region of interest overall after erosion '.format( 'bu' ) )
+                                    title = '{}_region_of_interest_overall_after_erosion'.format( 'bu' ) )
         except:
             pass
         # coe_li = 0.01891746

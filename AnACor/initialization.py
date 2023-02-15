@@ -57,12 +57,15 @@ def main():
         'expt_filename': expt_files[0],
         'create3D': True,
         'coefficient': True,
-        'coefficient_auto':False,
+        'coefficient_auto_orientation':False,
+        'coefficient_auto_viewing':False,
         'coefficient_orientation': 0,
+        'coefficient_viewing' : 0 ,
+        'coefficient_thresholding':'mean',
+        'flat_field_name':'',
         'dials_dependancy':'source /dls/science/groups/i23/yishun/dials_yishun/dials' ,
         'full_reflection': False,
-        'model_storepath':'./',
-        'coefficient_viewing': 0,
+        'model_storepath':None,
         'model_name':None,
 
     }
@@ -73,7 +76,9 @@ def main():
         'crac' : 0 ,
         'buac' : 0 ,
         'num_cores' : 20 ,
-        'time' : [3 , 10 , 10] ,
+        'hour' : 3,
+        'minute' : 10 ,
+        'second' : 10 ,
         'sampling' : 5000 ,
         'dials_dependancy' : 'source /dls/science/groups/i23/yishun/dials_yishun/dials' ,
         'hpc_dependancies' : 'module load global/cluster' ,
@@ -81,14 +86,13 @@ def main():
         'offset':0,
         'refl_filename':refl_files[0],
         'expt_filename': expt_files[0],
-
-        'model_name':None,
+        'model_storepath': '',
 
     }
     post_data = {
         'store_dir': directory,
-        'dials_dependancy' : '' ,
-        'mtz2sca_dependancy' : '' ,
+        'dials_dependancy' : 'source /dls/science/groups/i23/yishun/dials_yishun/dials' ,
+        'mtz2sca_dependancy' : 'module load ccp4' ,
         'dataset': 'test',
         'save_note' : 'anacor',
         'refl_filename':refl_files[0],

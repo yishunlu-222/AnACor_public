@@ -114,9 +114,9 @@ def set_parser ( ) :
     #          "e.g. module load dials"
     #          "e.g. source /home/yishun/dials_develop_version/dials",
     # )
-    parser.add_argument( "--time" , nargs = '*' , type = int ,
-                         help = "List of time for the cluster job"
-                                "e.g. 01 10 10 is 1hour 10minute 10seconds" )
+    # parser.add_argument( "--time" , nargs = '*' , type = int ,
+    #                      help = "List of time for the cluster job"
+    #                             "e.g. 01 10 10 is 1hour 10minute 10seconds" )
     global args
     args = parser.parse_args( )
 
@@ -125,7 +125,11 @@ def set_parser ( ) :
 
 def main ( ) :
     args = set_parser( )
+
+
+
     save_dir = os.path.join( args.store_dir , '{}_save_data'.format( args.dataset ) )
+    model_storepath=args.model_storepath
     for file in os.listdir( save_dir ) :
         if '.json' in file :
             if 'expt' in file :
@@ -166,6 +170,7 @@ def main ( ) :
         f.write( "buac={}\n".format( args.buac ) )
         f.write( "end={}\n".format( len( data ) ) )
         f.write( "py_file={}\n".format( py_pth ) )
+        f.write( "model_storepath={}\n".format( model_storepath ) )
         try :
             f.write( "refl_pth={}\n".format( refl_filename ) )
             f.write( "expt_pth={}\n".format( expt_filename ) )
@@ -184,6 +189,7 @@ def main ( ) :
         f.write( '    nohup python -u  ${py_file}   --low $i --up ${x%.*}  --dataset ${dataset} --sampling ${sampling} '
                  '--loac ${loac} --liac ${liac} --crac ${crac}  --buac ${buac} --offset ${offset}'
                  ' --store-dir ${store_dir} --refl-filename ${refl_pth} --expt-filename ${expt_pth}  '
+                 '--model-storepath ${model_storepath}'
                  ' > ${logging_dir}/nohup_${expri}_${dataset}_${counter}.out&\n' )
         f.write( '    final=$i\n' )
         f.write( '    break\n' )
@@ -192,6 +198,7 @@ def main ( ) :
             '  nohup python -u  ${py_file}    --low $i --up $[$i+$increment] --dataset ${dataset}  --sampling ${sampling} '
             ' --loac ${loac} --liac ${liac} --crac ${crac} --buac ${buac}  --offset ${offset} '
             '--store-dir ${store_dir} --refl-filename ${refl_pth} --expt-filename ${expt_pth}  '
+            '--model-storepath ${model_storepath}'
             '> ${logging_dir}/nohup_${expri}_${dataset}_${counter}.out&\n' )
         f.write( '  if [[ $counter -eq 1 ]]; then\n' )
         f.write( '    sleep 20\n' )
@@ -200,18 +207,20 @@ def main ( ) :
         f.write( 'nohup python -u ${py_file}    --low ${x%.*} --up -1  --dataset ${dataset} --sampling ${sampling} '
                  '--loac ${loac} --liac ${liac} --crac ${crac} --buac ${buac}   --offset ${offset} '
                  '--store-dir ${store_dir}  --refl-filename ${refl_pth}  --expt-filename ${expt_pth}  '
+                 '--model-storepath ${model_storepath}'
                  '> ${logging_dir}/nohup_${expri}_${dataset}_$[$counter+1].out\n' )
 
     cluster_command = "qsub -S /bin/sh -l h_rt={0}:{1}:{2} -pe smp {3}  -o {5} -e {6} {4}".format(
-        str( args.time[0] ).zfill( 2 ) ,
-        str( args.time[1] ).zfill( 2 ) ,
-        str( args.time[2] ).zfill( 2 ) ,
+        str( args.hour ).zfill( 2 ) ,
+        str( args.minute ).zfill( 2 ) ,
+        str( args.second ).zfill( 2 ) ,
         args.num_cores ,
         os.path.join( save_dir , "mpprocess_script.sh" ) ,
         os.path.join( save_dir , "Logging" ) ,
         os.path.join( save_dir , "Logging" ) )
+
     if args.hpc_dependancies is not None :
-        all_command = args.hpc_dependancies + [cluster_command]
+        all_command = [args.hpc_dependancies] + [cluster_command]
     else :
         all_command = cluster_command
     command = ""

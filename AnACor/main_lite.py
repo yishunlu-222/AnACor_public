@@ -74,6 +74,12 @@ def set_parser():
         default=False,
         help="whether store the path lengths to calculate with different absorption coefficients",
     )
+    parser.add_argument(
+        "--model-storepath",
+        type=str,
+        default=None,
+        help="whether store the path lengths to calculate with different absorption coefficients",
+    )
 
 
     parser.add_argument(
@@ -125,17 +131,20 @@ def main():
     result_path  =os.path.join(  save_dir,'ResultData','absorption_factors')
     refl_dir = os.path.join(  save_dir,'ResultData','reflections')
 
-    models_list=[]
-    for file in os.listdir(save_dir ):
-          if dataset in file and ".npy" in file:
-              models_list.append(file)
+    if args.model_storepath == 'None':
+        models_list=[]
+        for file in os.listdir(save_dir ):
+              if dataset in file and ".npy" in file:
+                  models_list.append(file)
 
-    if len(models_list) ==1:
-        model_path = os.path.join( save_dir, models_list[0] )
-    elif len(models_list) ==0:
-        raise RuntimeError("\n There are no 3D models of sample {} in this directory \n  Please create one by command python setup.py \n".format(dataset))
+        if len(models_list) ==1:
+            model_path = os.path.join( save_dir, models_list[0] )
+        elif len(models_list) ==0:
+            raise RuntimeError("\n There are no 3D models of sample {} in this directory \n  Please create one by command python setup.py \n".format(dataset))
+        else:
+            raise RuntimeError("\n There are many 3D models of sample {} in this directory \n  Please delete the unwanted models \n".format(dataset))
     else:
-        raise RuntimeError("\n There are many 3D models of sample {} in this directory \n  Please delete the unwanted models \n".format(dataset))
+        model_path=args.model_storepath
 
     for file in os.listdir(save_dir):
         if '.json' in file:
