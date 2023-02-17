@@ -228,10 +228,8 @@ def main ( ) :
     #    if args.vflip :
     #        model_name = './{}_tomobar_cropped_f.npy'.format( dataset )
     #    else :
-    if args.model_name is not None :
-        model_name = './{}.npy'.format( args.model_name )
-    else :
-        model_name = './{}_.npy'.format( dataset )
+
+    model_name = './{}_.npy'.format( dataset )
     # segimg_path="D:/lys/studystudy/phd/absorption_correction/dataset/13304_segmentation_labels_tifs/dls/i23" \
     #             "/data/2019/nr23571-5/processing/tomography/recon/13304/avizo/segmentation_labels_tiffs"
 
@@ -264,20 +262,21 @@ def main ( ) :
               if dataset in file and ".npy" in file:
                   models_list.append(file)
 
-
-        model_storepath = os.path.join( save_dir, models_list[0] )
-
-        if model_storepath is None :
+        try:
+            model_storepath = os.path.join( save_dir, models_list[0] )
+        except:
             raise RuntimeError( "The 3D model is not defined and run by create3D by this program" )
-
-
+        try:
+            coefficient_viewing= args.coefficient_viewing
+        except:
+            coefficient_viewing=0
         coefficient_model = RunAbsorptionCoefficient( args.rawimg_path , model_storepath ,
                                                       auto_orientation = args.coefficient_auto_orientation ,
                                                       auto_viewing= args.coefficient_auto_viewing ,
                                                       save_dir = os.path.join( result_path ,
                                                                                "absorption_coefficient" ) ,
                                                       offset = args.coefficient_orientation ,
-                                                      angle = args.coefficient_viewing ,
+                                                      angle = coefficient_viewing ,
                                                       kernel_square = (5 , 5) ,
                                                       full = False , thresholding = args.coefficient_thresholding,
                                                       flat_fielded=args.flat_field_name)

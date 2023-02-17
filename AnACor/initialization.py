@@ -20,7 +20,8 @@ def find_dir(directory,word,base=False):
         for file in files :
             if word in file :
                 if base:
-                    tff_dir = os.path.join( root , file )
+                    if file.endswith(word):
+                        tff_dir = os.path.join( root , file )
                 else:
                     tff_dir = os.path.dirname( os.path.join( root , file ) )
                 tff_dirs.append( tff_dir )
@@ -36,9 +37,22 @@ def main():
 
     # Filter the list of files to include only .tff image files
     image_files =find_dir(directory, '.tif' )
+
     expt_files = find_dir(directory,  '.expt',base=True )
     refl_files = find_dir(directory, '.refl' ,base = True)
-
+    npy_files = find_dir( directory , '.npy',base = True )
+    try:
+        refl_file=refl_files[0]
+    except:
+        refl_file=''
+    try:
+        expt_file=expt_files[0]
+    except:
+        expt_file=''
+    try:
+        npy_file=npy_files [0]
+    except:
+        npy_file=''
     # Get the directory paths for the image files
 
 
@@ -56,20 +70,18 @@ def main():
         'dataset': 'test',
         'segimg_path' : dirs_3D,
         'rawimg-path':dirs_flat_fielded,
-        'refl_filename':refl_files[0],
-        'expt_filename': expt_files[0],
+        'refl_filename':refl_file,
+        'expt_filename': expt_file,
         'create3D': True,
         'coefficient': True,
-        'coefficient_auto_orientation':False,
-        'coefficient_auto_viewing':False,
+        'coefficient_auto_orientation':True,
+        'coefficient_auto_viewing':True,
         'coefficient_orientation': 0,
-        'coefficient_viewing' : 0 ,
+        'flat_field_name' : '' ,
         'coefficient_thresholding':'mean',
-        'flat_field_name':'',
         'dials_dependancy':'source /dls/science/groups/i23/yishun/dials_yishun/dials' ,
         'full_reflection': False,
-        'model_storepath':None,
-        'model_name':None,
+        'model_storepath':npy_file,
 
     }
     mp_data = {
@@ -87,8 +99,8 @@ def main():
         'hpc_dependancies' : 'module load global/cluster' ,
         'dataset': 'test',
         'offset':0,
-        'refl_filename':refl_files[0],
-        'expt_filename': expt_files[0],
+        'refl_filename':refl_file,
+        'expt_filename': expt_file,
         'model_storepath': '',
 
     }
@@ -98,8 +110,8 @@ def main():
         'mtz2sca_dependancy' : 'module load ccp4' ,
         'dataset': 'test',
         'save_note' : 'anacor',
-        'refl_filename':refl_files[0],
-        'expt_filename': expt_files[0],
+        'refl_filename':refl_file,
+        'expt_filename': expt_file,
         'full_reflection' : False ,
         'with_scaling':True,
     }

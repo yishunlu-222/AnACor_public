@@ -277,13 +277,13 @@ class AbsorptionCoefficient( object ) :
         # self.bu_region = self.region_of_interest_ovlap( target = 4 , liquor = 1 )
 
         self.imagemask_overlapping( self.img1 , np.roll(self.li_region,self.yxshift) ,
-                                    title = '{} region of interest overall '.format('li') )
+                                    title = '{}_region_of_interest_overall'.format('li') )
         self.imagemask_overlapping( self.img1 , np.roll(self.lo_region,self.yxshift)   ,
-                                    title = '{} region of interest overall '.format('lo') )
+                                    title = '{}_region_of_interest_overall'.format('lo') )
         self.imagemask_overlapping( self.img1 , np.roll(self.cr_region,self.yxshift)  ,
-                                    title = '{} region of interest overall '.format('cr') )
+                                    title = '{}_region_of_interest_overall'.format('cr') )
         self.imagemask_overlapping( self.img1 , np.roll(self.bu_region,self.yxshift)  ,
-                                    title = '{} region of interest overall '.format('bu') )
+                                    title = '{}_region_of_interest_overall'.format('bu') )
 
         if len(np.unique(self.lo_region))==1 or self.full is True:
             self.lo_region = self.region_of_interest( target = 2 )
@@ -372,7 +372,7 @@ class AbsorptionCoefficient( object ) :
         # if percent==0.5 and cls=='lo':
         #     pdb.set_trace()
         self.imagemask_overlapping( self.img1 , np.roll(region_background,self.yxshift) ,
-                                    title = ' area of {} with acceptance percentage of {} '.format(cls, percent ) )
+                                    title = 'area_of_{}_with_acceptance_percentage_of_{}'.format(cls, percent ) )
 
         # plt.imshow( region + region_back )
         # plt.title( ' area of {} with acceptance percentage of {} '.format( cls , percent ) )
@@ -595,8 +595,11 @@ class AbsorptionCoefficient( object ) :
             calculate_difference(sorted_imgfile_list =sorted_imgfile_list, start = angle_start , end = angle_end , num = number , mask_label = mask_label ) )
         peak2 = np.where( difference_2 == np.min( difference_2 ) )[0][0]
 
-        print( "the zone is at  {} which is the offset".format( angle_start + peak2 ) )
+        # print( "the zone is at  {} which is the offset".format( angle_start + peak2 ) )
+        print( "The estimated starting omega angle of "
+               "tomography experiment is {} degree".format( angle_start + peak2 ) )
         self.offset = -(angle_start + peak2)
+
 
     def cal_orientation_auto_v1 ( self ) :
         thresh_method=self.thresholding_method()
@@ -618,7 +621,7 @@ class AbsorptionCoefficient( object ) :
             for angle in np.linspace(start,end,num = num,dtype = int ):
                 fileindex =str( int(angle * afterfix) ).zfill(5)
                 filename=prefix.replace('candidate',fileindex)
-                print(filename)
+
                 file = os.path.join( self.tomo_img_path , filename )
 
                 candidate_img = cv2.normalize( cv2.imread( file , 2 ), None , 0 , 255 , cv2.NORM_MINMAX ).astype( 'uint8' )
@@ -649,7 +652,8 @@ class AbsorptionCoefficient( object ) :
         difference_2,contents_2 = np.array( calculate_difference( start = angle_start , end = angle_end , num = number,mask_label =mask_label ) )
         peak2 = np.where( difference_2 == np.min( difference_2 ) )[0][0]
 
-        print("the zone is at  {} which is the offset".format(angle_start+peak2))
+        print( "The estimated starting omega angle of "
+               "tomography experiment is {} degree".format( angle_start + peak2 ) )
         self.offset=-(angle_start+peak2)
 
         peak = np.where(contents_1==np.max(contents_1))[0][0]
@@ -659,7 +663,8 @@ class AbsorptionCoefficient( object ) :
         # print("the biggest region is at around {}".format(peak*10))
         difference_3,contents_3 = np.array( calculate_difference( start = angle_start , end = angle_end , num = number,mask_label =mask_label ) )
         peak2 =  np.where(contents_3==np.max(contents_3))[0][0]
-        print("the biggest zone is at  {} which is the rotation angle".format(angle_start+peak2))
+        print("The estimated angle where"
+              " the sample perfectly perpendicular to the screen is {} degree".format(angle_start+peak2))
         self.angle=(angle_start+peak2)
 
     def cal_viewing_auto ( self ) :
@@ -723,13 +728,29 @@ class AbsorptionCoefficient( object ) :
         difference_3,contents_3 = np.array( calculate_difference(sorted_imgfile_list =sorted_imgfile_list,
                                                                  start = angle_start , end = angle_end , num = number,mask_label =mask_label ) )
         peak2 =  np.where(contents_3==np.max(contents_3))[0][0]
-        print("the biggest zone is at  {} which is the rotation angle".format(angle_start+peak2))
+        print("The estimated angle where"
+              " the sample perfectly perpendicular to the screen is {} degree".format(angle_start+peak2))
         self.angle=(angle_start+peak2)
 
 
 
     def differet_orientation ( self,angle,flat_fielded=None) :
 
+        if self.auto_viewing is not True:
+            file = os.path.join( self.tomo_img_path , flat_fielded)
+            increment= len( os.listdir( self.tomo_img_path ) ) // 180
+            angle=  int(re.findall( r'\d+' ,flat_fielded)[-1])/increment
+        else:
+            afterfix = len(os.listdir(self.tomo_img_path)) //180
+            fileindex =int( angle * afterfix )
+            for f in os.listdir(self.tomo_img_path):
+                index= int(re.findall( r'\d+' ,f)[-1])
+                if index ==fileindex:
+                    filename=f
+                    break
+            file = os.path.join( self.tomo_img_path , filename )
+
+        self.img = cv2.imread( file , 2 )
         angle_inv = -( angle+self.offset)
         self.img_list = np.load( self.ModelFilename )
         # if self.ModelRotate< 0:
@@ -742,20 +763,10 @@ class AbsorptionCoefficient( object ) :
             for i , slice in enumerate( self.img_list ) :
                 result =self. rotate_image( slice , angle_inv )
                 self.img_list[i] = result
-        if self.auto_viewing is not True:
-            file = os.path.join( self.tomo_img_path , flat_fielded)
-        else:
-            afterfix = len(os.listdir(self.tomo_img_path)) //180
-            fileindex =int( angle * afterfix )
-            for f in os.listdir(self.tomo_img_path):
-                index= int(re.findall( r'\d+' ,f)[-1])
-                if index ==fileindex:
-                    filename=f
-                    break
-            file = os.path.join( self.tomo_img_path , filename )
+
 
         new1 = self.img_list.mean( axis = 1 )
-        self.img = cv2.imread( file , 2 )
+
 
         if self.v_flip:
             self.img=cv2.flip(self.img,0) # 1 : flip over horizontal ; 0 : flip over vertical
@@ -1573,8 +1584,14 @@ class RunAbsorptionCoefficient(AbsorptionCoefficient):
             loac_list.append( self.coe_lo)
             crac_list.append( self.coe_cr)
 
-        print("the offset is {}".format(self.offset))
-        print( "the rotation angle is {}".format( self.angle) )
+        # print("the offset is {}".format(self.offset))
+        # print( "the rotation angle is {}".format( self.angle) )
+        print( "The starting omega angle of "
+               "tomography experiment is chosen as {} degree".format( self.offset ) )
+
+        print("The angle where"
+              " the sample perfectly perpendicular to the screen is chosen as {} degree".format(self.offset))
+
         output=[order]
         output.append(liac_list)
         output.append( loac_list )

@@ -129,7 +129,25 @@ def main ( ) :
 
 
     save_dir = os.path.join( args.store_dir , '{}_save_data'.format( args.dataset ) )
-    model_storepath=args.model_storepath
+    if args.model_storepath == 'None' or len(args.model_storepath) < 2 :
+        models_list = []
+        for file in os.listdir( save_dir ) :
+            if args.dataset in file and ".npy" in file :
+                models_list.append( file )
+
+        if len( models_list ) == 1 :
+            model_storepath = os.path.join( save_dir , models_list[0] )
+        elif len( models_list ) == 0 :
+            raise RuntimeError(
+                "\n There are no 3D models of sample {} in this directory \n  Please create one by command python setup.py \n".format(
+                    args.dataset ) )
+        else :
+            raise RuntimeError(
+                "\n There are many 3D models of sample {} in this directory \n  Please delete the unwanted models \n".format(
+                    args.dataset ) )
+    else :
+        model_storepath = args.model_storepath
+
     for file in os.listdir( save_dir ) :
         if '.json' in file :
             if 'expt' in file :
