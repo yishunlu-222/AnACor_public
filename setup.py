@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(
-    name='AnACor1',
+    name='AnACor',
     version='1.1',
     description='AnACor for analytical absorption correction by tomography reconstruction',
     author='Yishun Lu',
@@ -10,14 +10,14 @@ setup(
 
     entry_points = {
         'console_scripts' :
-            ['anacor1.preprocess = AnACor.preprocess:main',
-             'anacor1.main = AnACor.main:main',
-             'anacor1.postprocess = AnACor.postprocess:main',
-             'anacor1.preprocess_lite = AnACor.preprocess_lite:main',
-             'anacor1.main_lite = AnACor.main_lite:main',
-             'anacor1.mp_lite = AnACor.mp_lite:main',
-             'anacor1.postprocess_lite = AnACor.postprocess_lite:main',
-             'anacor1.init = AnACor.initialization:main' ,
+            ['anacor.preprocess = AnACor.preprocess:main',
+             'anacor.main = AnACor.main:main',
+             'anacor.postprocess = AnACor.postprocess:main',
+             'anacor.preprocess_lite = AnACor.preprocess_lite:main',
+             'anacor.main_lite = AnACor.main_lite:main',
+             'anacor.mp_lite = AnACor.mp_lite:main',
+             'anacor.postprocess_lite = AnACor.postprocess_lite:main',
+             'anacor.init = AnACor.initialization:main' ,
              ],
     },
 

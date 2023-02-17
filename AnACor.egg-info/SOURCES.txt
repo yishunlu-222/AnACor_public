@@ -6,6 +6,7 @@ AnACor/absorption_coefficient.py
 AnACor/absorption_surface.py
 AnACor/adapative_sampling.py
 AnACor/image_process.py
+AnACor/initialization.py
 AnACor/into_flex.py
 AnACor/main.py
 AnACor/main_lite.py

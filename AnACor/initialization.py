@@ -45,7 +45,10 @@ def main():
     #make the dirs list into a dictionary for creating yaml file
     # expt_my_dict = {i : expt_files[i] for i in range( len( expt_files ) )}
     # refl_my_dict = {i : refl_files[i] for i in range( len( refl_files ) )}
-    dirs_3D , dirs_flat_fielded=distinguish_flat_fielded_3D(image_files)
+    try:
+        dirs_3D , dirs_flat_fielded=distinguish_flat_fielded_3D(image_files)
+    except:
+        dirs_3D , dirs_flat_fielded='',''
     images_my_dict = {'3d model image directory' : dirs_3D,
                       'flat fielded image directory':dirs_flat_fielded}
     pre_data = {

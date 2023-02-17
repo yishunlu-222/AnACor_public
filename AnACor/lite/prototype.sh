@@ -29,7 +29,7 @@ experiement=0 # the index number of the experiment
 ##install necessary package
 dials.python -m pip install numba
 dials.python -m pip install -U scikit-image
-dials.python -m pip install opencv-python
+  dials.python -m pip install opencv-python
 dials.python -m pip install imagecodecs
 dials.python setup.py --dataset ${dataset} --segimg-path ${segimg_path}    --store-dir ${store_dir} \
                     --refl-filename ${refl_whole_path} --create3D ${create3D}
