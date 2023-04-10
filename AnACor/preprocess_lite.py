@@ -3,6 +3,7 @@ import json
 import yaml
 import pdb
 import numpy as np
+import sys
 import argparse
 try:
     from AnACor.image_process import Image2Model
@@ -79,24 +80,23 @@ def set_parser ( ) :
     #     help = "whether the reconstruction slices need to be vertically filpped to match that in the real experiment" ,
     # )
     # parser.add_argument(
-    #     "--coefficient-calculation" ,
+    #     "--cal_coefficient-calculation" ,
     #     type = str2bool ,
     #     default = False ,
-    #     help = "whether the reconstruction slices need to be vertically filpped to match that in the real experiment" ,
+    #     help = "whether need to calculate coefficients" ,
     # )
     # parser.add_argument(
     #     "--coefficient-auto-orientation" ,
     #     type = str2bool ,
     #     default = True ,
-    #     help = "whether calculating the best estimate of the flat-field image to calculate absorption coefficient "
-    #            "automatically" ,
+    #     help = "whether automatically match the orientation of 3D model with the flat-field image to calculate absorption coefficient ",
     # )
     # parser.add_argument(
     #     "--coefficient-auto-viewing" ,
     #     type = str2bool ,
     #     default = True ,
-    #     help = "whether calculating the best estimate of the flat-field image to calculate absorption coefficient "
-    #            "automatically" ,
+    #     help = "whether automatically calculating the largest area of the flat-field image to calculate absorption coefficient "
+    #            ,
     # )
     # parser.add_argument(
     #     "--coefficient-orientation" ,
@@ -113,10 +113,11 @@ def set_parser ( ) :
     #            "in degree" ,
     # )
     # parser.add_argument(
-    #     "--model-name" ,
+    #     "--coefficient-thresholding" ,
     #     type = str ,
     #     default = None ,
-    #     help = "the optional 3D model name, otherwise it would be {dataset}_.npy" ,
+    #     help = "thresholding method to extract the region of interest"
+    #            "options are: 'triangle', 'li', 'mean,'minimum','otsu','yen','isodata'" ,
     # )
     #
     # parser.add_argument(
@@ -124,7 +125,7 @@ def set_parser ( ) :
     #     type = str2bool ,
     #     default = False ,
     #     help = "whether cutting some unwanted data of the reflection table"
-    #            "before calculating" ,
+    #            "before calculating based dials.scale outlier removing algorithm" ,
     # )
     # parser.add_argument(
     #     "--dials-dependancy" ,
@@ -134,20 +135,29 @@ def set_parser ( ) :
     #            "e.g. source /home/yishun/dials_develop_version/dials" ,
     # )
     # parser.add_argument(
-    #     "--flat-field" ,
+    #     "--flat-field-name" ,
     #     type = str ,
     #       default=None,
-    #     help = "the path to execute dials package"
-    #            "e.g. module load dials"
-    #            "e.g. source /home/yishun/dials_develop_version/dials" ,
+    #     help = "the flat-field image selected to determine the absorption coefficient, "
+    #            "when you use this flag, you should also fill the angle in coefficient_viewing"
+    #            "to allow the 3D model to rotate to match it"
     # )
-
-
+    parser.add_argument(
+        "--input-file" ,
+        type = str ,
+        default='default_preprocess_input.yaml',
+        help = "the path of the input file of all the flags" ,
+    )
+    global ar
+    ar = parser.parse_args( )
     directory = os.getcwd( )
     # Load the YAML configuration file
-    with open( os.path.join(directory,'default_preprocess_input.yaml') , 'r' ) as f :
-        config = yaml.safe_load( f )
-
+    try:
+        with open( ar.input_file , 'r' ) as f :
+            config = yaml.safe_load( f )
+    except:
+        with open( os.path.join(directory,ar.input_file) , 'r' ) as f :
+            config = yaml.safe_load( f )
     # Add an argument for each key in the YAML file
     for key , value in config.items( ) :
         parser.add_argument( '--{}'.format( key ) , default = value )
@@ -177,12 +187,13 @@ def set_parser ( ) :
 def preprocess_dial_lite ( args , save_dir ) :
     # from dials.util.filter_reflections import *
     import subprocess
+    print('preprocessing dials data.....')
     with open( os.path.join( save_dir , "preprocess_script.sh" ) , "w" ) as f :
         f.write( "#!/bin/bash \n" )
         f.write( "{} \n".format( args.dials_dependancy ) )
-        f.write( "expt_pth={} \n".format( args.expt_filename ) )
-        f.write( "refl_pth={} \n".format( args.refl_filename ) )
-        f.write( "store_dir={} \n".format( save_dir ) )
+        f.write( "expt_pth=\'{}\' \n".format( args.expt_filename ) )
+        f.write( "refl_pth=\'{}\' \n".format( args.refl_filename ) )
+        f.write( "store_dir=\'{}\' \n".format( save_dir ) )
         f.write( "dataset={} \n".format( args.dataset ) )
         f.write( "full={} \n".format( args.full_reflection ) )
         f.write( "dials.python {}  --dataset ${{dataset}} " 
@@ -239,6 +250,15 @@ def main ( ) :
         os.makedirs( save_dir )
         os.makedirs( os.path.join( save_dir , "Logging" ) )
     result_path = os.path.join( save_dir , 'ResultData' )
+
+    with open(os.path.join( save_dir , "Logging" , 'preprocess_lite.log') , 'w' ) as f :
+        # Redirect standard output to the file
+        sys.stdout = f
+
+
+        sys.stdout = sys.__stdout__
+
+
     if os.path.exists( result_path ) is False :
         os.makedirs( os.path.join( save_dir , 'ResultData' ) )
         os.makedirs( os.path.join( result_path , "reflections" ) )
@@ -256,7 +276,7 @@ def main ( ) :
         model_storepath = ModelGenerator.run( )
     print( "\n3D model file is already created... \n" )
 
-    if args.coefficient is True :
+    if args.cal_coefficient is True :
         models_list=[]
         for file in os.listdir(save_dir ):
               if dataset in file and ".npy" in file:

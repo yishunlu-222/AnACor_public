@@ -172,11 +172,11 @@ class AbsorptionCoefficient( object ) :
         self.auto_orientation=auto_orientation
         self.auto_viewing=auto_viewing
         # current the first image is where the gonionmeter is 0
-        if  self.auto_orientation is True:
+        if  self.auto_orientation or  self.auto_viewing is True:
             self.cal_orientation_auto()
 
-        if  self.auto_viewing is True:
-            self.cal_viewing_auto()
+        # if  self.auto_viewing is True:
+        #     self.cal_viewing_auto()
 
         self.differet_orientation( self.angle,flat_fielded = flat_fielded )
         self.pixel_size = pixel_size
@@ -206,7 +206,7 @@ class AbsorptionCoefficient( object ) :
 
     def pre_process( self ):
         if os.path.exists(self.save_dir) is False:
-            pdb.set_trace()
+
             try:
                 os.makedirs(self.save_dir)
             except:
@@ -551,15 +551,26 @@ class AbsorptionCoefficient( object ) :
         mask_label = self.mask_generation( img_label , thresh = 255 )
 
 
-        def calculate_difference ( start , end ,sorted_imgfile_list , num , mask_label ) :
-            increment=int(len(sorted_imgfile_list)/180)
+        def calculate_difference ( start , end ,sorted_imgfile_list , step , mask_label,plot=False ) :
+            increment=len(sorted_imgfile_list)/180
             difference = []
             contents = []
-            for i,angle in enumerate(np.linspace( start , end , num = num , dtype = int )) :
-
+            proportion_cut = 0.1
+            y_max_mask_label = mask_label.shape[0]
+            mask_label[:int(y_max_mask_label*proportion_cut),:]=0
+            mask_label[int(y_max_mask_label*(1-proportion_cut)): ,:]=0
+            # for i,angle in enumerate(np.linspace( start , end , num = num , dtype = int )) :
+            for i , angle in enumerate( np.arange( start , end ,step=step , dtype = int ) ) :
                 # fileindex = str( int( angle * afterfix ) ).zfill( 5 )
                 # filename = prefix.replace( 'candidate' , fileindex )
-                filename=sorted_imgfile_list[int(increment*angle)]
+
+                try:
+                    if angle==180:
+                        filename = sorted_imgfile_list[int( increment * angle )-1]
+                    else:
+                        filename=sorted_imgfile_list[int(increment*angle)]
+                except:
+                    pdb.set_trace()
                 # print( filename )
 
                 file = os.path.join( self.tomo_img_path , filename )
@@ -572,34 +583,76 @@ class AbsorptionCoefficient( object ) :
                 candidate_mask = self.mask_generation( candidate_img , thresh = thresh )
                 candidate_mask , mask_label = self.padding( candidate_mask , mask_label )
                 contents.append( len( candidate_mask[candidate_mask > 0] ) )
-                shifted_mask , xyshift = self.skimage_translation_matching( candidate_mask , mask_label )
+                candidate_mask[:int( y_max_mask_label * proportion_cut ) , :] = 0
+                candidate_mask[int( y_max_mask_label * (1 - proportion_cut) ) : , :] = 0
 
+                # shift the mask_label to match candidate_mask to plot it
+                shifted_mask , xyshift = self.skimage_translation_matching(candidate_mask, mask_label )
+                if plot:
+                    self.imagemask_overlapping_tri( candidate_img ,candidate_mask, shifted_mask,"threshold of angle of {} degree".format(angle))
                 difference.append( np.abs( candidate_mask - shifted_mask ).mean( ) )
 
             return difference , contents
 
+
         angle_start = 0
-        angle_end = 180
-        number = int( (angle_end - angle_start) / 10 + 1 )
+        angle_end = 190
+        # number = int( (angle_end - angle_start) / 10 + 1 )
+        step_1=10
         difference_1 , contents_1 = np.array(
-            calculate_difference(sorted_imgfile_list =sorted_imgfile_list , start = angle_start , end = angle_end , num = number , mask_label = mask_label ) )
-        peak = np.where( difference_1 == np.min( difference_1 ) )[0][0]
+            calculate_difference(sorted_imgfile_list =sorted_imgfile_list , start = angle_start , end = angle_end , step = step_1 , mask_label = mask_label ) )
+        ori_peak = np.where( difference_1 == np.min( difference_1 ) )[0][0]
+
+        if self.auto_orientation:
+
+            if ori_peak !=0 and ori_peak !=18:
+                angle_start = (ori_peak -1)*10
+                angle_end = (ori_peak + 1) * 10
+            elif ori_peak ==0:
+                angle_start = ori_peak *10
+                angle_end = (ori_peak + 1) * 10
+            elif ori_peak==18:
+                angle_start = (ori_peak -1)*10
+                angle_end = ori_peak * 10
+            else:
+                RuntimeError("inappropriate peak_1")
+            # print("the zone is at around {}".format(peak*10))
+            step_2=1
+            # print("the zone is at around {}".format(peak*10))
+
+            difference_2 , contents_2 = np.array(
+                calculate_difference(sorted_imgfile_list =sorted_imgfile_list, start = angle_start ,
+                                     end = angle_end , step=step_2 , mask_label = mask_label,plot = True ) )
+            ori_peak2 = np.where( difference_2 == np.min( difference_2 ) )[0][0]
+            self.offset = -(angle_start + ori_peak2)
+            print( "the zone is at  {} which is the offset".format( angle_start + ori_peak2 ) )
 
 
-        angle_start = (peak - 1) * 10
-        angle_end = (peak + 1) * 10
-        number = 21
-        # print("the zone is at around {}".format(peak*10))
+        if self.auto_viewing:
+            view_peak = np.where(contents_1==np.max(contents_1))[0][0]
 
-        difference_2 , contents_2 = np.array(
-            calculate_difference(sorted_imgfile_list =sorted_imgfile_list, start = angle_start , end = angle_end , num = number , mask_label = mask_label ) )
-        peak2 = np.where( difference_2 == np.min( difference_2 ) )[0][0]
-
-        # print( "the zone is at  {} which is the offset".format( angle_start + peak2 ) )
-        print( "The estimated starting omega angle of "
-               "tomography experiment is {} degree".format( angle_start + peak2 ) )
-        self.offset = -(angle_start + peak2)
-
+            if view_peak != 0 and view_peak != 18 :
+                angle_start = (view_peak - 1) * 10
+                angle_end = (view_peak + 1) * 10
+            elif view_peak == 0 :
+                angle_start = view_peak * 10
+                angle_end = (view_peak + 1) * 10
+            elif view_peak == 18 :
+                angle_start = (view_peak - 1) * 10
+                angle_end = view_peak * 10
+            else :
+                RuntimeError( "inappropriate peak_1" )
+            # print("the zone is at around {}".format(peak*10))
+            step_2 = 1
+            number=21
+            # print("the biggest region is at around {}".format(peak*10))
+            difference_3 , contents_3= np.array(
+                calculate_difference(sorted_imgfile_list =sorted_imgfile_list, start = angle_start ,
+                                     end = angle_end , step=step_2 , mask_label = mask_label,plot = True ) )
+            view_peak_2 =  np.where(contents_3==np.max(contents_3))[0][0]
+            print("The estimated angle where"
+                  " the sample perfectly perpendicular to the screen is {} degree".format(angle_start+view_peak_2))
+            self.angle=(angle_start+view_peak_2)
 
     def cal_orientation_auto_v1 ( self ) :
         thresh_method=self.thresholding_method()
@@ -1590,19 +1643,19 @@ class RunAbsorptionCoefficient(AbsorptionCoefficient):
                "tomography experiment is chosen as {} degree".format( self.offset ) )
 
         print("The angle where"
-              " the sample perfectly perpendicular to the screen is chosen as {} degree".format(self.offset))
-
-        output=[order]
-        output.append(liac_list)
-        output.append( loac_list )
-        output.append( crac_list )
-        try:
-            output.append( buac_list )
-        except:
-            pass
-
-        with open(os.path.join(self.save_dir,"{}_coefficients with percentage.json".format(self.angle)),'w') as f1:
-            json.dump(output,f1,indent = 2)
+              " the sample perfectly perpendicular to the screen is chosen as {} degree".format(self.angle))
+        pdb.set_trace()
+        # output=[order]
+        # output.append(liac_list)
+        # output.append( loac_list )
+        # output.append( crac_list )
+        # try:
+        #     output.append( buac_list )
+        # except:
+        #     pass
+        #
+        # with open(os.path.join(self.save_dir,"{}_coefficients with percentage.json".format(self.angle)),'w') as f1:
+        #     json.dump(output,f1,indent = 2)
 
 
 def tablization( dataset,centre=0,save_dir='./'):

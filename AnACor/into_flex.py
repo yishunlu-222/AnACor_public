@@ -106,7 +106,7 @@ if args.with_scaling == 1 :
     print( "\n the absorption correction factors are combined with scaling \n " )
     ac = flex.double( list( corr ) )
     reflections["analytical_correction"] = ac
-    reflections.as_file( os.path.join( args.target_pth , "test_{}.refl".format( args.save_number ) ) )
+    reflections.as_file( os.path.join( args.target_pth , "anacor_{}.refl".format( args.save_number ) ) )
 else :
     print( "\n  the absorption correction factors are applied directly on the reflection table \n " )
     after = np.array( reflections['intensity.sum.value'] ) / corr
@@ -123,7 +123,7 @@ else :
     reflections['intensity.sum.variance'] = varafterr
     reflections['intensity.prf.value'] = prf_afterr
     reflections['intensity.prf.variance'] = prf_varafterr
-    reflections.as_file( os.path.join( args.target_pth , "test_in_{}.refl".format( args.save_number ) ) )
+    reflections.as_file( os.path.join( args.target_pth , "anacor_in_{}.refl".format( args.save_number ) ) )
 
 
 

@@ -168,16 +168,10 @@ def main ( ) :
 
     for file in os.listdir( save_dir ) :
         if '.json' in file :
-            if args.full_reflection:
-                if 'expt' in file and 'True' in file :
-                    expt_filename = os.path.join( save_dir , file )
-                if 'refl' in file and 'True' in file:
-                    refl_filename = os.path.join( save_dir , file )
-            else:
-                if 'expt' in file and 'False' in file :
-                    expt_filename = os.path.join( save_dir , file )
-                if 'refl' in file and 'False' in file:
-                    refl_filename = os.path.join( save_dir , file )
+            if 'expt' in file :
+                expt_filename = os.path.join( save_dir , file )
+            if 'refl' in file :
+                refl_filename = os.path.join( save_dir , file )
     try :
         with open( expt_filename ) as f2 :
             axes_data = json.load( f2 )
@@ -277,17 +271,17 @@ def main ( ) :
             f.write( "cd {} \n".format( dials_dir ) )
             f.write( "\n" )
             f.write( "dials.scale  {0} {1} "
-                     "anomalous={3}  physical.absorption_correction=False physical.analytical_correction=True "
+                     "anomalous=True  physical.absorption_correction=False physical.analytical_correction=True "
                      "output.reflections=result_{2}_ac.refl  output.html=result_{2}_ac.html "
                      "output{{log={2}_ac_log.log}} output{{unmerged_mtz={2}_unmerged_ac.mtz}} output{{merged_mtz={2}_merged_ac.mtz}} "
-                     "\n".format( os.path.join( dials_dir , dials_save_name ) , args.expt_filename , dataset,args.anomalous ) )
+                     "\n".format( os.path.join( dials_dir , dials_save_name ) , args.expt_filename , dataset ) )
             f.write( "\n" )
             f.write( "dials.scale  {0} {1}  "
-                     "anomalous={3}  physical.absorption_level=high physical.analytical_correction=True "
+                     "anomalous=True  physical.absorption_level=high physical.analytical_correction=True "
                      "output.reflections=result_{2}_acsh.refl  output.html=result_{2}_acsh.html "
                      "output{{log={2}_acsh_log.log}}  output{{unmerged_mtz={2}_unmerged_acsh.mtz}} "
                      "output{{merged_mtz={2}_merged_acsh.mtz}} "
-                     "\n".format( os.path.join( dials_dir , dials_save_name ) , args.expt_filename , dataset,args.anomalous ) )
+                     "\n".format( os.path.join( dials_dir , dials_save_name ) , args.expt_filename , dataset ) )
             f.write( "{} \n".format( args.mtz2sca_dependancy ) )
             f.write( "mtz2sca {}_merged_acsh.mtz   \n".format( dataset ) )
             f.write( "mtz2sca {}_merged_ac.mtz   \n".format( dataset ) )

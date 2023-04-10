@@ -2,6 +2,38 @@ import yaml
 import os
 import pdb
 
+def comment():
+    import yaml
+
+    class MyDumper( yaml.Dumper ) :
+        def __init__ ( self , *args , **kwargs ) :
+            self.comments = kwargs.pop( 'comments' , {} )
+            super( MyDumper , self ).__init__( *args , **kwargs )
+
+        def increase_indent ( self , flow = False , indentless = False ) :
+            return super( MyDumper , self ).increase_indent( flow , False )
+
+        def write_line_break ( self , data = None ) :
+            super( MyDumper , self ).write_line_break( data )
+            current_indent = len( self.indents )
+            if current_indent in self.comments :
+                comment = self.comments[current_indent]
+                super( MyDumper , self ).write_comment( comment )
+
+    data = {
+        'foo' : 'bar' ,
+        'baz' : 'qux' ,
+    }
+
+    comments = {
+        1 : 'This is a comment for baz' ,
+        2 : 'This is a comment for foo' ,
+    }
+
+    # Dump the dictionary to a YAML file with comments
+    with open( 'data.yaml' , 'w' ) as f :
+        yaml.dump( data , f , MyDumper , default_flow_style = False , comments = comments )
+
 def distinguish_flat_fielded_3D(image_base_dirs):
     dirs_3D =image_base_dirs[0]
     dirs_flat_fielded=image_base_dirs[1]
@@ -22,12 +54,16 @@ def find_dir(directory,word,base=False):
                 if base:
                     if file.endswith(word):
                         tff_dir = os.path.join( root , file )
+                    else:
+                        tff_dir=[]
                 else:
                     tff_dir = os.path.dirname( os.path.join( root , file ) )
                 tff_dirs.append( tff_dir )
-
-    result = list( set( [f for f in tff_dirs] ) )
-    return result
+    try:
+        result = list( set( [f for f in tff_dirs] ) )
+        return result
+    except:
+        return None
 def main():
     # Define the directory to search
     directory = os.getcwd( )
@@ -73,10 +109,11 @@ def main():
         'refl_filename':refl_file,
         'expt_filename': expt_file,
         'create3D': True,
-        'coefficient': True,
+        'cal_coefficient': True,
         'coefficient_auto_orientation':True,
         'coefficient_auto_viewing':True,
         'coefficient_orientation': 0,
+        'coefficient_viewing': 0,
         'flat_field_name' : '' ,
         'coefficient_thresholding':'mean',
         'dials_dependancy':'source /dls/science/groups/i23/yishun/dials_yishun/dials' ,
@@ -102,20 +139,32 @@ def main():
         'refl_filename':refl_file,
         'expt_filename': expt_file,
         'model_storepath': '',
-
+        'post_process': False,
+        'full_reflection' : False ,
+        'with_scaling' : True ,
+        'anomalous':True,
+        'mtz2sca_dependancy' : 'module load ccp4' ,
     }
     post_data = {
         'store_dir': directory,
         'dials_dependancy' : 'source /dls/science/groups/i23/yishun/dials_yishun/dials' ,
         'mtz2sca_dependancy' : 'module load ccp4' ,
         'dataset': 'test',
-        'save_note' : 'anacor',
         'refl_filename':refl_file,
         'expt_filename': expt_file,
         'full_reflection' : False ,
         'with_scaling':True,
     }
-
+    multipost_data = {
+        'store_dir': directory,
+        'dials_dependancy' : 'source /dls/science/groups/i23/yishun/dials_yishun/dials' ,
+        'mtz2sca_dependancy' : 'module load ccp4' ,
+        'dataset': 'multi_dataset',
+        'refl_filename':refl_files,
+        'expt_filename': expt_files,
+        'full_reflection' : False ,
+        'with_scaling':True,
+    }
     # Write the image file paths to a YAML file
     with open( 'default_preprocess_input.yaml' , 'w' ) as file :
         yaml.dump( pre_data , file, default_flow_style=False, sort_keys=False, indent=4 )
@@ -125,5 +174,7 @@ def main():
 
     with open( 'default_postprocess_input.yaml' , 'w' ) as file :
         yaml.dump( post_data , file, default_flow_style=False, sort_keys=False, indent=4 )
+    with open( 'default_mutli_postprocess_input.yaml' , 'w' ) as file :
+        yaml.dump( multipost_data , file,  sort_keys=False, indent=4 )
 if __name__ == '__main__':
     main()

@@ -115,6 +115,26 @@ class Image2Model(object):
         except:
             raise  RuntimeError("there is problem on reading the segmentation images, please check")
 
+        clear=False
+        while clear is not True :
+            clear_img = input( "Does the image show all the classes ? \n" )
+            if clear_img.lower( ) in ('yes' , 'true' , 't' , 'y' , '1') :
+                break
+            elif clear_img.lower( ) in ('no' , 'false' , 'f' , 'n' , '0') :
+                clear=False
+            else:
+                RuntimeError( "Sorry i can't recognize it. Can you enter yes or no?  \n" )
+
+            img_number = input( "Which image number you would like to view? \n"
+                                "You can copy and paste the name of the image \n" )
+            for img_list in os.listdir( self.path ) :
+                if img_number  in img_list and 'tif' in img_list :
+                    self.exam_image = os.path.join( self.path , img_list )
+
+            self.find_color( self.exam_image )
+
+
+
         correct_pixel="no"
         while correct_pixel != 'y' and correct_pixel != 'yes':
             input_air = input( "Please type down the rgb colours of the background class and press Enter \n"
@@ -191,7 +211,7 @@ class Image2Model(object):
 
         vflip = input( "Does it need to be vertically flipped? \n"
                 "If yes, Press y or yes. Otherwise press any other keys \n" )
-        if 'y' in hflip or 'yes' in  vflip:
+        if 'y' in vflip or 'yes' in  vflip:
             self.v_flip=True
         else :
             self.v_flip = False
