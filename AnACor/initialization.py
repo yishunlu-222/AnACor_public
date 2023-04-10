@@ -114,7 +114,7 @@ def main():
         'coefficient_auto_viewing':True,
         'coefficient_orientation': 0,
         'coefficient_viewing': 0,
-        'flat_field_name' : '' ,
+        'flat_field_name' : None ,
         'coefficient_thresholding':'mean',
         'dials_dependancy':'source /dls/science/groups/i23/yishun/dials_yishun/dials' ,
         'full_reflection': False,

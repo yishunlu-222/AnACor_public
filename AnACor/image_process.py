@@ -79,9 +79,10 @@ class ImagePreprocess(object):
                 cv2.imwrite(filepath, mask)
 
 class Image2Model(object):
-    def __init__(self,segpath,modelpath,h_flip=False,v_flip=False,reverse=False,label=True,crop=False):
+    def __init__(self,segpath,modelpath,logger,h_flip=False,v_flip=False,reverse=False,label=True,crop=False):
         self.path=segpath
         self.h_flip=h_flip
+        self.logger=logger
         self.v_flip = v_flip
         self.filename=modelpath
         self.reverse=reverse

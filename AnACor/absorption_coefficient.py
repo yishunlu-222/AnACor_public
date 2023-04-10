@@ -14,6 +14,8 @@ from scipy.signal import find_peaks
 import re
 from skimage.metrics import *
 import time
+import logging
+
 def rgb2mask(rgb, COLOR=None):
     """
 
@@ -142,7 +144,7 @@ def save_npy(path,reverse,filename='13304_label_1C.npy',label=True,crop=False,vf
 
 
 class AbsorptionCoefficient( object ) :
-    def __init__ ( self , tomo_img_path , ModelFilename ,auto_orientation, auto_viewing,crop=None,thresholding='mean', angle=0, save_dir="./",pixel_size = 0.3,
+    def __init__ ( self , tomo_img_path , ModelFilename ,auto_orientation, auto_viewing,logger,crop=None,thresholding='mean', angle=0, save_dir="./",pixel_size = 0.3,
                    kernel_square = (15 , 15),full=False,offset=0,v_flip=False,h_flip=False,
                    ModelRotate=-90,flat_fielded=None,*args) :
         """
@@ -155,6 +157,8 @@ class AbsorptionCoefficient( object ) :
         :param kernel_square:
         :param full: full image of the class instead of the image thas is not blocked by the other classes
         """
+
+        self.logger=logger
         self.save_dir=save_dir
         self.thresholding=thresholding
         self.crop=crop
@@ -357,6 +361,9 @@ class AbsorptionCoefficient( object ) :
         else:
             self.histogram_in_area( roi_cls , percent , cls = cls , number_bins = 50 , xlim = None  )
             #
+
+        self.logger.info('mean of {} is {}'.format( cls,roi_cls.mean( ) ))
+        self.logger.info('standard deviation of {} is {}'.format( cls,np.std( roi_cls ) ) )
         print( 'mean of {} is {}'.format( cls,roi_cls.mean( ) ) )
         print( 'standard deviation of {} is {}'.format( cls,np.std( roi_cls ) ) )
         crd = np.stack( (output_y_list , output_x_list) , axis = 1 )
@@ -395,6 +402,35 @@ class AbsorptionCoefficient( object ) :
         plt.savefig( '{}/{}.png'.format( self.save_dir,title ) )
         plt.clf( )
         # plt.show( )
+
+    def imagemask_overlapping_tri ( self,img1 , mask  , mask2,title = 'Null' ) :
+        try:
+            label=np.unique(mask)[1]
+        except:
+            label=10
+        try:
+            label2=np.unique(mask)[1]
+        except:
+            label2=20
+        img1 = skimage.color.gray2rgb( img1 )
+
+        maskrgb = skimage.color.gray2rgb( mask )
+        maskrgb[mask == label] = np.array( [255 , 255 , 0] )
+
+
+        maskrgb2 = skimage.color.gray2rgb( mask2 )
+        maskrgb2[mask2 == label2] = np.array( [0 , 255 , 255] )
+        # overaly = np.ubyte( img1 + 0.1 * maskrgb )
+        overaly = img1 + 0.3 * maskrgb
+        overaly[overaly > 255] = 255
+
+        overaly = overaly + 0.3 * maskrgb2
+        overaly[overaly > 255] = 255
+        overaly = np.ubyte( overaly )
+        plt.imshow( overaly )
+        plt.title( title )
+        plt.savefig( '{}/{}.png'.format( self.save_dir,title ) )
+        plt.clf( )
 
     def region_interaction_of_two_classes( self , target , base = 1 ) :
         """
@@ -559,6 +595,7 @@ class AbsorptionCoefficient( object ) :
             y_max_mask_label = mask_label.shape[0]
             mask_label[:int(y_max_mask_label*proportion_cut),:]=0
             mask_label[int(y_max_mask_label*(1-proportion_cut)): ,:]=0
+
             # for i,angle in enumerate(np.linspace( start , end , num = num , dtype = int )) :
             for i , angle in enumerate( np.arange( start , end ,step=step , dtype = int ) ) :
                 # fileindex = str( int( angle * afterfix ) ).zfill( 5 )
@@ -588,9 +625,10 @@ class AbsorptionCoefficient( object ) :
 
                 # shift the mask_label to match candidate_mask to plot it
                 shifted_mask , xyshift = self.skimage_translation_matching(candidate_mask, mask_label )
-                if plot:
-                    self.imagemask_overlapping_tri( candidate_img ,candidate_mask, shifted_mask,"threshold of angle of {} degree".format(angle))
+                # if plot:
+                #     self.imagemask_overlapping_tri( candidate_img ,candidate_mask, shifted_mask,"threshold of angle of {} degree".format(angle))
                 difference.append( np.abs( candidate_mask - shifted_mask ).mean( ) )
+
 
             return difference , contents
 
@@ -622,9 +660,10 @@ class AbsorptionCoefficient( object ) :
 
             difference_2 , contents_2 = np.array(
                 calculate_difference(sorted_imgfile_list =sorted_imgfile_list, start = angle_start ,
-                                     end = angle_end , step=step_2 , mask_label = mask_label,plot = True ) )
+                                     end = angle_end , step=step_2 , mask_label = mask_label,plot = False ) )
             ori_peak2 = np.where( difference_2 == np.min( difference_2 ) )[0][0]
             self.offset = -(angle_start + ori_peak2)
+            self.logger.info( "the zone is at  {} which is the offset".format( angle_start + ori_peak2 ) )
             print( "the zone is at  {} which is the offset".format( angle_start + ori_peak2 ) )
 
 
@@ -644,166 +683,153 @@ class AbsorptionCoefficient( object ) :
                 RuntimeError( "inappropriate peak_1" )
             # print("the zone is at around {}".format(peak*10))
             step_2 = 1
-            number=21
+
             # print("the biggest region is at around {}".format(peak*10))
             difference_3 , contents_3= np.array(
                 calculate_difference(sorted_imgfile_list =sorted_imgfile_list, start = angle_start ,
-                                     end = angle_end , step=step_2 , mask_label = mask_label,plot = True ) )
+                                     end = angle_end , step=step_2 , mask_label = mask_label,plot = False ) )
             view_peak_2 =  np.where(contents_3==np.max(contents_3))[0][0]
+            self.logger.info("The estimated angle where"
+                  " the sample perfectly perpendicular to the screen is {} degree".format(angle_start+view_peak_2))
             print("The estimated angle where"
                   " the sample perfectly perpendicular to the screen is {} degree".format(angle_start+view_peak_2))
             self.angle=(angle_start+view_peak_2)
 
-    def cal_orientation_auto_v1 ( self ) :
-        thresh_method=self.thresholding_method()
-
-        prefix=re.findall( r'\d+' ,os.listdir( self.tomo_img_path )[0])[-1]
-
-        prefix=os.listdir( self.tomo_img_path )[0].replace(prefix,"candidate")
-        afterfix = len( os.listdir( self.tomo_img_path ) ) // 180
-
-        self.img_list = np.load( self.ModelFilename )
-        new1 = self.img_list.mean( axis = 1 )
-        img_label = 255 - cv2.normalize( new1 , None , 0 , 255 , cv2.NORM_MINMAX ).astype( 'uint8' )
-        mask_label = self.mask_generation( img_label , thresh = 255 )
-
-        def calculate_difference(start, end, num,mask_label):
-
-            difference = []
-            contents=[]
-            for angle in np.linspace(start,end,num = num,dtype = int ):
-                fileindex =str( int(angle * afterfix) ).zfill(5)
-                filename=prefix.replace('candidate',fileindex)
-
-                file = os.path.join( self.tomo_img_path , filename )
-
-                candidate_img = cv2.normalize( cv2.imread( file , 2 ), None , 0 , 255 , cv2.NORM_MINMAX ).astype( 'uint8' )
-                if self.v_flip:
-                    candidate_img=cv2.flip(candidate_img,0)
-                thresh =thresh_method (candidate_img)
-                candidate_mask = self.mask_generation( candidate_img , thresh = thresh )
-                # candidate_mask , mask_label=self.cropping(candidate_mask , mask_label)
-                candidate_mask , mask_label = self.padding( candidate_mask , mask_label )
-                contents.append(len(candidate_mask[candidate_mask>0]))
-                shifted_mask, xyshift=self.skimage_translation_matching(candidate_mask,mask_label)
-                difference.append(np.abs(candidate_mask-shifted_mask).mean())
-                #difference.append(np.abs(lengths_mask  -len(candidate_mask[candidate_mask>0])) )
-
-            return difference,contents
-
-        angle_start=0
-        angle_end=180
-        number=int((angle_end-angle_start)/10 +1)
-        difference_1,contents_1=np.array(calculate_difference(start = angle_start,end = angle_end,num = number,mask_label =mask_label))
-
-        peak = np.where(difference_1==np.min(difference_1))[0][0]
-        angle_start=(peak-1)*10
-        angle_end=(peak+1)*10
-        number=21
-        # print("the zone is at around {}".format(peak*10))
-
-        difference_2,contents_2 = np.array( calculate_difference( start = angle_start , end = angle_end , num = number,mask_label =mask_label ) )
-        peak2 = np.where( difference_2 == np.min( difference_2 ) )[0][0]
-
-        print( "The estimated starting omega angle of "
-               "tomography experiment is {} degree".format( angle_start + peak2 ) )
-        self.offset=-(angle_start+peak2)
-
-        peak = np.where(contents_1==np.max(contents_1))[0][0]
-        angle_start=(peak-1)*10
-        angle_end=(peak+1)*10
-        number=21
-        # print("the biggest region is at around {}".format(peak*10))
-        difference_3,contents_3 = np.array( calculate_difference( start = angle_start , end = angle_end , num = number,mask_label =mask_label ) )
-        peak2 =  np.where(contents_3==np.max(contents_3))[0][0]
-        print("The estimated angle where"
-              " the sample perfectly perpendicular to the screen is {} degree".format(angle_start+peak2))
-        self.angle=(angle_start+peak2)
-
-    def cal_viewing_auto ( self ) :
-        def extract_number ( s ) :
-            # Helper function to extract the number from a string using regular expressions
-            match = re.findall( r'\d+' , s )[-1]
-
-            if match :
-                return match
-            else :
-                return None
-
-        thresh_method = self.thresholding_method( )
-        # prefix = re.findall( r'\d+' , os.listdir( self.tomo_img_path )[0] )[-1]
-        #
-        # prefix = os.listdir( self.tomo_img_path )[0].replace( prefix , "candidate" )
-        # afterfix = len( os.listdir( self.tomo_img_path ) ) // 180
-        imgfile_list = os.listdir( self.tomo_img_path )
-        sorted_imgfile_list = sorted( imgfile_list , key = extract_number )
-        self.img_list = np.load( self.ModelFilename )
-        new1 = self.img_list.mean( axis = 1 )
-        img_label = 255 - cv2.normalize( new1 , None , 0 , 255 , cv2.NORM_MINMAX ).astype( 'uint8' )
-        mask_label = self.mask_generation( img_label , thresh = 255 )
-
-        def calculate_difference ( start , end , sorted_imgfile_list , num , mask_label ) :
-            increment = int( len( sorted_imgfile_list ) / 180 )
-            difference = []
-            contents = []
-            for i , angle in enumerate( np.linspace( start , end , num = num , dtype = int ) ) :
-
-
-                filename = sorted_imgfile_list[int( increment * angle )]
-                # print( filename )
-
-                file = os.path.join( self.tomo_img_path , filename )
-
-                candidate_img = cv2.normalize( cv2.imread( file , 2 ) , None , 0 , 255 , cv2.NORM_MINMAX ).astype(
-                    'uint8' )
-                if self.v_flip :
-                    candidate_img = cv2.flip( candidate_img , 0 )
-                thresh = thresh_method( candidate_img )
-                candidate_mask = self.mask_generation( candidate_img , thresh = thresh )
-                candidate_mask , mask_label = self.padding( candidate_mask , mask_label )
-                contents.append( len( candidate_mask[candidate_mask > 0] ) )
-                shifted_mask , xyshift = self.skimage_translation_matching( candidate_mask , mask_label )
-                difference.append( np.abs( candidate_mask - shifted_mask ).mean( ) )
-
-            return difference , contents
-
-        angle_start=0
-        angle_end=180
-        number=int((angle_end-angle_start)/10 +1)
-        difference_1,contents_1=np.array(calculate_difference(sorted_imgfile_list =sorted_imgfile_list,
-                                                              start = angle_start,end = angle_end,num = number,mask_label =mask_label))
-        peak = np.where(contents_1==np.max(contents_1))[0][0]
-
-        angle_start=(peak-1)*10
-        angle_end=(peak+1)*10
-        number=21
-        # print("the biggest region is at around {}".format(peak*10))
-        difference_3,contents_3 = np.array( calculate_difference(sorted_imgfile_list =sorted_imgfile_list,
-                                                                 start = angle_start , end = angle_end , num = number,mask_label =mask_label ) )
-        peak2 =  np.where(contents_3==np.max(contents_3))[0][0]
-        print("The estimated angle where"
-              " the sample perfectly perpendicular to the screen is {} degree".format(angle_start+peak2))
-        self.angle=(angle_start+peak2)
-
+    # def cal_orientation_auto_v1 ( self ) :
+    #     thresh_method=self.thresholding_method()
+    #
+    #     prefix=re.findall( r'\d+' ,os.listdir( self.tomo_img_path )[0])[-1]
+    #
+    #     prefix=os.listdir( self.tomo_img_path )[0].replace(prefix,"candidate")
+    #     afterfix = len( os.listdir( self.tomo_img_path ) ) // 180
+    #
+    #     self.img_list = np.load( self.ModelFilename )
+    #     new1 = self.img_list.mean( axis = 1 )
+    #     img_label = 255 - cv2.normalize( new1 , None , 0 , 255 , cv2.NORM_MINMAX ).astype( 'uint8' )
+    #     mask_label = self.mask_generation( img_label , thresh = 255 )
+    #
+    #     def calculate_difference(start, end, num,mask_label):
+    #
+    #         difference = []
+    #         contents=[]
+    #         for angle in np.linspace(start,end,num = num,dtype = int ):
+    #             fileindex =str( int(angle * afterfix) ).zfill(5)
+    #             filename=prefix.replace('candidate',fileindex)
+    #
+    #             file = os.path.join( self.tomo_img_path , filename )
+    #
+    #             candidate_img = cv2.normalize( cv2.imread( file , 2 ), None , 0 , 255 , cv2.NORM_MINMAX ).astype( 'uint8' )
+    #             if self.v_flip:
+    #                 candidate_img=cv2.flip(candidate_img,0)
+    #             thresh =thresh_method (candidate_img)
+    #             candidate_mask = self.mask_generation( candidate_img , thresh = thresh )
+    #             # candidate_mask , mask_label=self.cropping(candidate_mask , mask_label)
+    #             candidate_mask , mask_label = self.padding( candidate_mask , mask_label )
+    #             contents.append(len(candidate_mask[candidate_mask>0]))
+    #             shifted_mask, xyshift=self.skimage_translation_matching(candidate_mask,mask_label)
+    #             difference.append(np.abs(candidate_mask-shifted_mask).mean())
+    #             #difference.append(np.abs(lengths_mask  -len(candidate_mask[candidate_mask>0])) )
+    #
+    #         return difference,contents
+    #
+    #     angle_start=0
+    #     angle_end=180
+    #     number=int((angle_end-angle_start)/10 +1)
+    #     difference_1,contents_1=np.array(calculate_difference(start = angle_start,end = angle_end,num = number,mask_label =mask_label))
+    #
+    #     peak = np.where(difference_1==np.min(difference_1))[0][0]
+    #     angle_start=(peak-1)*10
+    #     angle_end=(peak+1)*10
+    #     number=21
+    #     # print("the zone is at around {}".format(peak*10))
+    #
+    #     difference_2,contents_2 = np.array( calculate_difference( start = angle_start , end = angle_end , num = number,mask_label =mask_label ) )
+    #     peak2 = np.where( difference_2 == np.min( difference_2 ) )[0][0]
+    #
+    #     print( "The estimated starting omega angle of "
+    #            "tomography experiment is {} degree".format( angle_start + peak2 ) )
+    #     self.offset=-(angle_start+peak2)
+    #
+    #     peak = np.where(contents_1==np.max(contents_1))[0][0]
+    #     angle_start=(peak-1)*10
+    #     angle_end=(peak+1)*10
+    #     number=21
+    #     # print("the biggest region is at around {}".format(peak*10))
+    #     difference_3,contents_3 = np.array( calculate_difference( start = angle_start , end = angle_end , num = number,mask_label =mask_label ) )
+    #     peak2 =  np.where(contents_3==np.max(contents_3))[0][0]
+    #     print("The estimated angle where"
+    #           " the sample perfectly perpendicular to the screen is {} degree".format(angle_start+peak2))
+    #     self.angle=(angle_start+peak2)
+    #
+    # def cal_viewing_auto ( self ) :
+    #     def extract_number ( s ) :
+    #         # Helper function to extract the number from a string using regular expressions
+    #         match = re.findall( r'\d+' , s )[-1]
+    #
+    #         if match :
+    #             return match
+    #         else :
+    #             return None
+    #
+    #     thresh_method = self.thresholding_method( )
+    #     # prefix = re.findall( r'\d+' , os.listdir( self.tomo_img_path )[0] )[-1]
+    #     #
+    #     # prefix = os.listdir( self.tomo_img_path )[0].replace( prefix , "candidate" )
+    #     # afterfix = len( os.listdir( self.tomo_img_path ) ) // 180
+    #     imgfile_list = os.listdir( self.tomo_img_path )
+    #     sorted_imgfile_list = sorted( imgfile_list , key = extract_number )
+    #     self.img_list = np.load( self.ModelFilename )
+    #     new1 = self.img_list.mean( axis = 1 )
+    #     img_label = 255 - cv2.normalize( new1 , None , 0 , 255 , cv2.NORM_MINMAX ).astype( 'uint8' )
+    #     mask_label = self.mask_generation( img_label , thresh = 255 )
+    #
+    #     def calculate_difference ( start , end , sorted_imgfile_list , num , mask_label ) :
+    #         increment = int( len( sorted_imgfile_list ) / 180 )
+    #         difference = []
+    #         contents = []
+    #         for i , angle in enumerate( np.linspace( start , end , num = num , dtype = int ) ) :
+    #
+    #
+    #             filename = sorted_imgfile_list[int( increment * angle )]
+    #             # print( filename )
+    #
+    #             file = os.path.join( self.tomo_img_path , filename )
+    #
+    #             candidate_img = cv2.normalize( cv2.imread( file , 2 ) , None , 0 , 255 , cv2.NORM_MINMAX ).astype(
+    #                 'uint8' )
+    #             if self.v_flip :
+    #                 candidate_img = cv2.flip( candidate_img , 0 )
+    #             thresh = thresh_method( candidate_img )
+    #             candidate_mask = self.mask_generation( candidate_img , thresh = thresh )
+    #             candidate_mask , mask_label = self.padding( candidate_mask , mask_label )
+    #             contents.append( len( candidate_mask[candidate_mask > 0] ) )
+    #             shifted_mask , xyshift = self.skimage_translation_matching( candidate_mask , mask_label )
+    #             difference.append( np.abs( candidate_mask - shifted_mask ).mean( ) )
+    #
+    #         return difference , contents
+    #
+    #     angle_start=0
+    #     angle_end=180
+    #     number=int((angle_end-angle_start)/10 +1)
+    #     difference_1,contents_1=np.array(calculate_difference(sorted_imgfile_list =sorted_imgfile_list,
+    #                                                           start = angle_start,end = angle_end,num = number,mask_label =mask_label))
+    #     peak = np.where(contents_1==np.max(contents_1))[0][0]
+    #
+    #     angle_start=(peak-1)*10
+    #     angle_end=(peak+1)*10
+    #     number=21
+    #     # print("the biggest region is at around {}".format(peak*10))
+    #     difference_3,contents_3 = np.array( calculate_difference(sorted_imgfile_list =sorted_imgfile_list,
+    #                                                              start = angle_start , end = angle_end , num = number,mask_label =mask_label ) )
+    #     peak2 =  np.where(contents_3==np.max(contents_3))[0][0]
+    #     print("The estimated angle where"
+    #           " the sample perfectly perpendicular to the screen is {} degree".format(angle_start+peak2))
+    #     self.angle=(angle_start+peak2)
+    #
 
 
     def differet_orientation ( self,angle,flat_fielded=None) :
 
-        if self.auto_viewing is not True:
-            file = os.path.join( self.tomo_img_path , flat_fielded)
-            increment= len( os.listdir( self.tomo_img_path ) ) // 180
-            angle=  int(re.findall( r'\d+' ,flat_fielded)[-1])/increment
-        else:
-            afterfix = len(os.listdir(self.tomo_img_path)) //180
-            fileindex =int( angle * afterfix )
-            for f in os.listdir(self.tomo_img_path):
-                index= int(re.findall( r'\d+' ,f)[-1])
-                if index ==fileindex:
-                    filename=f
-                    break
-            file = os.path.join( self.tomo_img_path , filename )
-
-        self.img = cv2.imread( file , 2 )
         angle_inv = -( angle+self.offset)
         self.img_list = np.load( self.ModelFilename )
         # if self.ModelRotate< 0:
@@ -816,17 +842,40 @@ class AbsorptionCoefficient( object ) :
             for i , slice in enumerate( self.img_list ) :
                 result =self. rotate_image( slice , angle_inv )
                 self.img_list[i] = result
-
+        if flat_fielded is not None and flat_fielded.isspace() is not True\
+                and flat_fielded!='' :
+            file = os.path.join( self.tomo_img_path , flat_fielded)
+        else:
+            afterfix = len(os.listdir(self.tomo_img_path)) /180
+            fileindex =int( angle * afterfix )
+            for f in os.listdir(self.tomo_img_path):
+                index= int(re.findall( r'\d+' ,f)[-1])
+                if index ==fileindex:
+                    filename=f
+                    break
+            file = os.path.join( self.tomo_img_path , filename )
 
         new1 = self.img_list.mean( axis = 1 )
-
+        self.img = cv2.imread( file , 2 )
 
         if self.v_flip:
             self.img=cv2.flip(self.img,0) # 1 : flip over horizontal ; 0 : flip over vertical
         if self.h_flip:
             self.img=cv2.flip(self.img,1) # 1 : flip over horizontal ; 0 : flip over vertical
+
         self.img,new1=self.cropping(self.img,new1,crop = self.crop)
-        # pdb.set_trace()
+        self.logger.info("the examined flat-fielded corrected image is {}".format(os.path.basename(file)))
+        print("the examined flat-fielded corrected image is {}".format(os.path.basename(file)))
+
+        candidate_img = cv2.normalize( self.img , None , 0 , 255 , cv2.NORM_MINMAX ).astype(
+            'uint8' )
+        thresh = self.thresholding_method( )( candidate_img)
+        candidate_mask = self.mask_generation( candidate_img, thresh = thresh )
+        img_label = 255 - cv2.normalize( new1 , None , 0 , 255 , cv2.NORM_MINMAX ).astype( 'uint8' )
+        mask_label = self.mask_generation( img_label , thresh = 255 )
+        shifted_mask , xyshift = self.skimage_translation_matching( candidate_mask , mask_label )
+        self.imagemask_overlapping_tri( candidate_img, candidate_mask , shifted_mask ,
+                                        "threshold of angle of {} degree".format( angle ) )
 
     def cropping( self,img, label_img,crop=None ):
 
@@ -1106,6 +1155,8 @@ class AbsorptionCoefficient( object ) :
 
         except:
             pass
+        self.logger.info( ' skewness is {}'.format( skew( roi ) ) )
+        self.logger.info(  ' kurtosis is {}'.format( kurtosis( roi ) ) )
         print( ' skewness is {}'.format( skew( roi ) ) )
         print( ' kurtosis is {}'.format( kurtosis( roi ) ) )
         # https://stackoverflow.com/questions/60699836/how-to-use-norm-ppf
@@ -1533,11 +1584,11 @@ class TestAbsorptionCoefficient(AbsorptionCoefficient):
         pdb.set_trace()
 
 class RunAbsorptionCoefficient(AbsorptionCoefficient):
-    def __init__(self,tomo_img_path , ModelFilename , auto_viewing,auto_orientation,
+    def __init__(self,tomo_img_path , ModelFilename , auto_viewing,auto_orientation,logger,
                  angle=0 , save_dir='./',pixel_size = 0.3,
                    kernel_square = (15 , 15),full=False,offset=0,v_flip=False,h_flip=False,
                    ModelRotate=-90,crop=None,thresholding='triangle',flat_fielded=None):
-        super().__init__( tomo_img_path , ModelFilename , angle=angle ,
+        super().__init__( tomo_img_path , ModelFilename , angle=angle ,logger=logger,
                           auto_viewing=auto_viewing,auto_orientation=auto_orientation,
                           save_dir= save_dir,pixel_size = pixel_size,
                           kernel_square = kernel_square,full=full,
@@ -1639,12 +1690,17 @@ class RunAbsorptionCoefficient(AbsorptionCoefficient):
 
         # print("the offset is {}".format(self.offset))
         # print( "the rotation angle is {}".format( self.angle) )
+        self.logger.info( "The starting omega angle of "
+               "tomography experiment is chosen as {} degree".format( self.offset ) )
+
+        self.logger.info("The angle where"
+              " the sample perfectly perpendicular to the screen is chosen as {} degree".format(self.angle))
         print( "The starting omega angle of "
                "tomography experiment is chosen as {} degree".format( self.offset ) )
 
         print("The angle where"
               " the sample perfectly perpendicular to the screen is chosen as {} degree".format(self.angle))
-        pdb.set_trace()
+
         # output=[order]
         # output.append(liac_list)
         # output.append( loac_list )

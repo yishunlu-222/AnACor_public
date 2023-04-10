@@ -4,6 +4,7 @@ import yaml
 import pdb
 import numpy as np
 import sys
+import logging
 import argparse
 try:
     from AnACor.image_process import Image2Model
@@ -236,9 +237,9 @@ def main ( ) :
     args = set_parser( )
     dataset = args.dataset
 
-    #    if args.vflip :
-    #        model_name = './{}_tomobar_cropped_f.npy'.format( dataset )
-    #    else :
+
+
+
 
     model_name = './{}_.npy'.format( dataset )
     # segimg_path="D:/lys/studystudy/phd/absorption_correction/dataset/13304_segmentation_labels_tifs/dls/i23" \
@@ -251,12 +252,12 @@ def main ( ) :
         os.makedirs( os.path.join( save_dir , "Logging" ) )
     result_path = os.path.join( save_dir , 'ResultData' )
 
-    with open(os.path.join( save_dir , "Logging" , 'preprocess_lite.log') , 'w' ) as f :
-        # Redirect standard output to the file
-        sys.stdout = f
-
-
-        sys.stdout = sys.__stdout__
+    # with open(os.path.join( save_dir , "Logging" , 'preprocess_lite.log') , 'w' ) as f :
+    #     # Redirect standard output to the file
+    #     sys.stdout = f
+    #
+    #
+    #     sys.stdout = sys.__stdout__
 
 
     if os.path.exists( result_path ) is False :
@@ -265,32 +266,53 @@ def main ( ) :
         os.makedirs( os.path.join( result_path , "absorption_factors" ) )
         os.makedirs( os.path.join( result_path , "absorption_coefficient" ) )
         os.makedirs( os.path.join( result_path , "dials_output" ) )
-    print( "\nResultData directory is created... \n" )
 
+
+    logger = logging.getLogger( )
+    logger.setLevel( logging.INFO )
+
+    handler = logging.FileHandler( os.path.join( save_dir , "Logging" , 'preprocess_lite.log') ,
+                                   mode = "w+" , delay=True)
+    handler.setLevel( logging.INFO )
+
+    formatter = logging.Formatter( '%(asctime)s - %(levelname)s - %(message)s' )
+    handler.setFormatter( formatter )
+    logger.addHandler( handler )
+    logger.info( "\nResultData directory is created... \n")
+    print( "\nResultData directory is created... \n" )
+    pdb
     # this process can be passed in the future
 
     model_path = os.path.join( save_dir , model_name )
     model_storepath = args.model_storepath
     if args.create3D is True :
-        ModelGenerator = Image2Model( args.segimg_path , model_path )
+        ModelGenerator = Image2Model( args.segimg_path , model_path,logger )
         model_storepath = ModelGenerator.run( )
+    logger.info( "\n3D model file is already created... \n" )
     print( "\n3D model file is already created... \n" )
 
     if args.cal_coefficient is True :
-        models_list=[]
-        for file in os.listdir(save_dir ):
-              if dataset in file and ".npy" in file:
-                  models_list.append(file)
 
-        try:
-            model_storepath = os.path.join( save_dir, models_list[0] )
-        except:
-            raise RuntimeError( "The 3D model is not defined and run by create3D by this program" )
+        if args.model_storepath is not None and args.model_storepath.isspace() is not True\
+                and args.model_storepath !='' :
+            pass
+        else:
+            models_list = []
+            for file in os.listdir(save_dir ):
+                  if dataset in file and ".npy" in file:
+                      models_list.append(file)
+
+            try:
+                model_storepath = os.path.join( save_dir, models_list[0] )
+            except:
+                logger.error("The 3D model is not defined or run by create3D by this program")
+                raise RuntimeError( "The 3D model is not defined or run by create3D by this program" )
         try:
             coefficient_viewing= args.coefficient_viewing
         except:
             coefficient_viewing=0
         coefficient_model = RunAbsorptionCoefficient( args.rawimg_path , model_storepath ,
+                                                      logger=logger,
                                                       auto_orientation = args.coefficient_auto_orientation ,
                                                       auto_viewing= args.coefficient_auto_viewing ,
                                                       save_dir = os.path.join( result_path ,
