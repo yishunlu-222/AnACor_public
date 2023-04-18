@@ -18,6 +18,7 @@ On Linux, after downloading the software package from https://github.com/yishunl
 
 ```
 Path length calculation
+
 	Input: S: the scattering vector of incident or diffracted ray
 	Ω: the rotating matrix of the goniometer
 	n: the positional vector of the crystal voxel to calculate path length by the ray-tracing
@@ -26,15 +27,18 @@ Path length calculation
 	crytal_voxels : crystal voxels in the 3D model
 	
 	Output: Path_len: incident/diffracted path lengths of different materials
+	
 	Function RayTracing(S,Ω,n,model):
+	
 		Ray ← S • Ω • n
 		face ← which_face( crytal_voxel, Ray  ) # ray exit face of the 3D model
 		Path ← cal_coord_2( crytal_voxel, Ray, model  ) # Store the coordinates along the path 
-		Path_len ← cal_num(Path) # calculate the path lengths of different materials fromt the path coordinates
+		Path_len ← cal_num( Path ) # calculate the path lengths of different materials fromt the path coordinates
 		
 		return Path_len
-```
 
+```
+You might find `which_face`  and `cal_num` in the `class RayTracingBasic` in **RayTracing.py**  and `cal_coord_2` in the **Core_accelerated.py**
 ## Reference
 
 When referencing this code, please cite our related paper:
