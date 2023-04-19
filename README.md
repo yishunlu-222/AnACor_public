@@ -49,7 +49,7 @@ Path length calculation
 
 ```
 - Once it knows which face the Ray (vector) exits or incident, it knows the direction to step over ( `which_face` ).
-- Then, it can step along the direction and store the coordinates where it passes by and it stops until it goes to the edge of the cube (`cal_coord_2` ).  For example, the exiting face is the *Front face* with the crystal voxel of `(z,y,x)`, and the next step will have coordinate of  `(z+dz,y+dz,x+dz)`. For every step, the x will have one increment (`dx=1`), so, y, z will have increments `dy= tan(θ)/cos(φ)`and `dz = tan(φ)` .
+- Then, it can step along the direction and store the coordinates where it passes by and it stops until it goes to the edge of the cube (`cal_coord_2` ).  For example, the exiting face is the *Front face* with the crystal voxel of `(z,y,x)`, and the next step will have coordinate of  `(z+dz,y+dz,x+dz)`. For every step, the x will have one increment (`dx=1`), so, y, z will have increments `dy= tan(θ)/cos(φ)`and `dz = tan(φ)` according to the coordinate system in this software. 
 - Finally, it gets a list of coordinates, which allow it to  compute the path lengths of different materials.
 
 You might find `which_face`  and `cal_num` in the `class RayTracingBasic` in **RayTracing.py**  and `cal_coord_2` in the **Core_accelerated.py**
