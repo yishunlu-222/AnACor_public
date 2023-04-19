@@ -429,7 +429,7 @@ class AbsorptionCoefficient( object ) :
         overaly = np.ubyte( overaly )
         plt.imshow( overaly )
         plt.title( title )
-        plt.savefig( '{}/{}.png'.format( self.save_dir,title ) )
+        plt.savefig( '{}/{}.png'.format( self.save_dir,title.split('\n')[0] ) )
         plt.clf( )
 
     def region_interaction_of_two_classes( self , target , base = 1 ) :
@@ -875,7 +875,10 @@ class AbsorptionCoefficient( object ) :
         mask_label = self.mask_generation( img_label , thresh = 255 )
         shifted_mask , xyshift = self.skimage_translation_matching( candidate_mask , mask_label )
         self.imagemask_overlapping_tri( candidate_img, candidate_mask , shifted_mask ,
-                                        "threshold of angle of {} degree".format( angle ) )
+                                        "threshold of angle of {} degree \n"
+                                        "yellow is the thresholding of flat-field \n"
+                                        "blue is the projection of 3D model \n"
+                                        "green is where they overlap".format( angle ) )
 
     def cropping( self,img, label_img,crop=None ):
 
