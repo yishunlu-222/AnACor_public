@@ -19,9 +19,7 @@ On Linux, after downloading the software package from https://github.com/yishunl
 
 - The 3D model in this software is a stack of segmented slices from tomographic reconstruction so it can be seen as a 3D cuboid. The six faces of 3D cuboid are labelled and will be used during the calculation. 
 
-
 - The coordinates of this software is defined on the right of the image, which obeys the right-hand rule. The X-ray direction is opposite to the X-aixs of this software, while the axis of goniometer is against to the Z-axis. One thing to be careful about is to make sure the coordinates in this software suit the coordinates in the experiements.
-
 
 - Vectors (both incident and diffracted vector) are resolved into theta(θ) and phi(φ) during the calculation given by 
 	- X = r  *  *cos(θ)* *  *cos(φ)*
@@ -53,7 +51,6 @@ Path length calculation
 - Once it knows which face the Ray (vector) exits or incident, it knows the direction to step over ( `which_face` ).
 - Then, it can step along the direction and store the coordinates where it passes by and it stops until it goes to the edge of the cube (`cal_coord_2` ).  For example, the exiting face is the *Front face* with the crystal voxel of `(z,y,x)`, and the next step will have coordinate of  `(z+dz,y+dz,x+dz)`. For every step, the x will have one increment (`dx=1`), so, y, z will have increments `dy= tan(θ)/cos(φ)`and `dz = tan(φ)` .
 - Finally, it gets a list of coordinates, which allow it to  compute the path lengths of different materials.
-
 
 You might find `which_face`  and `cal_num` in the `class RayTracingBasic` in **RayTracing.py**  and `cal_coord_2` in the **Core_accelerated.py**
 
