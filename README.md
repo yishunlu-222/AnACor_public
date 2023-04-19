@@ -55,6 +55,11 @@ Once it knows which face the Ray (vector) exits or incident, it knows the direct
 
 You might find `which_face`  and `cal_num` in the `class RayTracingBasic` in **RayTracing.py**  and `cal_coord_2` in the **Core_accelerated.py**
 
+### Slice Sampling
+
+
+### GPU (Cuda)
+
 ## Example
 
 The examples are not ready at the moment, but you can find more information in the documentation https://yishunlu-222.github.io/anacor.github.io/
