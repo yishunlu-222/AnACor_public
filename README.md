@@ -57,6 +57,7 @@ You might find `which_face`  and `cal_num` in the `class RayTracingBasic` in **R
 
 ### Slice Sampling
 
+### Gridding approximation 
 
 ### GPU (Cuda)
 
