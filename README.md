@@ -13,7 +13,7 @@ On Linux, after downloading the software package from https://github.com/yishunl
 	
 
 ## Algorithm explanation
-
+![coordinates](https://github.com/yishunlu-222/AnACor_public/blob/main/img/documentation%20of%20codes-7.png)
 #### Basic ray tracing method
 
 ```
