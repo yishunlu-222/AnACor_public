@@ -694,7 +694,7 @@ class AbsorptionCoefficient( object ) :
             print("The estimated angle where"
                   " the sample perfectly perpendicular to the screen is {} degree".format(angle_start+view_peak_2))
             self.angle=(angle_start+view_peak_2)
-
+        pdb.set_trace()
     # def cal_orientation_auto_v1 ( self ) :
     #     thresh_method=self.thresholding_method()
     #
@@ -875,7 +875,7 @@ class AbsorptionCoefficient( object ) :
         mask_label = self.mask_generation( img_label , thresh = 255 )
         shifted_mask , xyshift = self.skimage_translation_matching( candidate_mask , mask_label )
         self.imagemask_overlapping_tri( candidate_img, candidate_mask , shifted_mask ,
-                                        "threshold of angle of {} degree \n"
+                                        "threshold_of_angle_of_{}_degree\n"
                                         "yellow is the thresholding of flat-field \n"
                                         "blue is the projection of 3D model \n"
                                         "green is where they overlap".format( angle ) )

@@ -12,7 +12,19 @@ On Linux, after downloading the software package from https://github.com/yishunl
 	```
 	
 
-## Algorithm explanation
+## Software explanation
+
+#### Basics in AnACor
+![coordinates](https://github.com/yishunlu-222/AnACor_public/blob/main/img/documentation%20of%20codes-7.png)
+
+- The 3D model in this software is a stack of segmented slices from tomographic reconstruction so it can be seen as a 3D cuboid. The six faces of 3D cuboid are labelled and will be used during the calculation. 
+
+- The coordinates of this software is defined on the right of the image, which obeys the right-hand rule. The X-ray direction is opposite to the X-aixs of this software, while the axis of goniometer is against to the Z-axis. One thing to be careful about is to make sure the coordinates in this software suit the coordinates in the experiements.
+
+- Vectors (both incident and diffracted vector) are resolved into theta(θ) and phi(φ) during the calculation given by 
+	- X = r  *  *cos(θ)* *  *cos(φ)*
+	- Y = r  *  *sin(θ)*
+	- Z = r  *  *cos(θ)* *  *sin(φ)*
 
 #### Basic ray tracing method
 
@@ -21,8 +33,6 @@ Path length calculation
 
 	Input: S: the scattering vector of incident or diffracted ray
 	Ω: the rotating matrix of the goniometer
-	n: the positional vector of the crystal voxel to calculate path length by the ray-tracing
-	method
 	model : 3D segmented model from tomographic reconstruction
 	crytal_voxels : crystal voxels in the 3D model
 	
@@ -30,15 +40,25 @@ Path length calculation
 	
 	Function RayTracing(S,Ω,n,model):
 	
-		Ray ← S • Ω • n
+		Ray ← S • Ω 
 		face ← which_face( crytal_voxel, Ray  ) # ray exit face of the 3D model
-		Path ← cal_coord_2( crytal_voxel, Ray, model  ) # Store the coordinates along the path 
+		Path ← cal_coord_2( crytal_voxel, Ray, model  ) # Calculate and store the coordinates along the path 
 		Path_len ← cal_num( Path ) # calculate the path lengths of different materials fromt the path coordinates
 		
 		return Path_len
 
 ```
+- Once it knows which face the Ray (vector) exits or incident, it knows the direction to step over ( `which_face` ).
+- Then, it can step along the direction and store the coordinates where it passes by and it stops until it goes to the edge of the cube (`cal_coord_2` ).  For example, the exiting face is the *Front face* with the crystal voxel of `(z,y,x)`, and the next step will have coordinate of  `(z+dz,y+dz,x+dz)`. For every step, the x will have one increment (`dx=1`), so, y, z will have increments `dy= tan(θ)/cos(φ)`and `dz = tan(φ)` according to the coordinate system in this software. 
+- Finally, it gets a list of coordinates, which allow it to  compute the path lengths of different materials.
+
 You might find `which_face`  and `cal_num` in the `class RayTracingBasic` in **RayTracing.py**  and `cal_coord_2` in the **Core_accelerated.py**
+
+### Slice Sampling
+
+### Gridding approximation 
+
+### GPU (Cuda)
 
 ## Example
 

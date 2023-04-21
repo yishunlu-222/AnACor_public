@@ -110,7 +110,7 @@ def main():
         'expt_filename': expt_file,
         'create3D': True,
         'cal_coefficient': True,
-        'coefficient_auto_orientation':True,
+        'coefficient_auto_orientation':False,
         'coefficient_auto_viewing':True,
         'coefficient_orientation': 0,
         'coefficient_viewing': 0,

@@ -1,9 +1,0 @@
-[console_scripts]
-anacor1.init = AnACor.initialization:main
-anacor1.main = AnACor.main:main
-anacor1.main_lite = AnACor.main_lite:main
-anacor1.mp_lite = AnACor.mp_lite:main
-anacor1.postprocess = AnACor.postprocess:main
-anacor1.postprocess_lite = AnACor.postprocess_lite:main
-anacor1.preprocess = AnACor.preprocess:main
-anacor1.preprocess_lite = AnACor.preprocess_lite:main

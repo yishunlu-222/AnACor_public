@@ -59,20 +59,24 @@ class RayTracingBasic(object):
 
         theta , phi = self.dials_2_thetaphi( rotated_s1 )
         theta_1 , phi_1 = self.dials_2_thetaphi( xray , L1 = True )
+        ray_direction = self.dials_2_numpy( rotated_s1 )
+        xray_direction = self.dials_2_numpy( xray )
         absorp = np.empty( len( self.coordinate_list ) )
+        shape = np.array(self.label_list.shape)
         for k , index in enumerate( self.coordinate_list ) :
             coord = self.crystal_coordinate[index]
             # face_2 = which_face_2(coord, shape, theta, phi)  # 1s
 
             # face_1 = which_face_1_anti(coord, shape, rotation_frame_angle)  # 0.83
-            face_1 = self.which_face( coord , theta_1 , phi_1 )
-            face_2 = self.which_face( coord , theta , phi )
-
-            path_1 = cal_coord_2( theta_1 , phi_1 , coord , face_1 ,self.label_list.shape,self.label_list)  # 37
+            # face_1 = self.which_face( coord , theta_1 , phi_1 )
+            # face_2 = self.which_face( coord , theta , phi )
+            face_1 = self.cube_face( coord , xray_direction , shape , L1 = True )
+            face_2 = self.cube_face( coord , ray_direction , shape )
+            path_1 = cal_coord_2( theta_1 , phi_1 , coord , face_1 ,shape,self.label_list)  # 37
             #            face_2 = which_face_matrix(coord,rotated_s1,shape)
             #            face_1 = which_face_matrix(coord,xray,shape,exit=False)
             #            path_1 = cal_coord_1_anti(rotation_frame_angle, coord, face_1, shape, label_list)
-            path_2 = cal_coord_2( theta , phi , coord ,face_2,self.label_list.shape,self.label_list)  # 16
+            path_2 = cal_coord_2( theta , phi , coord ,face_2,shape,self.label_list)  # 16
             numbers = self.cal_num( path_1 , path_2 )  # 3.5s
             if self.store_path:
                 if k == 0 :
@@ -95,6 +99,16 @@ class RayTracingBasic(object):
         #            numbers_2 = cal_num22(coord,path_12,path_22,theta,rotation_frame_angle)
         #            absorption = cal_rate(numbers_2, coefficients, pixel_size)
         #            absorp[k] = absorption
+
+    def dials_2_numpy ( self,vector ) :
+
+        numpy_2_dials_1 = np.array( [[1 , 0 , 0] ,
+                                     [0 , 0 , 1] ,
+                                     [0 , 1 , 0]] )
+
+        back2 = numpy_2_dials_1.dot( vector )
+
+        return back2
 
     def ada_sampling ( self,crystal_coordinate , threshold = 10000 ) :
 
@@ -243,6 +257,127 @@ class RayTracingBasic(object):
         # pdb.set_trace()
         return face
 
+    def cube_face ( self,ray_origin , ray_direction , cube_size , L1 = False ) :
+        """
+        Determine which face of a cube a ray is going out.
+        ray casting method
+        To find the distance along the vector where the intersection point
+        with a plane occurs, you can use the dot product of the vector and
+          the plane normal to find the component of the vector that is
+          perpendicular to the plane. Then, you can use this perpendicular
+          component and the plane equation to solve for the distance along
+          the vector to the intersection point.
+          t = (plane_distance - np.dot(vector_origin, plane_normal)) /
+             np.dot(vector, plane_normal)
+        Args:
+            ray_origin (tuple): the origin of the ray, as a tuple of (x, y, z) coordinates
+            ray_direction (tuple): the direction of the ray, as a unit vector tuple of (x, y, z) coordinates
+            cube_center (tuple): the center of the cube, as a tuple of (x, y, z) coordinates
+            cube_size (float): the size of the cube, as a scalar value
+        /*  'FRONTZY' = 1;
+    *   'LEYX' = 2 ;
+    *   'RIYX' = 3;
+        'TOPZX' = 4;
+        'BOTZX' = 5;
+        "BACKZY" = 6 ;
+
+        Returns:
+            str: the name of the face that the ray intersects with first, or None if the ray doesn't intersect with the cube
+        """
+        # Determine the minimum and maximum x, y, and z coordinates of the cube
+
+        # min_x = cube_center[0] - cube_size / 2
+        # max_x = cube_center[0] + cube_size / 2
+        # min_y = cube_center[1] - cube_size / 2
+        # max_y = cube_center[1] + cube_size / 2
+        # min_z = cube_center[2] - cube_size / 2
+        # max_z = cube_center[2] + cube_size / 2
+        # if L1 is True:
+        #     ray_direction = -ray_direction
+        # L1=False
+
+        min_x = 0
+        max_x = cube_size[2]
+        min_y = 0
+        max_y = cube_size[1]
+        min_z = 0
+        max_z = cube_size[0]
+        # Calculate the t values for each face of the cube
+        tx_min = (min_x - ray_origin[2]) / ray_direction[2]
+        tx_max = (max_x - ray_origin[2]) / ray_direction[2]
+        ty_min = (min_y - ray_origin[1]) / ray_direction[1]
+        ty_max = (max_y - ray_origin[1]) / ray_direction[1]
+        tz_min = (min_z - ray_origin[0]) / ray_direction[0]
+        tz_max = (max_z - ray_origin[0]) / ray_direction[0]
+        # print("tx min is {}".format(tx_min))
+        # print("ty min  is {}".format(ty_min))
+        # print("tz min  is {}".format(tz_min))
+        # print("tx max  is {}".format(tx_max))
+        # print("ty max  is {}".format(ty_max))
+        # print("tz max  is {}".format(tz_max))
+        # Determine which face is intersected first
+        # t_mini = max( tx_min , ty_min , tz_min )
+        # t_max = min( tx_max , ty_max , tz_max )
+        t_numbers = [tx_min , ty_min , tz_min , tx_max , ty_max , tz_max]
+        non_negative_numbers = [num for num in t_numbers if num >= 0]
+        # if L1 is True:
+        try :
+            t_min = min( non_negative_numbers )
+        except :
+            t_min = max( non_negative_numbers )
+            print( "t_min is max at {}".format( ray_direction ) )
+            print( "t_min is max at {}".format( ray_origin ) )
+        # else:
+        # try:
+        #         t_min=max(t_mini,t_max)
+        # except:
+        #     pdb.set_trace()
+
+        # print(t_numbers)
+        # pdb.set_trace()
+        # if t_min > t_max :
+        #     # The ray doesn't intersect with the cube
+        #     return None
+        if t_min == tx_min :
+            # The ray intersects with the left face of the cube]
+            if L1 is True :
+                return "FRONTZY"
+            else :
+                return "BACKZY"
+        elif t_min == tx_max :
+            # The ray intersects with the right face of the cube
+            if L1 is True :
+                return "BACKZY"
+            else :
+                return "FRONTZY"
+        elif t_min == ty_min :
+            # The ray intersects with the bottom face of the cube
+            if L1 is True :
+                return 'BOTZX'
+            else :
+                return 'TOPZX'
+        elif t_min == ty_max :
+            # The ray intersects with the top face of the cube
+            if L1 is True :
+                return 'TOPZX'
+            else :
+                return 'BOTZX'
+        elif t_min == tz_min :
+            # The ray intersects with the front face of the cube
+            if L1 is True :
+                return 'RIYX'
+            else :
+                return 'LEYX'
+        elif t_min == tz_max :
+            # The ray intersects with the back face of the cube
+            if L1 is True :
+                return 'LEYX'
+            else :
+                return 'RIYX'
+        else :
+            RuntimeError( 'face determination has a problem with direction {}'
+                          'and position {}'.format( ray_direction , ray_origin ) )
+
     def cal_rate(self,numbers,coefficients , pixel_size):
         """
         the calculation normally minus 0.5 for regularization and to represent the ray starting
@@ -305,6 +440,7 @@ class RayTracingBasic(object):
                 pass
 
         return li_l_2 , lo_l_2 , cr_l_2 , bu_l_2
+
     def cal_num (self,  path_1 , path_2  ) :
 
         li_l_2 , lo_l_2 , cr_l_2 , bu_l_2 = self.cal_path2_plus( path_2  )
