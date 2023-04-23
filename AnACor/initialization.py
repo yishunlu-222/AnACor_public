@@ -121,6 +121,7 @@ def main():
         'model_storepath':npy_file,
 
     }
+    
     mp_data = {
         'store_dir': directory,
         'liac' : 0 ,
@@ -155,7 +156,7 @@ def main():
         'full_reflection' : False ,
         'with_scaling':True,
     }
-    multipost_data = {
+    multi_data = {
         'store_dir': directory,
         'dials_dependancy' : 'source /dls/science/groups/i23/yishun/dials_yishun/dials' ,
         'mtz2sca_dependancy' : 'module load ccp4' ,
@@ -171,10 +172,12 @@ def main():
 
     with open( 'default_mpprocess_input.yaml' , 'w' ) as file :
         yaml.dump( mp_data , file, default_flow_style=False, sort_keys=False, indent=4)
+    
+    with open( 'default_multi_dataset_input.yaml' , 'w' ) as file :
+        yaml.dump( multi_data , file, default_flow_style=False, sort_keys=False, indent=4)
 
     with open( 'default_postprocess_input.yaml' , 'w' ) as file :
         yaml.dump( post_data , file, default_flow_style=False, sort_keys=False, indent=4 )
-    with open( 'default_mutli_postprocess_input.yaml' , 'w' ) as file :
-        yaml.dump( multipost_data , file,  sort_keys=False, indent=4 )
+
 if __name__ == '__main__':
     main()

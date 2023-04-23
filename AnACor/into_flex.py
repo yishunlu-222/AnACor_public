@@ -96,8 +96,13 @@ with open( filename ) as f1 :
     data = json.load( f1 )
 for i , row in enumerate( data ) :
     corr[i] = row
-
+print("len( data )")
 print( len( data ) )
+try:
+  assert len(data) ==len(reflections)
+except:
+  raise RuntimeError("the length of the reflection table and the absorption correction factors are not equal \n"
+                     "it may be some processes have problems during multiprocessing \n")
 # pdb.set_trace()
 
 # print("len(reflections)")
