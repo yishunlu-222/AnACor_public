@@ -70,20 +70,20 @@ def set_parser():
 
     parser.add_argument(
         "--dataset" ,
-        type = int ,
+        type = str ,
         default = 16846 ,
         help = "1 is true, 0 is false" ,
     )
     parser.add_argument(
-        "--modelpath" ,
+        "--model-storepath" ,
         type = str ,
         required = True ,
         help = "full model path" ,
     )
     parser.add_argument(
-        "--save-dir" ,
+        "--store-dir" ,
         type = str ,
-        required = True ,
+        default = "./" ,
         help = "full storing path" ,
     )
     parser.add_argument(
@@ -99,25 +99,25 @@ def set_parser():
         help = "full experiment path" ,
     )
     parser.add_argument(
-        "--li" ,
+        "--liac" ,
         type = float ,
         required = True ,
         help = "abs of liquor" ,
     )
     parser.add_argument(
-        "--lo" ,
+        "--loac" ,
         type = float ,
         required = True ,
         help = "abs of loop" ,
     )
     parser.add_argument(
-        "--cr" ,
+        "--crac" ,
         type = float ,
         required = True ,
         help = "abs of crystal" ,
     )
     parser.add_argument(
-        "--bu" ,
+        "--buac" ,
         type = float ,
         required = True ,
         help = "abs of other component" ,
@@ -126,6 +126,12 @@ def set_parser():
         "--sampling-num" ,
         type = int ,
         default = 5000 ,
+        help = "pixel size of tomography" ,
+    )
+    parser.add_argument(
+        "--auto-sampling" ,
+        type = str2bool ,
+        default = True,
         help = "pixel size of tomography" ,
     )
     parser.add_argument(
@@ -170,7 +176,12 @@ def set_parser():
         default = 'z' ,
         help = "pixel size of tomography" ,
     )
-
+    parser.add_argument(
+        "--num-workers" ,
+        type = int,
+        default = 4 ,
+        help = "number of workers" ,
+    )
     global args
     args = parser.parse_args()
     return args
@@ -182,10 +193,17 @@ def main():
     print("start AAC")
     print("\n==========\n")
     dataset = args.dataset
-
+    
     save_dir = os.path.join(  args.store_dir, '{}_save_data'.format( dataset ) )
     result_path  =os.path.join(  save_dir,'ResultData','absorption_factors')
     refl_dir = os.path.join(  save_dir,'ResultData','reflections')
+
+    try:
+        os.makedirs(save_dir)
+        os.makedirs(result_path)
+        os.makedirs(refl_dir)
+    except:
+        pass
 
     if args.model_storepath == 'None':
         models_list=[]
@@ -204,68 +222,69 @@ def main():
     
     args.model_storepath= model_path
     args.save_dir=result_path
+
     algorithm = RayTracingBasic(args)
-    algorithm.run()
-    pdb.set_trace()
+    algorithm.mp_run()
+    # pdb.set_trace()
 
-    for file in os.listdir(save_dir):
-        if '.json' in file:
-            if 'expt' in file:
-                expt_filename=os.path.join(save_dir,file)
-            if 'refl' in file:
-                refl_filename = os.path.join(save_dir,file)
-    try:
-        with open(expt_filename) as f2:
-            axes_data = json.load(f2)
-        print( "experimental data is loaded... \n" )
-        with open(refl_filename) as f1:
-            data = json.load(f1)
-        print( "reflection table is loaded... \n" )
-    except:
-        try:
-            with open(args.expt_filename) as f2:
-                axes_data = json.load(f2)
-            print( "experimental data is loaded... \n" )
-            with open(args.refl_filename) as f1:
-                data = json.load(f1)
-            print( "reflection table is loaded... \n" )
-        except:
-            raise  RuntimeError('no reflections or experimental files detected'
-                                'please use --refl_filename --expt-filename to specify')
+    # for file in os.listdir(save_dir):
+    #     if '.json' in file:
+    #         if 'expt' in file:
+    #             expt_filename=os.path.join(save_dir,file)
+    #         if 'refl' in file:
+    #             refl_filename = os.path.join(save_dir,file)
+    # try:
+    #     with open(expt_filename) as f2:
+    #         axes_data = json.load(f2)
+    #     print( "experimental data is loaded... \n" )
+    #     with open(refl_filename) as f1:
+    #         data = json.load(f1)
+    #     print( "reflection table is loaded... \n" )
+    # except:
+    #     try:
+    #         with open(args.expt_filename) as f2:
+    #             axes_data = json.load(f2)
+    #         print( "experimental data is loaded... \n" )
+    #         with open(args.refl_filename) as f1:
+    #             data = json.load(f1)
+    #         print( "reflection table is loaded... \n" )
+    #     except:
+    #         raise  RuntimeError('no reflections or experimental files detected'
+    #                             'please use --refl_filename --expt-filename to specify')
 
 
-    label_list = np.load(model_path).astype(np.int8)
+    # label_list = np.load(model_path).astype(np.int8)
 
-    print("3D model is loaded... \n")
-    mu_cr = args.crac  # (unit in mm-1) 16010
-    mu_li = args.liac
-    mu_lo = args.loac
-    mu_bu = args.buac
+    # print("3D model is loaded... \n")
+    # mu_cr = args.crac  # (unit in mm-1) 16010
+    # mu_li = args.liac
+    # mu_lo = args.loac
+    # mu_bu = args.buac
 
-    t1 = time.time()
+    # t1 = time.time()
 
-    low = args.low
-    up = args.up
+    # low = args.low
+    # up = args.up
 
-    if up == -1:
-        selected_data = data[low:]
-    else:
-        selected_data = data[low:up]
-    print('The total size of this calculation is {}'.format(len(selected_data)))
-    del data
-    coefficients = mu_li, mu_lo, mu_cr, mu_bu
-    axes = axes_data[0]
-    kappa_axis = np.array( axes["axes"][1] )
-    kappa = axes["angles"][1] / 180 * np.pi
-    kappa_matrix = kp_rotation( kappa_axis , kappa )
-    phi_axis = np.array( axes["axes"][0] )
-    phi = axes["angles"][0] / 180 * np.pi
-    phi_matrix = kp_rotation( phi_axis , phi )
-    # https://dials.github.io/documentation/conventions.html#equation-diffractometer
-    omega_axis = np.array( axes["axes"][2] )
-    F = np.dot( kappa_matrix , phi_matrix )  # phi is the most intrinsic rotation, then kappa
+    # if up == -1:
+    #     selected_data = data[low:]
+    # else:
+    #     selected_data = data[low:up]
+    # print('The total size of this calculation is {}'.format(len(selected_data)))
+    # del data
+    # coefficients = mu_li, mu_lo, mu_cr, mu_bu
+    # axes = axes_data[0]
+    # kappa_axis = np.array( axes["axes"][1] )
+    # kappa = axes["angles"][1] / 180 * np.pi
+    # kappa_matrix = kp_rotation( kappa_axis , kappa )
+    # phi_axis = np.array( axes["axes"][0] )
+    # phi = axes["angles"][0] / 180 * np.pi
+    # phi_matrix = kp_rotation( phi_axis , phi )
+    # # https://dials.github.io/documentation/conventions.html#equation-diffractometer
+    # omega_axis = np.array( axes["axes"][2] )
+    # F = np.dot( kappa_matrix , phi_matrix )  # phi is the most intrinsic rotation, then kappa
 
-    algorithm = RayTracingBasic(selected_data,label_list,coefficients,sampling_threshold=args.sampling)
+    # algorithm = RayTracingBasic(selected_data,label_list,coefficients,sampling_threshold=args.sampling)
     # corr = []
     # dict_corr = []  
     

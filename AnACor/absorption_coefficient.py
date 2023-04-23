@@ -694,7 +694,7 @@ class AbsorptionCoefficient( object ) :
             print("The estimated angle where"
                   " the sample perfectly perpendicular to the screen is {} degree".format(angle_start+view_peak_2))
             self.angle=(angle_start+view_peak_2)
-        pdb.set_trace()
+        #_trace()
     # def cal_orientation_auto_v1 ( self ) :
     #     thresh_method=self.thresholding_method()
     #
@@ -1704,17 +1704,18 @@ class RunAbsorptionCoefficient(AbsorptionCoefficient):
         print("The angle where"
               " the sample perfectly perpendicular to the screen is chosen as {} degree".format(self.angle))
 
-        # output=[order]
-        # output.append(liac_list)
-        # output.append( loac_list )
-        # output.append( crac_list )
-        # try:
-        #     output.append( buac_list )
-        # except:
-        #     pass
-        #
-        # with open(os.path.join(self.save_dir,"{}_coefficients with percentage.json".format(self.angle)),'w') as f1:
-        #     json.dump(output,f1,indent = 2)
+        output=[order]
+        output.append(['li','lo','cr','bu'])
+        output.append(liac_list)
+        output.append( loac_list )
+        output.append( crac_list )
+        try:
+            output.append( buac_list )
+        except:
+            pass
+        
+        with open(os.path.join(self.save_dir,"coefficients_with_percentage.json"),'w') as f1:
+            json.dump(output,f1,indent = 2)
 
 
 def tablization( dataset,centre=0,save_dir='./'):

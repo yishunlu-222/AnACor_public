@@ -24,7 +24,12 @@ def set_parser ( ) :
         default='default_mpprocess_input.yaml',
         help = "the path of the input file of all the flags" ,
     )
-
+    parser.add_argument(
+        "--auto-sampling" ,
+        type = str2bool ,
+        default = True,
+        help = "pixel size of tomography" ,
+    )
     directory = os.getcwd( )
     global ar
     ar = parser.parse_args( )
@@ -37,10 +42,20 @@ def set_parser ( ) :
             config = yaml.safe_load( f )
 
 
-    # directory = os.getcwd( )
-    # # Load the YAML configuration file
-    # with open( os.path.join(directory,'default_mpprocess_input.yaml') , 'r' ) as f :
-    #     config = yaml.safe_load( f )
+    # # Add an argument for each key in the YAML file
+    # for key, value in config.items():
+    #     # Check if the key is "auto-sampling"
+    #     if key == "auto-sampling":
+    #         # If so, overwrite the default value with the value from the YAML file
+    #         parser.add_argument(
+    #             "--{}".format(key),
+    #             type=str2bool,
+    #             default=value,
+    #             help="pixel size of tomography",
+    #         )
+    #     else:
+    #         # Otherwise, use the default value from the add_argument method
+    #         parser.add_argument("--{}".format(key), default=value)
 
     # Add an argument for each key in the YAML file
     for key , value in config.items( ) :
@@ -170,32 +185,32 @@ def main ( ) :
         if '.json' in file :
             if args.full_reflection:
                 if 'expt' in file and 'True' in file :
-                    expt_filename = os.path.join( save_dir , file )
+                    expt_path = os.path.join( save_dir , file )
                 if 'refl' in file and 'True' in file:
-                    refl_filename = os.path.join( save_dir , file )
+                    refl_path = os.path.join( save_dir , file )
             else:
                 if 'expt' in file and 'False' in file :
-                    expt_filename = os.path.join( save_dir , file )
+                    expt_path = os.path.join( save_dir , file )
                 if 'refl' in file and 'False' in file:
-                    refl_filename = os.path.join( save_dir , file )
+                    refl_path = os.path.join( save_dir , file )
     try :
-        with open( expt_filename ) as f2 :
+        with open( expt_path ) as f2 :
             axes_data = json.load( f2 )
         print( "experimental data is loaded... \n" )
-        with open( refl_filename ) as f1 :
+        with open( refl_path ) as f1 :
             data = json.load( f1 )
         print( "reflection table is loaded... \n" )
     except :
         try :
-            with open( args.expt_filename ) as f2 :
+            with open( args.expt_path ) as f2 :
                 axes_data = json.load( f2 )
             print( "experimental data is loaded... \n" )
-            with open( args.refl_filename ) as f1 :
+            with open( args.refl_path ) as f1 :
                 data = json.load( f1 )
             print( "reflection table is loaded... \n" )
         except :
             raise RuntimeError( 'no reflections or experimental files detected'
-                                'please use --refl_filename --expt-filename to specify' )
+                                'please use --refl_path --expt-filename to specify' )
 
     py_pth = os.path.join( os.path.dirname( os.path.abspath( __file__ ) ) , 'main_lite.py' )
     with open( os.path.join( save_dir , "mpprocess_script.sh" ) , "w" ) as f :
@@ -204,6 +219,7 @@ def main ( ) :
         f.write( "{}\n".format( args.dials_dependancy ) )
         f.write( "num={}\n".format( args.num_cores ) )
         f.write( "sampling={}\n".format( args.sampling ) )
+        f.write( "auto_sampling={}\n".format( args.auto_sampling) )
         f.write( "dataset={}\n".format( args.dataset ) )
         f.write( "offset={}\n".format( args.offset ) )
         f.write( "crac={}\n".format( args.crac ) )
@@ -213,44 +229,52 @@ def main ( ) :
         f.write( "end={}\n".format( len( data ) ) )
         f.write( "py_file={}\n".format( py_pth ) )
         f.write( "model_storepath={}\n".format( model_storepath ) )
+        f.write( "full_iter={} \n".format( 0 ) )
         try :
-            f.write( "refl_pth={}\n".format( refl_filename ) )
-            f.write( "expt_pth={}\n".format( expt_filename ) )
+            f.write( "refl_pth={}\n".format( refl_path ) )
+            f.write( "expt_pth={}\n".format( expt_path ) )
         except :
-            f.write( "refl_pth={}\n".format( args.refl_filename ) )
-            f.write( "expt_pth={}\n".format( args.expt_filename ) )
+            f.write( "refl_pth={}\n".format( args.refl_path ) )
+            f.write( "expt_pth={}\n".format( args.expt_path ) )
         f.write( "store_dir={}\n".format(args.store_dir  ) )
         f.write( "logging_dir={}\n".format( os.path.join( save_dir , 'Logging' ) ) )
-        f.write( 'increment=$[$end / $num]\n' )
-        f.write( 'counter=0\n' )
-        f.write( 'for i in $(seq 0 $increment $end);\n' )
-        f.write( 'do\n' )
-        f.write( '  counter=$[$counter+1]\n' )
-        f.write( '  if [[ $counter -eq $[$num-1] ]]; then\n' )
-        f.write( '    x=` echo "$i + $increment*0.6" | bc`  \n' )
-        f.write( '    nohup python -u  ${py_file}   --low $i --up ${x%.*}  --dataset ${dataset} --sampling ${sampling} '
+        f.write( 'nohup python -u  ${py_file}  --dataset ${dataset} --sampling ${sampling} '
                  '--loac ${loac} --liac ${liac} --crac ${crac}  --buac ${buac} --offset ${offset}'
-                 ' --store-dir ${store_dir} --refl-filename ${refl_pth} --expt-filename ${expt_pth}  '
-                 '--model-storepath ${model_storepath}'
-                 ' > ${logging_dir}/nohup_${expri}_${dataset}_${counter}.out&\n' )
-        f.write( '    final=$i\n' )
-        f.write( '    break\n' )
-        f.write( '  fi\n' )
-        f.write(
-            '  nohup python -u  ${py_file}    --low $i --up $[$i+$increment] --dataset ${dataset}  --sampling ${sampling} '
-            ' --loac ${loac} --liac ${liac} --crac ${crac} --buac ${buac}  --offset ${offset} '
-            '--store-dir ${store_dir} --refl-filename ${refl_pth} --expt-filename ${expt_pth}  '
-            '--model-storepath ${model_storepath}'
-            '> ${logging_dir}/nohup_${expri}_${dataset}_${counter}.out&\n' )
-        f.write( '  if [[ $counter -eq 1 ]]; then\n' )
-        f.write( '    sleep 20\n' )
-        f.write( '  fi\n' )
-        f.write( 'done\n' )
-        f.write( 'nohup python -u ${py_file}    --low ${x%.*} --up -1  --dataset ${dataset} --sampling ${sampling} '
-                 '--loac ${loac} --liac ${liac} --crac ${crac} --buac ${buac}   --offset ${offset} '
-                 '--store-dir ${store_dir}  --refl-filename ${refl_pth}  --expt-filename ${expt_pth}  '
-                 '--model-storepath ${model_storepath}'
-                 '> ${logging_dir}/nohup_${expri}_${dataset}_$[$counter+1].out\n' )
+                 ' --store-dir ${store_dir} --refl-path ${refl_pth} --expt-path ${expt_pth}  '
+                 '--model-storepath ${model_storepath} --full-iteration ${full_iter} --num-workers ${num}  '
+                 '--sampling-num ${sampling} --auto-sampling ${auto_sampling} '
+                 ' > ${logging_dir}/nohup_${dataset}_${counter}.out\n' )
+        
+        # f.write( 'increment=$[$end / $num]\n' )
+        # f.write( 'counter=0\n' )
+        # f.write( 'for i in $(seq 0 $increment $end);\n' )
+        # f.write( 'do\n' )
+        # f.write( '  counter=$[$counter+1]\n' )
+        # f.write( '  if [[ $counter -eq $[$num-1] ]]; then\n' )
+        # f.write( '    x=` echo "$i + $increment*0.6" | bc`  \n' )
+        # f.write( '    nohup python -u  ${py_file}   --low $i --up ${x%.*}  --dataset ${dataset} --sampling ${sampling} '
+        #          '--loac ${loac} --liac ${liac} --crac ${crac}  --buac ${buac} --offset ${offset}'
+        #          ' --store-dir ${store_dir} --refl-filename ${refl_pth} --expt-filename ${expt_pth}  '
+        #          '--model-storepath ${model_storepath}'
+        #          ' > ${logging_dir}/nohup_${expri}_${dataset}_${counter}.out&\n' )
+        # f.write( '    final=$i\n' )
+        # f.write( '    break\n' )
+        # f.write( '  fi\n' )
+        # f.write(
+        #     '  nohup python -u  ${py_file}    --low $i --up $[$i+$increment] --dataset ${dataset}  --sampling ${sampling} '
+        #     ' --loac ${loac} --liac ${liac} --crac ${crac} --buac ${buac}  --offset ${offset} '
+        #     '--store-dir ${store_dir} --refl-filename ${refl_pth} --expt-filename ${expt_pth}  '
+        #     '--model-storepath ${model_storepath}'
+        #     '> ${logging_dir}/nohup_${expri}_${dataset}_${counter}.out&\n' )
+        # f.write( '  if [[ $counter -eq 1 ]]; then\n' )
+        # f.write( '    sleep 20\n' )
+        # f.write( '  fi\n' )
+        # f.write( 'done\n' )
+        # f.write( 'nohup python -u ${py_file}    --low ${x%.*} --up -1  --dataset ${dataset} --sampling ${sampling} '
+        #          '--loac ${loac} --liac ${liac} --crac ${crac} --buac ${buac}   --offset ${offset} '
+        #          '--store-dir ${store_dir}  --refl-filename ${refl_pth}  --expt-filename ${expt_pth}  '
+        #          '--model-storepath ${model_storepath}'
+        #          '> ${logging_dir}/nohup_${expri}_${dataset}_$[$counter+1].out\n' )
 
         if args.post_process is True:
             dataset = args.dataset
@@ -270,7 +294,7 @@ def main ( ) :
                      "--full {3} --with-scaling {4} "
                      "--dataset {5} "
                      "--target-pth {6} --store-dir {7}  \n".format( intoflexpy_pth , args.dataset ,
-                                                                    args.refl_filename , args.full_reflection ,
+                                                                    args.refl_path , args.full_reflection ,
                                                                     args.with_scaling , dataset , dials_dir ,
                                                                     args.store_dir
                                                                     ) )
@@ -280,14 +304,14 @@ def main ( ) :
                      "anomalous={3}  physical.absorption_correction=False physical.analytical_correction=True "
                      "output.reflections=result_{2}_ac.refl  output.html=result_{2}_ac.html "
                      "output{{log={2}_ac_log.log}} output{{unmerged_mtz={2}_unmerged_ac.mtz}} output{{merged_mtz={2}_merged_ac.mtz}} "
-                     "\n".format( os.path.join( dials_dir , dials_save_name ) , args.expt_filename , dataset,args.anomalous ) )
+                     "\n".format( os.path.join( dials_dir , dials_save_name ) , args.expt_path , dataset,args.anomalous ) )
             f.write( "\n" )
             f.write( "dials.scale  {0} {1}  "
                      "anomalous={3}  physical.absorption_level=high physical.analytical_correction=True "
                      "output.reflections=result_{2}_acsh.refl  output.html=result_{2}_acsh.html "
                      "output{{log={2}_acsh_log.log}}  output{{unmerged_mtz={2}_unmerged_acsh.mtz}} "
                      "output{{merged_mtz={2}_merged_acsh.mtz}} "
-                     "\n".format( os.path.join( dials_dir , dials_save_name ) , args.expt_filename , dataset,args.anomalous ) )
+                     "\n".format( os.path.join( dials_dir , dials_save_name ) , args.expt_path , dataset,args.anomalous ) )
             f.write( "{} \n".format( args.mtz2sca_dependancy ) )
             f.write( "mtz2sca {}_merged_acsh.mtz   \n".format( dataset ) )
             f.write( "mtz2sca {}_merged_ac.mtz   \n".format( dataset ) )

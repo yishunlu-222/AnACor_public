@@ -106,8 +106,8 @@ def main():
         'dataset': 'test',
         'segimg_path' : dirs_3D,
         'rawimg-path':dirs_flat_fielded,
-        'refl_filename':refl_file,
-        'expt_filename': expt_file,
+        'refl-path':refl_file,
+        'expt-path': expt_file,
         'create3D': True,
         'cal_coefficient': True,
         'coefficient_auto_orientation':False,
@@ -124,6 +124,7 @@ def main():
     
     mp_data = {
         'store_dir': directory,
+        'dataset': 'test',
         'liac' : 0 ,
         'loac' : 0 ,
         'crac' : 0 ,
@@ -135,13 +136,12 @@ def main():
         'sampling' : 5000 ,
         'dials_dependancy' : 'source /dls/science/groups/i23/yishun/dials_yishun/dials' ,
         'hpc_dependancies' : 'module load global/cluster' ,
-        'dataset': 'test',
         'offset':0,
-        'refl_filename':refl_file,
-        'expt_filename': expt_file,
+        'refl_path':refl_file,
+        'expt_path': expt_file,
         'model_storepath': '',
-        'post_process': False,
-        'full_reflection' : False ,
+        'post_process': True,
+        'full_reflection' : 0 ,
         'with_scaling' : True ,
         'anomalous':True,
         'mtz2sca_dependancy' : 'module load ccp4' ,
@@ -151,9 +151,9 @@ def main():
         'dials_dependancy' : 'source /dls/science/groups/i23/yishun/dials_yishun/dials' ,
         'mtz2sca_dependancy' : 'module load ccp4' ,
         'dataset': 'test',
-        'refl_filename':refl_file,
-        'expt_filename': expt_file,
-        'full_reflection' : False ,
+        'refl_path':refl_file,
+        'expt_path': expt_file,
+        'full_reflection' : 0,
         'with_scaling':True,
     }
     multi_data = {
@@ -161,9 +161,9 @@ def main():
         'dials_dependancy' : 'source /dls/science/groups/i23/yishun/dials_yishun/dials' ,
         'mtz2sca_dependancy' : 'module load ccp4' ,
         'dataset': 'multi_dataset',
-        'refl_filename':refl_files,
-        'expt_filename': expt_files,
-        'full_reflection' : False ,
+        'refl_path':refl_files,
+        'expt_path': expt_files,
+        'full_reflection' : 0 ,
         'with_scaling':True,
     }
     # Write the image file paths to a YAML file
@@ -173,8 +173,8 @@ def main():
     with open( 'default_mpprocess_input.yaml' , 'w' ) as file :
         yaml.dump( mp_data , file, default_flow_style=False, sort_keys=False, indent=4)
     
-    with open( 'default_multi_dataset_input.yaml' , 'w' ) as file :
-        yaml.dump( multi_data , file, default_flow_style=False, sort_keys=False, indent=4)
+    # with open( 'default_multi_dataset_input.yaml' , 'w' ) as file :
+    #     yaml.dump( multi_data , file, default_flow_style=False, sort_keys=False, indent=4)
 
     with open( 'default_postprocess_input.yaml' , 'w' ) as file :
         yaml.dump( post_data , file, default_flow_style=False, sort_keys=False, indent=4 )

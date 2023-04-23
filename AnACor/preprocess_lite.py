@@ -192,8 +192,8 @@ def preprocess_dial_lite ( args , save_dir ) :
     with open( os.path.join( save_dir , "preprocess_script.sh" ) , "w" ) as f :
         f.write( "#!/bin/bash \n" )
         f.write( "{} \n".format( args.dials_dependancy ) )
-        f.write( "expt_pth=\'{}\' \n".format( args.expt_filename ) )
-        f.write( "refl_pth=\'{}\' \n".format( args.refl_filename ) )
+        f.write( "expt_pth=\'{}\' \n".format( args.expt_path) )
+        f.write( "refl_pth=\'{}\' \n".format( args.refl_path ) )
         f.write( "store_dir=\'{}\' \n".format( save_dir ) )
         f.write( "dataset={} \n".format( args.dataset ) )
         f.write( "full={} \n".format( args.full_reflection ) )
@@ -280,7 +280,7 @@ def main ( ) :
     logger.addHandler( handler )
     logger.info( "\nResultData directory is created... \n")
     print( "\nResultData directory is created... \n" )
-    pdb
+    
     # this process can be passed in the future
 
     model_path = os.path.join( save_dir , model_name )
@@ -326,6 +326,35 @@ def main ( ) :
 
     preprocess_dial_lite( args , save_dir )
 
+    for file in os.listdir(save_dir):
+        if '.json' in file:
+            if 'expt' in file:
+                expt_filename=os.path.join(save_dir,file)
+            if 'refl' in file:
+                refl_filename = os.path.join(save_dir,file)
+
+    with open('./default_mpprocess_input.yaml', 'r' ) as f3 :
+            mp_config = yaml.safe_load( f3 )
+    mp_config[ 'model_storepath' ] = model_storepath
+    mp_config[ 'refl_path' ] = refl_filename
+    mp_config[ 'expt_path' ] = expt_filename
+    mp_config[ 'dataset' ] = args.dataset
+
+    try:
+        with open(os.path.join( result_path , "absorption_coefficient","coefficients_with_percentage.json" )) as f2:
+            coe = json.load(f2)
+        
+        mp_config[ 'liac' ] =coe[2][2]
+        mp_config[ 'loac' ] =coe[3][2]
+        mp_config[ 'crac' ] =coe[4][2]
+        try:
+            mp_config[ 'buac' ] =coe[5][2]
+        except:
+            mp_config[ 'buac' ] =0
+    except:
+        pass
+    with open( 'default_mpprocess_input.yaml' , 'w' ) as file :
+        yaml.dump( mp_config , file, default_flow_style=False, sort_keys=False, indent=4)
 
 if __name__ == '__main__' :
     main( )
