@@ -336,8 +336,8 @@ def main ( ) :
     with open('./default_mpprocess_input.yaml', 'r' ) as f3 :
             mp_config = yaml.safe_load( f3 )
     mp_config[ 'model_storepath' ] = model_storepath
-    mp_config[ 'refl_path' ] = refl_filename
-    mp_config[ 'expt_path' ] = expt_filename
+    mp_config[ 'refl_path' ] = args.refl_path
+    mp_config[ 'expt_path' ] = args.expt_path
     mp_config[ 'dataset' ] = args.dataset
 
     try:

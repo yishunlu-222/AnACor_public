@@ -1,9 +1,10 @@
+// #define _USE_MATH_DEFINES
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
 #include <stdint.h>
 #include <stdlib.h>
-#define PI 3.14159265
+#define M_PI 3.14159265
 #define test_mod 0
 
 typedef struct
@@ -1456,11 +1457,11 @@ double ray_tracing_sampling(
         free(path_1.ray);
         free(path_1.classes);
         free(path_1.posi);
-        free(numbers_1);
+        // free(numbers_1);
         free(path_2.ray);
         free(path_2.classes);
         free(path_2.posi);
-        free(numbers_2);
+        // free(numbers_2);
         // printf("path_1 is \n");
         // printArrayD(numbers_1, 4);
         // printf("path_2 is \n");

@@ -167,7 +167,7 @@ def set_parser():
     parser.add_argument(
         "--by-c" ,
         type = str2bool ,
-        default = True ,
+        default = False,
         help = "pixel size of tomography" ,
     )
     parser.add_argument(
@@ -224,7 +224,8 @@ def main():
     args.save_dir=result_path
 
     algorithm = RayTracingBasic(args)
-    algorithm.mp_run()
+    algorithm.mp_run(printing=False)
+    #algorithm.run()
     # pdb.set_trace()
 
     # for file in os.listdir(save_dir):
