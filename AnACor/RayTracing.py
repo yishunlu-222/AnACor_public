@@ -43,6 +43,7 @@ def kp_rotation(axis,theta, raytracing=True):
 
 
 def slice_sampling(label_list,dim='z',sampling=5000,auto=True):
+    counter=0
     zz, yy, xx = np.where(label_list == rate_list['cr'])  # this line occupies 1GB, why???
     #crystal_coordinate = zip(zz, yy, xx)  # can be not listise to lower memory usage
     if auto:
@@ -69,6 +70,7 @@ def slice_sampling(label_list,dim='z',sampling=5000,auto=True):
     # crystal_coordinate = np.sort(crystal_coordinate, axis=index)
     crystal_coordinate= crystal_coordinate[crystal_coordinate[:,index].argsort()]
     for i, z_value in enumerate(zz_u):
+        counter+=1
         layer=[]
         wherez=np.where(crystal_coordinate[:,index]==z_value)
         for j in wherez[0]:
@@ -79,6 +81,7 @@ def slice_sampling(label_list,dim='z',sampling=5000,auto=True):
     output_lengths=np.array(output_lengths)
     sampling_distribution=np.zeros(len(output_lengths))
     for i, lengths in enumerate(output_lengths):
+        counter+=1
         if sampling/len(output_lengths) <  0.5:
             sorted_indices = np.argsort(output_lengths)[::-1] # descending order
             sampling_distribution[sorted_indices[:sampling]]=1
@@ -89,17 +92,20 @@ def slice_sampling(label_list,dim='z',sampling=5000,auto=True):
     
     # *sampling/len(output_lengths)
     for i, sampling_num in enumerate(sampling_distribution):
+        counter+=1
         if sampling_num==0:
             continue
 
             
         numbers=[]
         for k in range(int(sampling_num)):
+            counter+=1
             numbers.append(int(output_lengths[i]/(int(sampling_num)+1) * (k+1)) )
 
         for num in numbers:
+            counter+=1
             coord_list.append(output[i][num])
-    
+    print("\n the number of iteation for slice sampling is {} \n".format(counter))
     return np.array(coord_list)
 
 
@@ -263,7 +269,9 @@ class RayTracingBasic(object):
                                             self.omega_axis,self.xray,self.coord_list,
                                             self.rt_lib,
                                             printing))
-           
+                # process = mp.Process(target=self.test_mp, 
+                #                     args=(data_copies[i],self.coord_list,
+                #                           self.reflection_table[i*each_core:(i+1)*each_core]))
             else:
                 process = mp.Process(target=self.run, 
                                     args=(i*each_core,'-1',
@@ -274,17 +282,29 @@ class RayTracingBasic(object):
                                             self.omega_axis,self.xray,self.coord_list,
                                             self.rt_lib,
                                             printing))
+                # process = mp.Process(target=self.test_mp, 
+                #                     args=(data_copies[i],self.coord_list,
+                #                     self.reflection_table[i*each_core:]))
             processes.append(process)
         del self.label_list
         del self.reflection_table
         gc.collect()
         # Start all worker processes
         for process in processes:
+            
             process.start()
-
+            time.sleep(20)
         # Wait for all worker processes to finish
         for process in processes:
             process.join()
+
+    @staticmethod
+    def test_mp(label_list,cord_list,select_data):
+        print(label_list.shape)
+        label_list[0][0][0]=1
+        print(label_list[0][0][0])
+        print(cord_list[0][0][0])
+        print(select_data[0])
 
     @staticmethod
     def run(low,up,args,selected_data ,label_list,voxel_size,coefficients,F,omega_axis,xray,coord_list,rt_lib,printing=False):
@@ -413,6 +433,138 @@ class RayTracingBasic(object):
         with open( os.path.join( args.save_dir , "{}_time_{}.json".format(  args.dataset , up ) ) , "w" ) as f1 :  # Pickling
             json.dump( t2 -  args.t1 , f1 , indent = 2 )
         print( '{} ({} ) process is Finish!!!!'.format(os.getpid(),up) )
+
+
+
+    @staticmethod
+    def run(low,up,args,selected_data ,label_list,voxel_size,coefficients,F,omega_axis,xray,coord_list,rt_lib,printing=False):
+        # if mp:
+        #     label_list = self.label_list.copy()
+        # else:
+        #     label_list = self.label_list
+        if args.by_c :
+            label_list_c = RayTracingBasic.python_2_c_3d( label_list )
+
+        
+        # if up == -1:
+        #     selected_data = self.reflection_table[low:]
+        # else:
+        #     selected_data = self.reflection_table[low:up]
+
+        corr = []
+        dict_corr = []
+        shape = np.array(label_list.shape)
+        for i , row in enumerate( selected_data ) :
+            # try:
+            #     print('up is {} in processor {}'.format( up+i,os.getpid() ))
+            # except:
+            #     print('up is {} in processor {}'.format( up,os.getpid() ))
+            intensity = float( row['intensity.sum.value'] )
+            scattering_vector = literal_eval( row['s1'] )  # all are in x, y , z in the origin dials file
+            miller_index = row['miller_index']
+
+            rotation_frame_angle = literal_eval( row['xyzobs.mm.value'] )[2]
+            rotation_frame_angle += args.offset / 180 * np.pi
+            rotation_matrix_frame_omega = kp_rotation( omega_axis , rotation_frame_angle )
+
+            total_rotation_matrix = np.dot( rotation_matrix_frame_omega , F )
+            total_rotation_matrix = np.transpose( total_rotation_matrix )
+
+            
+            xray = np.dot( total_rotation_matrix , xray )
+            rotated_s1 = np.dot( total_rotation_matrix , scattering_vector )
+
+            theta , phi = RayTracingBasic.dials_2_thetaphi( rotated_s1 )
+            theta_1 , phi_1 = RayTracingBasic.dials_2_thetaphi( xray , L1 = True )
+
+            if args.by_c :
+                result = rt_lib.ray_tracing_sampling(
+                    coord_list , len( coord_list ) ,
+                    rotated_s1 , xray , voxel_size ,
+                    coefficients , label_list_c , shape ,
+                    args.full_iteration , args.store_paths )
+                # result = dials_lib.ray_tracing(crystal_coordinate, crystal_coordinate_shape,
+                #                     coordinate_list,len(coordinate_list) ,
+                #                     rotated_s1, xray, voxel_size,
+                #                 coefficients, label_list_c, shape,
+                #                 args.full_iteration, args.store_paths)
+            else:
+                ray_direction = RayTracingBasic.dials_2_numpy( rotated_s1 )
+                xray_direction = RayTracingBasic.dials_2_numpy( xray )
+                # absorp = np.empty(len(coordinate_list))
+                # for k , index in enumerate( coordinate_list ) :
+                #     coord = crystal_coordinate[index]
+                absorp = np.empty( len( coord_list ) )
+                for k , coord in enumerate( coord_list ) :
+                    # face_1 = which_face_2(coord, shape, theta_1, phi_1)
+                    # face_2 = which_face_2(coord, shape, theta, phi)
+                    face_1 = RayTracingBasic.cube_face( coord , xray_direction , shape , L1 = True )
+                    face_2 = RayTracingBasic.cube_face( coord , ray_direction , shape )
+                    path_1 = cal_coord_2( theta_1 , phi_1 , coord , face_1 , shape ,label_list )  # 37
+                    path_2 = cal_coord_2( theta , phi , coord , face_2 , shape ,label_list )  # 16
+
+                    numbers_1 = RayTracingBasic.cal_path2_plus( path_1 , voxel_size )  # 3.5s
+                    numbers_2 = RayTracingBasic.cal_path2_plus( path_2 , voxel_size )  # 3.5s
+                    if args.store_paths == 1 :
+                        if k == 0 :
+                            path_length_arr_single = np.expand_dims( np.array( (numbers_1 + numbers_2) ) , axis = 0 )
+                        else :
+
+                            path_length_arr_single = np.concatenate(
+                                (
+                                path_length_arr_single , np.expand_dims( np.array( (numbers_1 + numbers_2) ) , axis = 0 )) ,
+                                axis = 0 )
+                    absorption = RayTracingBasic.cal_rate( (numbers_1 + numbers_2) , coefficients )
+
+                    absorp[k] = absorption
+
+                if args.store_paths == 1 :
+                    if i == 0 :
+                        path_length_arr = np.expand_dims( path_length_arr_single , axis = 0 )
+                    else :
+                        path_length_arr = np.concatenate(
+                            (path_length_arr , np.expand_dims( path_length_arr_single , axis = 0 )) , axis = 0 )
+                result = absorp.mean( )
+                #print( result )
+            t2 = time.time( )
+            corr.append( result )
+            if printing:
+                print( '[{}/{}] theta: {:.4f}, phi: {:.4f} , rotation: {:.4f},  absorption: {:.4f}'.format( low + i ,
+                                                                                                        low + len(
+                                                                                                            selected_data ) ,
+                                                                                                        theta * 180 / np.pi ,
+                                                                                                        phi * 180 / np.pi ,
+                                                                                                        rotation_frame_angle * 180 / np.pi ,
+                                                                                                        result ) )
+            # pdb.set_trace()
+
+                print( 'process {} it spends {}'.format( os.getpid(),t2 -  args.t1 ) )
+            dict_corr.append( {'index' : low + i , 'miller_index' : miller_index ,
+                            'intensity' : intensity , 'corr' : result ,
+                            'theta' : theta * 180 / np.pi ,
+                            'phi' : phi * 180 / np.pi ,
+                            'theta_1' : theta_1 * 180 / np.pi ,
+                            'phi_1' : phi_1 * 180 / np.pi , } )
+            if i % 1000 == 1 :
+                if args.store_paths == 1 :
+                    np.save( os.path.join(  args.save_dir , "{}_path_lengths_{}.npy".format(  args.dataset , up ) ) , path_length_arr )
+                with open( os.path.join(  args.save_dir , "{}_refl_{}.json".format(  args.dataset , up ) ) , "w" ) as fz :  # Pickling
+                    json.dump( corr , fz , indent = 2 )
+                with open( os.path.join(  args.save_dir , "{}_dict_refl_{}.json".format(  args.dataset , up ) ) ,
+                        "w" ) as f1 :  # Pickling
+                    json.dump( dict_corr , f1 , indent = 2 )
+        if args.store_paths == 1 :
+            np.save( os.path.join(  args.save_dir , "{}_path_lengths_{}.npy".format(  args.dataset , up ) ) , path_length_arr )
+        with open( os.path.join(  args.save_dir , "{}_refl_{}.json".format(  args.dataset , up ) ) , "w" ) as fz :  # Pickling
+            json.dump( corr , fz , indent = 2 )
+
+        with open( os.path.join(  args.save_dir , "{}_dict_refl_{}.json".format(  args.dataset , up ) ) , "w" ) as f1 :  # Pickling
+            json.dump( dict_corr , f1 , indent = 2 )
+        with open( os.path.join( args.save_dir , "{}_time_{}.json".format(  args.dataset , up ) ) , "w" ) as f1 :  # Pickling
+            json.dump( t2 -  args.t1 , f1 , indent = 2 )
+        print( '{} ({} ) process is Finish!!!!'.format(os.getpid(),up) )
+
+
 
     @staticmethod
     def dials_2_numpy (vector ) :
