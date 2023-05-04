@@ -4,8 +4,10 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <malloc.h>
+#include <sys/resource.h>
 #define M_PI 3.14159265
-#define test_mod 0
+#define test_mod 1
 
 typedef struct
 {
@@ -167,7 +169,12 @@ int64_t which_face(int64_t coord[3], int64_t shape[3], double theta, double phi)
     double x = coord[2];
     double y = coord[1];
     double z = coord[0];
-
+    if (test_mod)
+    {
+            struct rusage usage;
+    getrusage(RUSAGE_SELF, &usage);
+    printf("Memory usage: %ld KB\n", usage.ru_maxrss);
+    }
     if (fabs(theta) < M_PI / 2)
     {
         double theta_up = atan((y - 0) / (x - 0 + 0.001));
@@ -349,10 +356,11 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
     Path2_c result;
     int64_t z = coord[0], y = coord[1], x = coord[2];
     int64_t z_max = shape[0], y_max = shape[1], x_max = shape[2];
+    int64_t diagonal = x_max * sqrt(3);
 
-    int64_t *path_2 = malloc(z_max * y_max * sizeof(int64_t));
-    int64_t *classes_posi = malloc(100 * sizeof(int64_t));
-    int64_t *classes = malloc(100 * sizeof(int64_t));
+    int64_t *path_2 = malloc(diagonal *3* sizeof(int64_t));
+    int64_t *classes_posi = malloc(diagonal * sizeof(int64_t));
+    int64_t *classes = malloc(diagonal * sizeof(int64_t));
     classes[0] = 3;
     classes_posi[0] = 0;
     // int64_t path_2[x_max*y_max*z_max][3];
@@ -499,6 +507,12 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
                 // }
                 int64_t potential_coord[3] = {new_z, new_y, new_x};
                 int64_t label = label_list[new_z][new_y][new_x];
+                // if (test_mod){
+                //     printArray(potential_coord, 3);
+                //     printf("label: %ld \n", label);
+
+                // }
+
                 if (!full_iteration)
                 {
                     if (label == 0)
@@ -1190,9 +1204,11 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
     // printf("Length of 2d array in C: %d \n", len_path_2);
     // printf("Length of classes in C: %d \n", len_classes);
     // printf("Length of classes_posi in C: %d \n", len_classes_posi);
-    result.ray = path_2;
+    // result.ray = path_2;
     // result.posi = classes_posi;
     // result.classes = classes;
+
+
     result.len_path_2 = len_path_2;
     result.len_classes = len_classes;
     result.len_classes_posi = len_classes_posi;
@@ -1215,10 +1231,47 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
     // printArray(result.ray, 30);
     // printArray(result.posi, result.len_classes_posi);
     // printArray(result.classes, result.len_classes);
-    free(path_2);
-    free(classes_posi);
-    free(classes);
+    if (test_mod)
+    {
+            struct rusage usage;
+    getrusage(RUSAGE_SELF, &usage);
+    printf("Memory usage: %ld KB\n", usage.ru_maxrss);
+    }
 
+    if (test_mod)
+    {
+
+    printf( "diagonal is %d \n", diagonal);
+    printf("len_path_2 is %d \n", len_path_2);
+    printf("len_classes is %d \n", len_classes);
+    printf("len_classes_posi is %d \n", len_classes_posi);
+    // printArray(path_2, len_path_2*3);
+    printArray(classes_posi, len_classes_posi);
+    printArray(classes, len_classes);
+    }
+    
+
+    free(path_2);
+    if (test_mod)
+    {
+    printf("path_2 is free \n");
+
+    }
+
+    free(classes_posi);
+    if (test_mod)
+    {
+    printf("classes_posi is free \n");
+
+    }
+        
+    free(classes);
+    if (test_mod)
+    {
+    printf(" class is free \n");
+
+    }
+    // malloc_trim(0);
     return result;
 }
 
@@ -1346,6 +1399,13 @@ double ray_tracing_sampling(
     // printArray(crystal_coordinate_shape, 3);
     // printArrayD(rotated_s1, 3);
     // printArrayD(xray, 3);
+    if (test_mod)
+    {
+            struct rusage usage;
+    getrusage(RUSAGE_SELF, &usage);
+    printf("The starting Memory usage: %ld KB\n", usage.ru_maxrss);
+    }
+
     double x_ray_c[3];
     for (int64_t i = 0; i < 3; i++)
     {
@@ -1394,7 +1454,7 @@ double ray_tracing_sampling(
 
         if (test_mod)
         {
-
+            printf("\n");
             printf("theta_1 is %f ", theta_1);
             printf("phi_1 is %f ", phi_1);
             printf("\n");
@@ -1405,19 +1465,18 @@ double ray_tracing_sampling(
         if (test_mod)
         {
             printf("path_1111 at %d is good  \n", i);
-
             printf("face_2 is  ");
             printf("%d \n", face_2);
             printf("theta is %f ", theta);
             printf("phi is %f \n", phi);
-            printf("\n");
+
         }
         // printf("face_2 at %d is %d \n",i, face_2);
         path_2 = cal_coord(theta, phi, coord, face_2, shape, label_list, full_iteration);
-        // if (test_mod)
-        // {
-        //     printf("path_2222 at %d is good  \n", i);
-        // }
+        if (test_mod)
+        {
+            printf("path_2222 at %d is good  \n", i);
+        }
 
         // printf("Length of classes in ray tracing : %d \n", path_1.len_classes);
         // printf("Length of classes_posi in ray tracing: %d \n", path_1.len_classes_posi);
@@ -1437,6 +1496,7 @@ double ray_tracing_sampling(
             printf("numbers_2 is");
             printArrayD(numbers_2, 4);
             printf("absorption is %f at %d \n", absorption, i);
+            printf("\n");
             // if (i <10)
             // {
 
@@ -1457,11 +1517,13 @@ double ray_tracing_sampling(
         free(path_1.ray);
         free(path_1.classes);
         free(path_1.posi);
-        // free(numbers_1);
+        // free(path_1);
+        free(numbers_1);
         free(path_2.ray);
         free(path_2.classes);
         free(path_2.posi);
-        // free(numbers_2);
+        // free(path_2);
+        free(numbers_2);
         // printf("path_1 is \n");
         // printArrayD(numbers_1, 4);
         // printf("path_2 is \n");
@@ -1553,7 +1615,10 @@ double ray_tracing(int64_t *crystal_coordinate,
 
         if (test_mod)
         {
-
+                // Check the available memory
+            struct rusage usage;
+            getrusage(RUSAGE_SELF, &usage);
+            printf("Memory usage: %ld KB\n", usage.ru_maxrss);
             printf("theta_1 is %f ", theta_1);
             printf("phi_1 is %f ", phi_1);
             printf("\n");

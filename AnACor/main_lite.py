@@ -131,7 +131,7 @@ def set_parser():
     parser.add_argument(
         "--auto-sampling" ,
         type = str2bool ,
-        default = False,
+        default = True,
         help = "pixel size of tomography" ,
     )
     parser.add_argument(
@@ -167,7 +167,7 @@ def set_parser():
     parser.add_argument(
         "--by-c" ,
         type = str2bool ,
-        default = False,
+        default = True,
         help = "pixel size of tomography" ,
     )
     parser.add_argument(
@@ -180,6 +180,12 @@ def set_parser():
         "--num-workers" ,
         type = int,
         default = 4 ,
+        help = "number of workers" ,
+    )
+    parser.add_argument(
+        "--test-mode" ,
+        type = str2bool,
+        default = False ,
         help = "number of workers" ,
     )
     global args
@@ -224,7 +230,7 @@ def main():
     args.save_dir=result_path
 
     algorithm = RayTracingBasic(args)
-    algorithm.mp_run(printing=True)
+    algorithm.mp_run(printing=True,test=args.test_mode)
     #algorithm.run()
     # pdb.set_trace()
 
