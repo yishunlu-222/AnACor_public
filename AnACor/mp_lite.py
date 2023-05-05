@@ -318,7 +318,7 @@ def main ( ) :
             f.write( "mtz2sca {}_merged_acsh.mtz   \n".format( dataset ) )
             f.write( "mtz2sca {}_merged_ac.mtz   \n".format( dataset ) )
 
-    cluster_command = "qsub -S /bin/sh -l h_rt={0}:{1}:{2},exclusive=True  -pe openmpi {3}  -o {5} -e {6} {4}".format(
+    cluster_command = "qsub -S /bin/sh -l h_rt={0}:{1}:{2} -pe smp {3}  -o {5} -e {6} {4}".format(
         str( args.hour ).zfill( 2 ) ,
         str( args.minute ).zfill( 2 ) ,
         str( args.second ).zfill( 2 ) ,

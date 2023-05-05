@@ -76,7 +76,6 @@ reflections = flex.reflection_table.from_file( args.refl_filename )
 
 print( "len(reflections)" )
 print( len( reflections ) )
-corr = np.ones( len( reflections ) )
 p = []
 dataset = args.dataset
 save_dir = os.path.join( args.store_dir , '{}_save_data'.format( dataset ) )
@@ -87,23 +86,29 @@ if args.full is True :
     pass
 else :
     scaler = ScalerFactory( )
-    refls = scaler.filter_bad_reflections( reflections )
-    excluded_for_scaling = refls.get_flags( refls.flags.excluded_for_scaling )
-    refls.del_selected( excluded_for_scaling )
+    reflections = scaler.filter_bad_reflections( reflections )
+    excluded_for_scaling = reflections.get_flags( reflections.flags.excluded_for_scaling )
+    reflections.del_selected( excluded_for_scaling )
+    print( "len(reflections)" )
+    print( len( reflections ) )
 
 corr = np.ones( len( reflections ) )
+
 with open( filename ) as f1 :
     data = json.load( f1 )
+
+print("len( data )")
+print( len( data ) )   
+
 for i , row in enumerate( data ) :
     corr[i] = row
-print("len( data )")
-print( len( data ) )
+
 try:
   assert len(data) ==len(reflections)
 except:
   raise RuntimeError("the length of the reflection table and the absorption correction factors are not equal \n"
                      "it may be some processes have problems during multiprocessing \n")
-# pdb.set_trace()
+
 
 # print("len(reflections)")
 # print(len(reflections))
