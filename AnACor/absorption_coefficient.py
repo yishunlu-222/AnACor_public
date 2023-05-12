@@ -16,6 +16,9 @@ from skimage.metrics import *
 import time
 import logging
 
+
+np.seterr(divide='ignore', invalid='ignore')
+
 def rgb2mask(rgb, COLOR=None):
     """
 
