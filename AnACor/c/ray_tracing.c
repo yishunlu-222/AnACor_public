@@ -6,20 +6,14 @@
 #include <stdlib.h>
 #include <malloc.h>
 #include <sys/resource.h>
-#define M_PI 3.14159265
-#define test_mod 1
+#include "bisection.h"
+#include "testkit.h"
+#include "ray_tracing.h"
+#define M_PI 3.14159265358979323846
+#define test_mod 0
 
-typedef struct
-{
-    int64_t x, y, z;
-} Vector3D;
 
-typedef struct
-{
-    Vector3D *ray;
-    int64_t *posi;
-    char *classes;
-} Path2;
+
 
 typedef struct
 {
@@ -37,71 +31,8 @@ typedef struct
     double phi;
 } ThetaPhi;
 
-typedef struct
-{
-    double li;
-    double lo;
-    double cr;
-    double bu;
-} classes_lengths;
 
-// typedef struct {
-//     Point64_t *path_ray;
-//     int64_t *posi;
-//     int64_t *classes;
-// } Path2;
 
-int64_t count_len(int64_t *arr)
-{
-    int64_t count = 0;
-    while (*arr != '\0')
-    {
-        count++;
-        arr++;
-    }
-    printf("Length of array: %d\n", count);
-
-    return count;
-}
-
-void printArray(int64_t arr[], int64_t n)
-{
-    for (int64_t i = 0; i < n; i++)
-    {
-        printf("%d ", arr[i]);
-        if (i % 3 == 2)
-        {
-            printf("\n");
-        }
-    }
-    printf("\n");
-}
-
-void printArrayshort(int64_t arr[], char n)
-{
-    for (int64_t i = 0; i < n; i++)
-    {
-        printf("%d ", arr[i]);
-        if (i % 3 == 2)
-        {
-            printf("\n");
-        }
-    }
-    printf("\n");
-}
-
-void printArrayD(double arr[], int64_t n)
-{
-    for (int64_t i = 0; i < n; i++)
-    {
-        printf("%.15lf ", arr[i]);
-        if (i % 3 == 2)
-        {
-            printf("\n");
-        }
-    }
-    printf("\n");
-}
 
 ThetaPhi dials_2_thetaphi_22(double rotated_s1[3], int64_t L1)
 {
@@ -141,6 +72,77 @@ ThetaPhi dials_2_thetaphi_22(double rotated_s1[3], int64_t L1)
 
     return result;
 }
+
+
+void dials_2_numpy(double vector[3], double result[3]) {
+    double numpy_2_dials_1[3][3] = {
+        {1, 0, 0},
+        {0, 0, 1},
+        {0, 1, 0}
+    };
+
+    for (int i = 0; i < 3; i++) {
+        result[i] = 0.0;
+        for (int j = 0; j < 3; j++) {
+            result[i] += numpy_2_dials_1[i][j] * vector[j];
+        }
+    }
+}
+
+
+int64_t cube_face(int64_t ray_origin[3], double ray_direction[3], int64_t cube_size[3], int L1) {
+    int64_t min_x = 0;
+    int64_t max_x = cube_size[2];
+    int64_t min_y = 0;
+    int64_t max_y = cube_size[1];
+    int64_t min_z = 0;
+    int64_t max_z = cube_size[0];
+
+    double tx_min = (min_x - ray_origin[2]) / ray_direction[2];
+    double tx_max = (max_x - ray_origin[2]) / ray_direction[2];
+    double ty_min = (min_y - ray_origin[1]) / ray_direction[1];
+    double ty_max = (max_y - ray_origin[1]) / ray_direction[1];
+    double tz_min = (min_z - ray_origin[0]) / ray_direction[0];
+    double tz_max = (max_z - ray_origin[0]) / ray_direction[0];
+
+    double t_numbers[6] = {tx_min, ty_min, tz_min, tx_max, ty_max, tz_max};
+    int t_numbers_len = sizeof(t_numbers) / sizeof(t_numbers[0]);
+    
+    double non_negative_numbers[t_numbers_len];
+    int non_negative_len = 0;
+    for (int i = 0; i < t_numbers_len; i++) {
+        if (t_numbers[i] >= 0) {
+            non_negative_numbers[non_negative_len++] = t_numbers[i];
+        }
+    }
+
+    double t_min = non_negative_numbers[0];
+    for (int i = 1; i < non_negative_len; i++) {
+        if (non_negative_numbers[i] < t_min) {
+            t_min = non_negative_numbers[i];
+        }
+    }
+    // printf("t_min: %f\n", t_min);
+    if (t_min == tx_min) {
+        return L1 ? 1 : 6;
+    } else if (t_min == tx_max) {
+        return L1 ? 6 : 1;
+    } else if (t_min == ty_min) {
+        return L1 ? 5 : 4;
+    } else if (t_min == ty_max) {
+        return L1 ? 4 : 5;
+    } else if (t_min == tz_min) {
+        return L1 ? 3 : 2;
+    } else if (t_min == tz_max) {
+        return L1 ? 2 : 3;
+    } else {
+        fprintf(stderr, "face determination has a problem with direction %f, %f, %f and position %f, %f, %f\n", ray_direction[0], ray_direction[1],
+         ray_direction[2], ray_origin[0], ray_origin[1], ray_origin[2])  ;
+        exit(EXIT_FAILURE);
+    }
+}
+
+
 
 int64_t which_face(int64_t coord[3], int64_t shape[3], double theta, double phi)
 {
@@ -1212,65 +1214,70 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
     result.len_path_2 = len_path_2;
     result.len_classes = len_classes;
     result.len_classes_posi = len_classes_posi;
-    result.posi = malloc(len_classes_posi * sizeof(int64_t));
-    result.classes = malloc(len_classes * sizeof(int64_t));
-    result.ray = malloc(len_path_2 * 3 * sizeof(int64_t));
-    for (int64_t i = 0; i < len_path_2 * 3; i++)
-    {
-        result.ray[i] = path_2[i];
-    }
-    for (int64_t i = 0; i < len_classes_posi; i++)
-    {
-        // printf("classes_posi is %d \n", classes_posi[i]);
-        result.posi[i] = classes_posi[i];
-    }
-    for (int64_t i = 0; i < len_classes; i++)
-    {
-        result.classes[i] = classes[i];
-    }
-    // printArray(result.ray, 30);
-    // printArray(result.posi, result.len_classes_posi);
-    // printArray(result.classes, result.len_classes);
-    if (test_mod)
-    {
-            struct rusage usage;
-    getrusage(RUSAGE_SELF, &usage);
-    printf("Memory usage: %ld KB\n", usage.ru_maxrss);
-    }
+    result.posi = realloc(classes_posi, len_classes_posi * sizeof(int64_t));
+    result.classes = realloc(classes, len_classes * sizeof(int64_t));
+    result.ray = realloc(path_2, len_path_2 * 3 * sizeof(int64_t));
 
-    if (test_mod)
-    {
 
-    printf( "diagonal is %d \n", diagonal);
-    printf("len_path_2 is %d \n", len_path_2);
-    printf("len_classes is %d \n", len_classes);
-    printf("len_classes_posi is %d \n", len_classes_posi);
-    // printArray(path_2, len_path_2*3);
-    printArray(classes_posi, len_classes_posi);
-    printArray(classes, len_classes);
-    }
+    // result.posi = malloc(len_classes_posi * sizeof(int64_t));
+    // result.classes = malloc(len_classes * sizeof(int64_t));
+    // result.ray = malloc(len_path_2 * 3 * sizeof(int64_t));
+    // for (int64_t i = 0; i < len_path_2 * 3; i++)
+    // {
+    //     result.ray[i] = path_2[i];
+    // }
+    // for (int64_t i = 0; i < len_classes_posi; i++)
+    // {
+    //     // printf("classes_posi is %d \n", classes_posi[i]);
+    //     result.posi[i] = classes_posi[i];
+    // }
+    // for (int64_t i = 0; i < len_classes; i++)
+    // {
+    //     result.classes[i] = classes[i];
+    // }
+    // // printArray(result.ray, 30);
+    // // printArray(result.posi, result.len_classes_posi);
+    // // printArray(result.classes, result.len_classes);
+    // if (test_mod)
+    // {
+    //         struct rusage usage;
+    // getrusage(RUSAGE_SELF, &usage);
+    // printf("Memory usage: %ld KB\n", usage.ru_maxrss);
+    // }
+
+    // if (test_mod)
+    // {
+
+    // printf( "diagonal is %d \n", diagonal);
+    // printf("len_path_2 is %d \n", len_path_2);
+    // printf("len_classes is %d \n", len_classes);
+    // printf("len_classes_posi is %d \n", len_classes_posi);
+    // // printArray(path_2, len_path_2*3);
+    // printArray(classes_posi, len_classes_posi);
+    // printArray(classes, len_classes);
+    // }
     
 
-    free(path_2);
-    if (test_mod)
-    {
-    printf("path_2 is free \n");
+    // free(path_2);
+    // if (test_mod)
+    // {
+    // printf("path_2 is free \n");
 
-    }
+    // }
 
-    free(classes_posi);
-    if (test_mod)
-    {
-    printf("classes_posi is free \n");
+    // free(classes_posi);
+    // if (test_mod)
+    // {
+    // printf("classes_posi is free \n");
 
-    }
+    // }
         
-    free(classes);
-    if (test_mod)
-    {
-    printf(" class is free \n");
+    // free(classes);
+    // if (test_mod)
+    // {
+    // printf(" class is free \n");
 
-    }
+    // }
     // malloc_trim(0);
     return result;
 }
@@ -1390,7 +1397,7 @@ double cal_rate(double *numbers_1, double *numbers_2, double *coefficients,
 double ray_tracing_sampling(
     int64_t *coord_list,
     int64_t len_coord_list,
-    double *rotated_s1, double *xray,
+    const double *rotated_s1, const double *xray,
     double *voxel_size, double *coefficients,
     int8_t ***label_list, int64_t *shape, int full_iteration,
     int64_t store_paths)
@@ -1405,18 +1412,29 @@ double ray_tracing_sampling(
     getrusage(RUSAGE_SELF, &usage);
     printf("The starting Memory usage: %ld KB\n", usage.ru_maxrss);
     }
+    
+    // in the theta phi determination, xray will be reversed
+    // so create a new array to store the original xray to process
+   
+    double x_ray_angle[3],x_ray_trans[3];
+    double rotated_s1_angle[3],rotated_s1_trans[3];
+    memcpy(x_ray_angle, xray, sizeof(xray));
+    memcpy(x_ray_trans, xray, sizeof(xray));
+    memcpy(rotated_s1_angle, rotated_s1, sizeof(rotated_s1));
+    memcpy(rotated_s1_trans, rotated_s1, sizeof(rotated_s1));
 
-    double x_ray_c[3];
-    for (int64_t i = 0; i < 3; i++)
-    {
-        x_ray_c[i] = xray[i];
-    }
+    // for (int64_t i = 0; i < 3; i++)
+    // {
+    //     x_ray_c[i] = xray[i];
+    // }
+
+
     // printArrayD(voxel_size, 3);
     // printArrayD(coefficients, 3);
     // printArray(shape, 3);
     // printf("%d ", len_coordinate_list);
-    ThetaPhi result_2 = dials_2_thetaphi_22(rotated_s1, 0);
-    ThetaPhi result_1 = dials_2_thetaphi_22(x_ray_c, 1);
+    ThetaPhi result_2 = dials_2_thetaphi_22(rotated_s1_angle, 0);
+    ThetaPhi result_1 = dials_2_thetaphi_22(x_ray_angle, 1);
     // printf("\n");
     double theta = result_2.theta;
     double phi = result_2.phi;
@@ -1428,6 +1446,12 @@ double ray_tracing_sampling(
     double *numbers_1, *numbers_2;
     double absorption;
     double absorption_sum = 0, absorption_mean = 0;
+
+
+    double xray_direction[3],scattered_direction[3];
+    dials_2_numpy(x_ray_trans, xray_direction);
+    dials_2_numpy(rotated_s1_trans, scattered_direction);
+    printArrayD(xray_direction,3);
     // if (test_mod)
     // {
     //     theta_1 = 0.660531;
@@ -1442,8 +1466,13 @@ double ray_tracing_sampling(
                             coord_list[i * 3 + 1],
                             coord_list[i * 3 + 2]};
         // printf("%d ",label_list[coord[0]][coord[1]][coord[2]]);
-        int64_t face_1 = which_face(coord, shape, theta_1, phi_1);
-        int64_t face_2 = which_face(coord, shape, theta, phi);
+        // int64_t face_1 = which_face(coord, shape, theta_1, phi_1);
+        // int64_t face_2 = which_face(coord, shape, theta, phi);
+
+
+        int64_t face_1 = cube_face(coord, xray_direction, shape, 1);
+        int64_t face_2 = cube_face(coord, scattered_direction, shape, 0);
+
         // int64_t face_1=1;
         // int64_t face_2=1;
         // if (i > 3)
@@ -1485,10 +1514,12 @@ double ray_tracing_sampling(
         // printArray(path_1.classes, path_1.len_classes);
 
         numbers_1 = cal_path2_plus(path_1, voxel_size);
-
         numbers_2 = cal_path2_plus(path_2, voxel_size);
+        // printArrayD(numbers_1, 4);
+        // printArrayD(numbers_2, 4);
 
         absorption = cal_rate(numbers_1, numbers_2, coefficients, 1);
+        
         if (test_mod)
         {
             printf("numbers_1 is  ");
@@ -1517,12 +1548,11 @@ double ray_tracing_sampling(
         free(path_1.ray);
         free(path_1.classes);
         free(path_1.posi);
-        // free(path_1);
+
         free(numbers_1);
         free(path_2.ray);
         free(path_2.classes);
         free(path_2.posi);
-        // free(path_2);
         free(numbers_2);
         // printf("path_1 is \n");
         // printArrayD(numbers_1, 4);
@@ -1551,389 +1581,3 @@ double ray_tracing_sampling(
     return absorption_mean;
 }
 
-double ray_tracing(int64_t *crystal_coordinate,
-                   int64_t *crystal_coordinate_shape,
-                   int64_t *coordinate_list,
-                   int64_t len_coordinate_list,
-                   double *rotated_s1, double *xray,
-                   double *voxel_size, double *coefficients,
-                   int8_t ***label_list, int64_t *shape, int full_iteration,
-                   int64_t store_paths)
-{
-
-    // printArray(crystal_coordinate_shape, 3);
-    // printArrayD(rotated_s1, 3);
-    // printArrayD(xray, 3);
-    double x_ray_c[3];
-    for (int64_t i = 0; i < 3; i++)
-    {
-        x_ray_c[i] = xray[i];
-    }
-    // printArrayD(voxel_size, 3);
-    // printArrayD(coefficients, 3);
-    // printArray(shape, 3);
-    // printf("%d ", len_coordinate_list);
-    ThetaPhi result_2 = dials_2_thetaphi_22(rotated_s1, 0);
-    ThetaPhi result_1 = dials_2_thetaphi_22(x_ray_c, 1);
-    // printf("\n");
-    double theta = result_2.theta;
-    double phi = result_2.phi;
-    double theta_1 = result_1.theta;
-    double phi_1 = result_1.phi;
-    // printf("\n");
-
-    Path2_c path_2, path_1;
-    double *numbers_1, *numbers_2;
-    double absorption;
-    double absorption_sum = 0, absorption_mean = 0;
-    // if (test_mod)
-    // {
-    //     theta_1 = 0.660531;
-    //     phi_1 = -0.001338;
-    //     theta = -1.557793;
-    //     phi = -1.560976;
-    // }
-    for (int64_t i = 0; i < len_coordinate_list; i++)
-    {
-
-        int64_t index = coordinate_list[i];
-        int64_t coord[3] = {
-            crystal_coordinate[crystal_coordinate_shape[1] * index],
-            crystal_coordinate[crystal_coordinate_shape[1] * index + 1],
-            crystal_coordinate[crystal_coordinate_shape[1] * index + 2],
-        };
-        // printf("%d ",label_list[coord[0]][coord[1]][coord[2]]);
-        int64_t face_1 = which_face(coord, shape, theta_1, phi_1);
-        int64_t face_2 = which_face(coord, shape, theta, phi);
-        // int64_t face_1=1;
-        // int64_t face_2=1;
-        // if (i > 3)
-        // {
-        //     break;
-
-        // }
-
-        if (test_mod)
-        {
-                // Check the available memory
-            struct rusage usage;
-            getrusage(RUSAGE_SELF, &usage);
-            printf("Memory usage: %ld KB\n", usage.ru_maxrss);
-            printf("theta_1 is %f ", theta_1);
-            printf("phi_1 is %f ", phi_1);
-            printf("\n");
-            printf("face_1 at %d is %d \n", i, face_1);
-        }
-
-        path_1 = cal_coord(theta_1, phi_1, coord, face_1, shape, label_list, full_iteration);
-        if (test_mod)
-        {
-            printf("path_1111 at %d is good  \n", i);
-
-            printf("face_2 is  ");
-            printf("%d \n", face_2);
-            printf("theta is %f ", theta);
-            printf("phi is %f \n", phi);
-            printf("\n");
-        }
-        // printf("face_2 at %d is %d \n",i, face_2);
-        path_2 = cal_coord(theta, phi, coord, face_2, shape, label_list, full_iteration);
-        // if (test_mod)
-        // {
-        //     printf("path_2222 at %d is good  \n", i);
-        // }
-
-        // printf("Length of classes in ray tracing : %d \n", path_1.len_classes);
-        // printf("Length of classes_posi in ray tracing: %d \n", path_1.len_classes_posi);
-        // printArray(path_1.ray, 30);
-        // printArray(path_1.posi, path_1.len_classes_posi);
-        // printArray(path_1.classes, path_1.len_classes);
-
-        numbers_1 = cal_path2_plus(path_1, voxel_size);
-
-        numbers_2 = cal_path2_plus(path_2, voxel_size);
-
-        absorption = cal_rate(numbers_1, numbers_2, coefficients, 1);
-        if (test_mod)
-        {
-            printf("numbers_1 is  ");
-            printArrayD(numbers_1, 4);
-            printf("numbers_2 is");
-            printArrayD(numbers_2, 4);
-            printf("absorption is %f at %d \n", absorption, i);
-            // if (i <10)
-            // {
-
-            // }
-        }
-        // if (i >3 ){
-        //         free(path_1.ray);
-        //         free(path_1.classes);
-        //         free(path_1.posi);
-        //         free(numbers_1);
-        //         free(path_2.ray);
-        //         free(path_2.classes);
-        //         free(path_2.posi);
-        //         free(numbers_2);
-        //         break;
-        // }
-        absorption_sum += absorption;
-        free(path_1.ray);
-        free(path_1.classes);
-        free(path_1.posi);
-        free(numbers_1);
-        free(path_2.ray);
-        free(path_2.classes);
-        free(path_2.posi);
-        free(numbers_2);
-        // printf("path_1 is \n");
-        // printArrayD(numbers_1, 4);
-        // printf("path_2 is \n");
-        // printArrayD(numbers_2, 4);
-        // printf("absorption is %.10lf \n",absorption);
-        // printf("Length of classes in ray tracing : %d \n", path_1.len_classes);
-        // printf("Length of classes_posi in ray tracing: %d \n", path_1.len_classes_posi);
-        // on test, this is a top face,wich
-        // path_2 = cal_coord(theta, phi, coord, face_2, shape, label_list, full_iteration);
-    }
-    absorption_mean = absorption_sum / len_coordinate_list;
-    //         if (test_mod)
-    //     {
-    // printf("absorption_sum is %f \n", absorption_sum);
-    // printf("len_coordinate_list is %f \n", len_coordinate_list);}
-    // printf("finish \n");
-    // free(path_1.ray);
-    // free(path_1.classes);
-    // free(path_1.posi);
-    // free(numbers_1);
-    // free(path_2.ray);
-    // free(path_2.classes);
-    // free(path_2.posi);
-    // free(numbers_2);
-    return absorption_mean;
-}
-
-char *which_face_2(int64_t coord[3], int64_t shape[3], double theta, double phi)
-{
-    // deciding which plane to go out, to see which direction (xyz) has increment of 1
-
-    /*
-     * coord: the point64_t which was calculated the ray length
-     * shape: shape of the tomography matrix
-     * theta: calculated theta angle to the point64_t on the detector, positive means rotate clockwisely, vice versa
-     * phi: calculated phi angle to the point64_t on the detector, positive means rotate clockwisely
-     * return: which face of the ray to exit, that represents the which (x,y,z) increment is 1
-     *
-     * top front left is the origin, not bottom front left
-     */
-    // the detector and the x-ray anti-clockwise rotation is positive
-    double z_max = shape[0] - 1;
-    double y_max = shape[1] - 1;
-    double x_max = shape[2] - 1;
-    double x = coord[2];
-    double y = coord[1];
-    double z = coord[0];
-    // printf("The value of xyz is %f\n", x);
-    // printf("The value of xyz is %f\n", y);
-    // printf("The value of xyz is %f\n", z);
-    // printf("The value of xyz is %f\n", x_max);
-    // printf("The value of xyz is %f\n", y_max);
-    // printf("The value of xyz is %f\n", z_max);
-    if (fabs(theta) < M_PI / 2)
-    {
-        double theta_up = atan((y - 0) / (x - 0 + 0.001));
-        double theta_down = -atan((y_max - y) / (x - 0 + 0.001)); // negative
-        double phi_right = atan((z_max - z) / (x - 0 + 0.001));
-        double phi_left = -atan((z - 0) / (x - 0 + 0.001)); // negative
-        double omega = atan(tan(theta) * cos(phi));
-        // printf("The value of my_double is %f\n", theta);
-        // printf("The value of my_double is %f\n", phi);
-        // printf("The value of my_double is %f\n", omega);
-        // printf("The value of my_double is %f\n", theta_up);
-        // printf("The value of my_double is %f\n", theta_down);
-        // printf("The value of my_double is %f\n", phi_left)   ;
-        // printf("The value of my_double is %f\n", phi_right);
-        if (omega > theta_up)
-        {
-            // at this case, theta is positive,
-            // normally the most cases for theta > theta_up, the ray passes the top ZX plane
-            // if the phis are smaller than both edge limits
-            // the ray only goes through right/left plane when the  reflection coordinate is too close to the  right/left plane
-            double side = (y - 0) * sin(fabs(phi)) / tan(theta); // the length of rotation is the projected length on x
-            if (side > (z - 0) && phi < phi_left)
-            {
-                return "LEYX";
-            }
-            else if (side > (z_max - z) && phi > phi_right)
-            {
-                return "RIYX";
-            }
-            else
-            {
-                return "TOPZX";
-            }
-        }
-        else if (omega < theta_down)
-        {
-            double side = (y_max - y) * sin(fabs(phi)) / tan(-theta);
-            if (side > (z - 0) && phi < phi_left)
-            {
-                return "LEYX";
-            }
-            else if (side > (z_max - z) && phi > phi_right)
-            {
-                return "RIYX";
-            }
-            else
-            {
-                return "BOTZX";
-            }
-        }
-        else if (phi > phi_right)
-        {
-            // when the code goes to this line, it means the theta is within the limits
-            return "RIYX";
-        }
-        else if (phi < phi_left)
-        {
-            return "LEYX";
-        }
-        else
-        {
-            // ray passes through the back plane
-            return "BACKZY";
-        }
-    }
-    else
-    {
-        // theta is larger than 90 degree or smaller than -90
-        double theta_up = atan((y - 0) / (x_max - x + 0.001));
-        double theta_down = atan((y_max - y) / (x_max - x + 0.001)); // negative
-        double phi_left = atan((z_max - z) / (x_max - x + 0.001));   // it is the reverse of the top phi_left
-        double phi_right = -atan((z - 0) / (x_max - x + 0.001));     // negative
-        //
-        //
-        if ((M_PI - theta) > theta_up && theta > 0)
-        {
-            // at this case, theta is positive,
-            // normally the most cases for theta > theta_up, the ray passes the top ZX plane
-            // if the phis are smaller than both edge limits
-            // the ray only goes through right/left plane when the  reflection coordinate is too close to the  right/left plane
-            double side = (y - 0) * sin(fabs(phi)) / fabs(tan(theta));
-            if (side > (z - 0) && -phi < phi_right)
-            {
-                return "LEYX";
-            }
-            else if (side > (z_max - z) && -phi > phi_left)
-            {
-                return "RIYX";
-            }
-            else
-            {
-                return "TOPZX";
-            }
-            //
-        }
-        else if (theta > theta_down - M_PI && theta <= 0)
-        {
-            double side = (y_max - y) * sin(fabs(phi)) / fabs(tan(-theta));
-            if (side > (z - 0) && -phi < phi_right)
-            {
-                return "LEYX";
-            }
-            else if (side > (z_max - z) && -phi > phi_left)
-            {
-                return "RIYX";
-            }
-            else
-            {
-                return "BOTZX";
-            }
-        }
-        else if (-phi < phi_right)
-        {
-            // when the code goes to this line, it means the theta is within the limits
-            return "LEYX";
-        }
-        else if (-phi > phi_left)
-        {
-            return "RIYX";
-        }
-        else
-        {
-            // ray passes through the back plane
-            return "FRONTZY";
-        }
-    }
-}
-
-// char ray_casting(Vector3D coord, Vector3D shape, double theta, double phi) {
-//     char face;
-//     double x = coord.x, y = coord.y, z = coord.z;
-//     double z_max = shape.x, y_max = shape.y, x_max = shape.z;
-//     double tan_theta = tan(theta), tan_phi = tan(phi);
-//     double ratio_x = tan_theta / cos(phi), ratio_y = 1 / sin(phi), ratio_z = tan_phi / cos(theta);
-//     double x_int64_tersect_y = x + ratio_x * (y_max - y), x_int64_tersect_z = x + ratio_x * (z_max - z);
-//     double y_int64_tersect_x = y + ratio_y * (x_max - x), y_int64_tersect_z = y + ratio_y * (z_max - z);
-//     double z_int64_tersect_x = z + ratio_z * (x_max - x), z_int64_tersect_y = z + ratio_z * (y_max - y);
-//     if (y_int64_tersect_x > 0 && y_int64_tersect_x < y_max && z_int64_tersect_x > 0 && z_int64_tersect_x < z_max) {
-//         if (x_int64_tersect_y > 0 && x_int64_tersect_y < x_max && z_int64_tersect_y > 0 && z_int64_tersect_y < z_max) {
-//             if (x_int64_tersect_z > 0 && x_int64_tersect_z < x_max && y_int64_tersect_z > 0 && y_int64_tersect_z < y_max) {
-//                 if (y_int64_tersect_x < z_int64_tersect_x && y_int64_tersect_x < x_int64_tersect_y && y_int64_tersect_x < z_int64_tersect_y && y_int64_tersect_x < x_int64_tersect_z) {
-//                     face = 'RIGHTX';
-//                 } else if (z_int64_tersect_x < y_int64_tersect_x && z_int64_tersect_x < x_int64_tersect_y && z_int64_tersect_x < z_int64_tersect_y && z_int64_tersect_x < x_int64_tersect_z) {
-//                     face = 'FRONTZX';
-//                 } else if (x_int64_tersect_y < y_int64_tersect_x && x_int64_tersect_y < z_int64_tersect_x && x_int64_tersect_y < z_int64_tersect_y && x_int64_tersect_y < x_int64_tersect_z) {
-//                     face = 'BOTTOMYX';
-//                 } else if (z_int64_tersect_y < y_int64_tersect_x && z_int64_tersect_y < z_int64_tersect_x && z_int64_tersect_y < x_int64_tersect_y && z_int64_tersect_y < x_int64_tersect_z) {
-//                     face = 'LEFTZ';
-//                 } else if (x_int64_tersect_z < y_int64_tersect_x && x_int64_tersect_z < z_int64_tersect_x && x_int64_tersect_z < x_int64_tersect_y && x_int64_tersect_z < z_int64_tersect_y) {
-//                     face = 'BACKZY';
-//                 } else {
-//                     face = 'TOPZY';
-//                 }
-//             } else if (y_int64_tersect_x < z_int64_tersect_x && y_int64_tersect_x < x_int64_tersect_y && y_int64_tersect_x < z_int64_tersect_y) {
-//                 face = 'RIGHTX';
-//             } else {
-//                 face = 'FRONTZX';
-//             }
-//         } else if (z_int64_tersect_x < y_int64_tersect_x && z_int64_tersect_x < x_int64_tersect_y && z_int64_tersect_x < z_int64_tersect_y) {
-//             face = 'BOTTOMYX';
-//         } else {
-//             face = 'RIGHTX';
-//         }
-//     }
-// }
-
-/////  ******* usused point64_ter method for better memory management *******//////
-
-// void dials_2_thetaphi_22(double rotated_s1[], int64_t L1, double *theta, double *phi) {
-//     if (L1 == 1) {
-//         // L1 is the incident beam and L2 is the diffracted so they are opposite
-//         rotated_s1[0] = -rotated_s1[0];
-//         rotated_s1[1] = -rotated_s1[1];
-//         rotated_s1[2] = -rotated_s1[2];
-//     }
-
-//     if (rotated_s1[1] == 0) {
-//         // tan-1(y/-x) at the scattering vector after rotation np.arctan(y/np.sqrt( x**2+ z**2))
-//         *theta = atan(-rotated_s1[2] / (-sqrt(pow(rotated_s1[0], 2) + pow(rotated_s1[1], 2)) + 0.001));
-//         // tan-1(-z/-x) because how phi and my system are defined so is tan-1(-z/-x) instead of tan-1(z/-x)
-//         *phi = atan(-rotated_s1[0] / (rotated_s1[1] + 0.001));
-//     }
-//     else {
-//         if (rotated_s1[1] < 0) {
-//             *theta = atan(-rotated_s1[2] / sqrt(pow(rotated_s1[0], 2) + pow(rotated_s1[1], 2)));  // tan-1(y/-x)
-//             *phi = atan(-rotated_s1[0] / (rotated_s1[1]));
-//         }
-//         else {
-//             if (rotated_s1[2] < 0) {
-//                 *theta = M_PI - atan(-rotated_s1[2] / sqrt(pow(rotated_s1[0], 2) + pow(rotated_s1[1], 2)));  // tan-1(y/-x)
-//             }
-//             else {
-//                 *theta = -M_PI - atan(-rotated_s1[2] / sqrt(pow(rotated_s1[0], 2) + pow(rotated_s1[1], 2)));  // tan-1(y/-x)
-//             }
-//             *phi = -atan(-rotated_s1[0] / (-rotated_s1[1]));  // tan-1(-z/-x)
-//         }
-//     }
-// }

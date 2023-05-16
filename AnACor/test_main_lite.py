@@ -22,6 +22,15 @@ import multiprocessing as mp
 #        Parse the argument
 # ===========================================
 
+dict_face = {
+    'FRONTZY': 1,
+    'LEYX': 2,
+    'RIYX': 3,
+    'TOPZX': 4,
+    'BOTZX': 5,
+    'BACKZY': 6
+}
+
 def str2bool(v):
     if isinstance(v, bool):
         return v
@@ -221,6 +230,13 @@ def worker_function(t1,low, up,dataset,selected_data ,label_list,
     corr = []
     dict_corr = []
     shape = np.array(label_list.shape)
+    
+    dials_lib = ct.CDLL( os.path.join( os.path.dirname( os.path.abspath( __file__ )), './ray_tracing.so' ))
+    dials_lib.cube_face.restype = ct.c_int
+    dials_lib.cube_face.argtypes = [np.ctypeslib.ndpointer( dtype = np.int64 ), 
+                                    np.ctypeslib.ndpointer( dtype = np.float64 ), 
+                                    np.ctypeslib.ndpointer( dtype = np.int64 ),
+                                    ct.c_int]
     if by_c :
 
         # class Thetaphi( ct.Structure ) :
@@ -276,7 +292,6 @@ def worker_function(t1,low, up,dataset,selected_data ,label_list,
         # dials_lib = ct.CDLL( './ray_tracing.so' )s
         # gcc -shared -o ray_tracing.so ray_tracing.c -fPIC
 
-
         dials_lib.ray_tracing_sampling.restype = ct.c_double
         dials_lib.ray_tracing_sampling.argtypes = [  # crystal_coordinate_shape
             np.ctypeslib.ndpointer( dtype = np.int64 ) ,  # coordinate_list
@@ -311,13 +326,14 @@ def worker_function(t1,low, up,dataset,selected_data ,label_list,
 
         xray = -np.array( axes_data[1]["direction"] )
         xray = np.dot( total_rotation_matrix , xray )
+
         rotated_s1 = np.dot( total_rotation_matrix , scattering_vector )
 
         theta , phi = dials_2_thetaphi_11( rotated_s1 )
         theta_1 , phi_1 = dials_2_thetaphi_11( xray , L1 = True )
 
         if by_c :
-            result = dials_lib.ray_tracing_sampling(
+            result_c = dials_lib.ray_tracing_sampling(
                 coord_list , len( coord_list ) ,
                 rotated_s1 , xray , voxel_size ,
                 coefficients , label_list_c , shape ,
@@ -327,32 +343,39 @@ def worker_function(t1,low, up,dataset,selected_data ,label_list,
             #                     rotated_s1, xray, voxel_size,
             #                 coefficients, label_list_c, shape,
             #                 args.full_iteration, args.store_paths)
-        else :
+        # else :
             ray_direction = dials_2_numpy_11( rotated_s1 )
             xray_direction = dials_2_numpy_11( xray )
             # absorp = np.empty(len(coordinate_list))
             # for k , index in enumerate( coordinate_list ) :
             #     coord = crystal_coordinate[index]
             absorp = np.empty( len( coord_list ) )
+            print( 'i is ',i )
             for k , coord in enumerate( coord_list ) :
                 # face_1 = which_face_2(coord, shape, theta_1, phi_1)
                 # face_2 = which_face_2(coord, shape, theta, phi)
+              
                 face_1 = cube_face( coord , xray_direction , shape , L1 = True )
                 face_2 = cube_face( coord , ray_direction , shape )
+                # face_1c = dials_lib.cube_face(coord, xray2, shape, 1)
+                # face_2c = dials_lib.cube_face(coord, rotated_s1_2, shape, 0)
+                
+   
+
                 path_1 = cal_coord_2( theta_1 , phi_1 , coord , face_1 , shape , label_list )  # 37
                 path_2 = cal_coord_2( theta , phi , coord , face_2 , shape , label_list )  # 16
 
                 numbers_1 = cal_num( path_1 , voxel_size )  # 3.5s
                 numbers_2 = cal_num( path_2 , voxel_size )  # 3.5s
-                if store_paths == 1 :
-                    if k == 0 :
-                        path_length_arr_single = np.expand_dims( np.array( (numbers_1 + numbers_2) ) , axis = 0 )
-                    else :
+    #             if store_paths == 1 :
+    #                 if k == 0 :
+    #                     path_length_arr_single = np.expand_dims( np.array( (numbers_1 + numbers_2) ) , axis = 0 )
+    #                 else :
 
-                        path_length_arr_single = np.concatenate(
-                            (
-                            path_length_arr_single , np.expand_dims( np.array( (numbers_1 + numbers_2) ) , axis = 0 )) ,
-                            axis = 0 )
+    #                     path_length_arr_single = np.concatenate(
+    #                         (
+    #                         path_length_arr_single , np.expand_dims( np.array( (numbers_1 + numbers_2) ) , axis = 0 )) ,
+    #                         axis = 0 )
                 absorption = cal_rate( (numbers_1 + numbers_2) , coefficients )
 
                 absorp[k] = absorption
@@ -364,7 +387,7 @@ def worker_function(t1,low, up,dataset,selected_data ,label_list,
                     path_length_arr = np.concatenate(
                         (path_length_arr , np.expand_dims( path_length_arr_single , axis = 0 )) , axis = 0 )
             result = absorp.mean( )
-
+        print('result_c is ',result)
         t2 = time.time( )
         if printing:
             print( '[{}/{}] theta: {:.4f}, phi: {:.4f} , rotation: {:.4f},  absorption: {:.4f}'.format( low + i ,
@@ -374,37 +397,37 @@ def worker_function(t1,low, up,dataset,selected_data ,label_list,
                                                                                                     phi * 180 / np.pi ,
                                                                                                     rotation_frame_angle * 180 / np.pi ,
                                                                                                     result ) )
-        # pdb.set_trace()
+        pdb.set_trace()
 
-            print( 'process {} it spends {}'.format( os.getpid(),t2 -
-                                                    t1 ) )
+    #         print( 'process {} it spends {}'.format( os.getpid(),t2 -
+    #                                                 t1 ) )
         
-        corr.append( result )
-        # print( 'it spends {}'.format( t2 - t1 ) )
-        dict_corr.append( {'index' : low + i , 'miller_index' : miller_index ,
-                        'intensity' : intensity , 'corr' : result ,
-                        'theta' : theta * 180 / np.pi ,
-                        'phi' : phi * 180 / np.pi ,
-                        'theta_1' : theta_1 * 180 / np.pi ,
-                        'phi_1' : phi_1 * 180 / np.pi , } )
-        if i % 1000 == 1 :
-            if store_paths == 1 :
-                np.save( os.path.join( save_dir , "{}_path_lengths_{}.npy".format( dataset , up ) ) , path_length_arr )
-            with open( os.path.join( save_dir , "{}_refl_{}.json".format( dataset , up ) ) , "w" ) as fz :  # Pickling
-                json.dump( corr , fz , indent = 2 )
-            with open( os.path.join( save_dir , "{}_dict_refl_{}.json".format( dataset , up ) ) ,
-                    "w" ) as f1 :  # Pickling
-                json.dump( dict_corr , f1 , indent = 2 )
-    if store_paths == 1 :
-        np.save( os.path.join( save_dir , "{}_path_lengths_{}.npy".format( dataset , up ) ) , path_length_arr )
-    with open( os.path.join( save_dir , "{}_refl_{}.json".format( dataset , up ) ) , "w" ) as fz :  # Pickling
-        json.dump( corr , fz , indent = 2 )
+    #     corr.append( result )
+    #     # print( 'it spends {}'.format( t2 - t1 ) )
+    #     dict_corr.append( {'index' : low + i , 'miller_index' : miller_index ,
+    #                     'intensity' : intensity , 'corr' : result ,
+    #                     'theta' : theta * 180 / np.pi ,
+    #                     'phi' : phi * 180 / np.pi ,
+    #                     'theta_1' : theta_1 * 180 / np.pi ,
+    #                     'phi_1' : phi_1 * 180 / np.pi , } )
+    #     if i % 1000 == 1 :
+    #         if store_paths == 1 :
+    #             np.save( os.path.join( save_dir , "{}_path_lengths_{}.npy".format( dataset , up ) ) , path_length_arr )
+    #         with open( os.path.join( save_dir , "{}_refl_{}.json".format( dataset , up ) ) , "w" ) as fz :  # Pickling
+    #             json.dump( corr , fz , indent = 2 )
+    #         with open( os.path.join( save_dir , "{}_dict_refl_{}.json".format( dataset , up ) ) ,
+    #                 "w" ) as f1 :  # Pickling
+    #             json.dump( dict_corr , f1 , indent = 2 )
+    # if store_paths == 1 :
+    #     np.save( os.path.join( save_dir , "{}_path_lengths_{}.npy".format( dataset , up ) ) , path_length_arr )
+    # with open( os.path.join( save_dir , "{}_refl_{}.json".format( dataset , up ) ) , "w" ) as fz :  # Pickling
+    #     json.dump( corr , fz , indent = 2 )
 
-    with open( os.path.join( save_dir , "{}_dict_refl_{}.json".format( dataset , up ) ) , "w" ) as f1 :  # Pickling
-        json.dump( dict_corr , f1 , indent = 2 )
-    with open( os.path.join( save_dir , "{}_time_{}.json".format( dataset , up ) ) , "w" ) as f1 :  # Pickling
-        json.dump( t2 - t1 , f1 , indent = 2 )
-    print( '{} ({} ) process is Finish!!!!'.format(os.getpid(),up) )
+    # with open( os.path.join( save_dir , "{}_dict_refl_{}.json".format( dataset , up ) ) , "w" ) as f1 :  # Pickling
+    #     json.dump( dict_corr , f1 , indent = 2 )
+    # with open( os.path.join( save_dir , "{}_time_{}.json".format( dataset , up ) ) , "w" ) as f1 :  # Pickling
+    #     json.dump( t2 - t1 , f1 , indent = 2 )
+    # print( '{} ({} ) process is Finish!!!!'.format(os.getpid(),up) )
 
 def slice_sampling(label_list,rate_list, dim='z', sampling=5000, auto=True):
 

@@ -1274,6 +1274,7 @@ def cube_face ( ray_origin , ray_direction , cube_size , L1 = False ) :
     # if t_min > t_max :
     #     # The ray doesn't intersect with the cube
     #     return None
+    # print( "t_min is {}".format( t_min ) )
     if t_min == tx_min :
         # The ray intersects with the left face of the cube]
         if L1 is True :
