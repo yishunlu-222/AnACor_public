@@ -13,7 +13,7 @@ pth=./c/
 all: program
 
 program:
-	$(CC) -shared -o ray_tracing.so ${pth}ray_tracing.c -fPIC -std=c99
+	$(CC) -shared -o ray_tracing.so ${pth}*.c -fPIC -std=c99
 
 
 clean:

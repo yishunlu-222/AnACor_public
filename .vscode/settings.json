@@ -2,6 +2,7 @@
     "C_Cpp.errorSquiggles": "disabled",
     "files.associations": {
         "bisection.h": "c",
-        "stdint.h": "c"
+        "stdint.h": "c",
+        "math.h": "c"
     }
 }

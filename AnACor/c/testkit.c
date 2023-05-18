@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-
+#include <stdint.h>
 
 int64_t count_len(int64_t *arr)
 {
@@ -29,7 +29,7 @@ void printArray(int64_t arr[], int64_t n)
     printf("\n");
 }
 
-void printArrayshort(int64_t arr[], char n)
+void printArrayshort(int8_t arr[], int64_t n)
 {
     for (int64_t i = 0; i < n; i++)
     {

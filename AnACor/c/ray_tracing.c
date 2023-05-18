@@ -8,12 +8,9 @@
 #include <sys/resource.h>
 #include "bisection.h"
 #include "testkit.h"
-#include "ray_tracing.h"
+// #include "ray_tracing.h"
 #define M_PI 3.14159265358979323846
 #define test_mod 0
-
-
-
 
 typedef struct
 {
@@ -30,9 +27,6 @@ typedef struct
     double theta;
     double phi;
 } ThetaPhi;
-
-
-
 
 ThetaPhi dials_2_thetaphi_22(double rotated_s1[3], int64_t L1)
 {
@@ -73,24 +67,25 @@ ThetaPhi dials_2_thetaphi_22(double rotated_s1[3], int64_t L1)
     return result;
 }
 
-
-void dials_2_numpy(double vector[3], double result[3]) {
+void dials_2_numpy(double vector[3], double result[3])
+{
     double numpy_2_dials_1[3][3] = {
         {1, 0, 0},
         {0, 0, 1},
-        {0, 1, 0}
-    };
+        {0, 1, 0}};
 
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 3; i++)
+    {
         result[i] = 0.0;
-        for (int j = 0; j < 3; j++) {
+        for (int j = 0; j < 3; j++)
+        {
             result[i] += numpy_2_dials_1[i][j] * vector[j];
         }
     }
 }
 
-
-int64_t cube_face(int64_t ray_origin[3], double ray_direction[3], int64_t cube_size[3], int L1) {
+int64_t cube_face(int64_t ray_origin[3], double ray_direction[3], int64_t cube_size[3], int L1)
+{
     int64_t min_x = 0;
     int64_t max_x = cube_size[2];
     int64_t min_y = 0;
@@ -107,42 +102,57 @@ int64_t cube_face(int64_t ray_origin[3], double ray_direction[3], int64_t cube_s
 
     double t_numbers[6] = {tx_min, ty_min, tz_min, tx_max, ty_max, tz_max};
     int t_numbers_len = sizeof(t_numbers) / sizeof(t_numbers[0]);
-    
+
     double non_negative_numbers[t_numbers_len];
     int non_negative_len = 0;
-    for (int i = 0; i < t_numbers_len; i++) {
-        if (t_numbers[i] >= 0) {
+    for (int i = 0; i < t_numbers_len; i++)
+    {
+        if (t_numbers[i] >= 0)
+        {
             non_negative_numbers[non_negative_len++] = t_numbers[i];
         }
     }
 
     double t_min = non_negative_numbers[0];
-    for (int i = 1; i < non_negative_len; i++) {
-        if (non_negative_numbers[i] < t_min) {
+    for (int i = 1; i < non_negative_len; i++)
+    {
+        if (non_negative_numbers[i] < t_min)
+        {
             t_min = non_negative_numbers[i];
         }
     }
     // printf("t_min: %f\n", t_min);
-    if (t_min == tx_min) {
+    if (t_min == tx_min)
+    {
         return L1 ? 1 : 6;
-    } else if (t_min == tx_max) {
+    }
+    else if (t_min == tx_max)
+    {
         return L1 ? 6 : 1;
-    } else if (t_min == ty_min) {
+    }
+    else if (t_min == ty_min)
+    {
         return L1 ? 5 : 4;
-    } else if (t_min == ty_max) {
+    }
+    else if (t_min == ty_max)
+    {
         return L1 ? 4 : 5;
-    } else if (t_min == tz_min) {
+    }
+    else if (t_min == tz_min)
+    {
         return L1 ? 3 : 2;
-    } else if (t_min == tz_max) {
+    }
+    else if (t_min == tz_max)
+    {
         return L1 ? 2 : 3;
-    } else {
+    }
+    else
+    {
         fprintf(stderr, "face determination has a problem with direction %f, %f, %f and position %f, %f, %f\n", ray_direction[0], ray_direction[1],
-         ray_direction[2], ray_origin[0], ray_origin[1], ray_origin[2])  ;
+                ray_direction[2], ray_origin[0], ray_origin[1], ray_origin[2]);
         exit(EXIT_FAILURE);
     }
 }
-
-
 
 int64_t which_face(int64_t coord[3], int64_t shape[3], double theta, double phi)
 {
@@ -171,12 +181,12 @@ int64_t which_face(int64_t coord[3], int64_t shape[3], double theta, double phi)
     double x = coord[2];
     double y = coord[1];
     double z = coord[0];
-    if (test_mod)
-    {
-            struct rusage usage;
-    getrusage(RUSAGE_SELF, &usage);
-    printf("Memory usage: %ld KB\n", usage.ru_maxrss);
-    }
+    // if (test_mod)
+    // {
+    //     struct rusage usage;
+    //     getrusage(RUSAGE_SELF, &usage);
+    //     printf("Memory usage: %ld KB\n", usage.ru_maxrss);
+    // }
     if (fabs(theta) < M_PI / 2)
     {
         double theta_up = atan((y - 0) / (x - 0 + 0.001));
@@ -360,7 +370,7 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
     int64_t z_max = shape[0], y_max = shape[1], x_max = shape[2];
     int64_t diagonal = x_max * sqrt(3);
 
-    int64_t *path_2 = malloc(diagonal *3* sizeof(int64_t));
+    int64_t *path_2 = malloc(diagonal * 3 * sizeof(int64_t));
     int64_t *classes_posi = malloc(diagonal * sizeof(int64_t));
     int64_t *classes = malloc(diagonal * sizeof(int64_t));
     classes[0] = 3;
@@ -1210,14 +1220,12 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
     // result.posi = classes_posi;
     // result.classes = classes;
 
-
     result.len_path_2 = len_path_2;
     result.len_classes = len_classes;
     result.len_classes_posi = len_classes_posi;
     result.posi = realloc(classes_posi, len_classes_posi * sizeof(int64_t));
     result.classes = realloc(classes, len_classes * sizeof(int64_t));
     result.ray = realloc(path_2, len_path_2 * 3 * sizeof(int64_t));
-
 
     // result.posi = malloc(len_classes_posi * sizeof(int64_t));
     // result.classes = malloc(len_classes * sizeof(int64_t));
@@ -1256,7 +1264,6 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
     // printArray(classes_posi, len_classes_posi);
     // printArray(classes, len_classes);
     // }
-    
 
     // free(path_2);
     // if (test_mod)
@@ -1271,7 +1278,7 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
     // printf("classes_posi is free \n");
 
     // }
-        
+
     // free(classes);
     // if (test_mod)
     // {
@@ -1394,6 +1401,126 @@ double cal_rate(double *numbers_1, double *numbers_2, double *coefficients,
     return result;
 }
 
+double ib_test(
+    int64_t *coord_list,
+    int64_t len_coord_list,
+     double *rotated_s1,  double *xray,
+    double *voxel_size, double *coefficients,
+    int8_t ***label_list, int64_t *shape, int full_iteration,
+    int64_t store_paths)
+{
+
+    // printArray(crystal_coordinate_shape, 3);
+    // printArrayD(rotated_s1, 3);
+    // printArrayD(xray, 3);
+    // if (test_mod)
+    // {
+    //     struct rusage usage;
+    //     getrusage(RUSAGE_SELF, &usage);
+    //     printf("The starting Memory usage: %ld KB\n", usage.ru_maxrss);
+    // }
+
+    // in the theta phi determination, xray will be reversed
+    // so create a new array to store the original xray to process
+
+    int num_cls=4;
+    double x_ray_angle[3], x_ray_trans[3];
+    double rotated_s1_angle[3], rotated_s1_trans[3];
+    memcpy(x_ray_angle, xray, sizeof(xray)*3);
+    memcpy(x_ray_trans, xray, sizeof(xray)*3);
+    memcpy(rotated_s1_angle, rotated_s1, sizeof(rotated_s1)*3);
+    memcpy(rotated_s1_trans, rotated_s1, sizeof(rotated_s1)*3);
+
+    // for (int64_t i = 0; i < 3; i++)
+    // {
+    //     x_ray_c[i] = xray[i];
+    // }
+
+    // printArrayD(voxel_size, 3);
+    // printArrayD(coefficients, 3);
+    // printArray(shape, 3);
+    // printf("%d ", len_coordinate_list);
+
+    ThetaPhi result_2 = dials_2_thetaphi_22(rotated_s1_angle, 0);
+    ThetaPhi result_1 = dials_2_thetaphi_22(x_ray_angle, 1);
+
+
+    double theta = result_2.theta;
+    double phi = result_2.phi;
+    double theta_1 = result_1.theta;
+    double phi_1 = result_1.phi;
+
+    Path2_c path_2, path_1;
+    double *numbers_1, *numbers_2;
+    double absorption;
+    double absorption_sum = 0, absorption_mean = 0;
+
+    double resolution = 1.0;
+    double xray_direction[3], scattered_direction[3];
+    dials_2_numpy(x_ray_trans, xray_direction);
+    dials_2_numpy(rotated_s1_trans, scattered_direction);
+
+    for (int64_t i = 0; i < len_coord_list; i++)
+    {
+
+        int64_t coord[3] = {coord_list[i * 3],
+                            coord_list[i * 3 + 1],
+                            coord_list[i * 3 + 2]};
+
+
+        int64_t face_1 = cube_face(coord, xray_direction, shape, 1);
+        int64_t face_2 = cube_face(coord, scattered_direction, shape, 0);
+
+        Path_iterative_bisection ibpath_1 = iterative_bisection(theta_1, phi_1,
+                                                             coord, face_1, label_list, shape, resolution,num_cls);
+        Path_iterative_bisection ibpath_2 = iterative_bisection(theta, phi,
+                                                             coord, face_2, label_list, shape, resolution,num_cls);
+        numbers_1 = cal_path_bisection(ibpath_1, voxel_size);                            
+        numbers_2 = cal_path_bisection(ibpath_2, voxel_size);   
+        absorption = cal_rate(numbers_1, numbers_2, coefficients, 1); 
+        absorption_sum += absorption;                     
+    if (test_mod)
+    {
+        printf("ibpath_1\n");
+        printArray(ibpath_1.path, (ibpath_1.length) * 3);
+        printf("ibpath_1.classes\n");
+        printArrayshort(ibpath_1.classes, ibpath_1.length );
+        printf("ibpath_1.boundary_list\n");
+        printArrayshort(ibpath_1.boundary_list, ibpath_1.length);
+        printf("%d\n", ibpath_1.length);
+        printf("numbers_1\n");
+        printArrayD(numbers_1, 4);
+        
+        printf("ibpath_2\n");
+        printArray(ibpath_2.path, (ibpath_2.length ) * 3);
+        printf("ibpath_2.classes\n");
+        printArrayshort(ibpath_2.classes, ibpath_2.length );
+        printf("ibpath_2.boundary_list\n");
+        printArrayshort(ibpath_2.boundary_list, ibpath_2.length );
+        printf("%d\n", ibpath_2.length);
+        printf("numbers_2\n");
+        printArrayD(numbers_2, 4);
+    }
+    free(ibpath_1.path);
+    free(ibpath_2.path);
+    free(ibpath_1.classes);
+    free(ibpath_2.classes);
+    free(ibpath_1.boundary_list);
+    free(ibpath_2.boundary_list);
+    free(numbers_1);
+    free(numbers_2);
+    if (i==0){
+        break;
+    }
+    }
+    // free(numbers_2);
+
+
+    absorption_mean = absorption_sum / len_coord_list;
+    printf("absorption_mean: %f\n", absorption_mean);
+    return absorption_mean;
+}
+
 double ray_tracing_sampling(
     int64_t *coord_list,
     int64_t len_coord_list,
@@ -1406,28 +1533,27 @@ double ray_tracing_sampling(
     // printArray(crystal_coordinate_shape, 3);
     // printArrayD(rotated_s1, 3);
     // printArrayD(xray, 3);
-    if (test_mod)
-    {
-            struct rusage usage;
-    getrusage(RUSAGE_SELF, &usage);
-    printf("The starting Memory usage: %ld KB\n", usage.ru_maxrss);
-    }
-    
+    // if (test_mod)
+    // {
+    //     struct rusage usage;
+    //     getrusage(RUSAGE_SELF, &usage);
+    //     printf("The starting Memory usage: %ld KB\n", usage.ru_maxrss);
+    // }
+
     // in the theta phi determination, xray will be reversed
     // so create a new array to store the original xray to process
-   
-    double x_ray_angle[3],x_ray_trans[3];
-    double rotated_s1_angle[3],rotated_s1_trans[3];
-    memcpy(x_ray_angle, xray, sizeof(xray));
-    memcpy(x_ray_trans, xray, sizeof(xray));
-    memcpy(rotated_s1_angle, rotated_s1, sizeof(rotated_s1));
-    memcpy(rotated_s1_trans, rotated_s1, sizeof(rotated_s1));
+
+    double x_ray_angle[3], x_ray_trans[3];
+    double rotated_s1_angle[3], rotated_s1_trans[3];
+    // memcpy(x_ray_angle, xray, sizeof(xray));
+    // memcpy(x_ray_trans, xray, sizeof(xray));
+    // memcpy(rotated_s1_angle, rotated_s1, sizeof(rotated_s1));
+    // memcpy(rotated_s1_trans, rotated_s1, sizeof(rotated_s1));
 
     // for (int64_t i = 0; i < 3; i++)
     // {
     //     x_ray_c[i] = xray[i];
     // }
-
 
     // printArrayD(voxel_size, 3);
     // printArrayD(coefficients, 3);
@@ -1447,11 +1573,10 @@ double ray_tracing_sampling(
     double absorption;
     double absorption_sum = 0, absorption_mean = 0;
 
-
-    double xray_direction[3],scattered_direction[3];
+    double xray_direction[3], scattered_direction[3];
     dials_2_numpy(x_ray_trans, xray_direction);
     dials_2_numpy(rotated_s1_trans, scattered_direction);
-    printArrayD(xray_direction,3);
+    printArrayD(xray_direction, 3);
     // if (test_mod)
     // {
     //     theta_1 = 0.660531;
@@ -1468,7 +1593,6 @@ double ray_tracing_sampling(
         // printf("%d ",label_list[coord[0]][coord[1]][coord[2]]);
         // int64_t face_1 = which_face(coord, shape, theta_1, phi_1);
         // int64_t face_2 = which_face(coord, shape, theta, phi);
-
 
         int64_t face_1 = cube_face(coord, xray_direction, shape, 1);
         int64_t face_2 = cube_face(coord, scattered_direction, shape, 0);
@@ -1498,7 +1622,6 @@ double ray_tracing_sampling(
             printf("%d \n", face_2);
             printf("theta is %f ", theta);
             printf("phi is %f \n", phi);
-
         }
         // printf("face_2 at %d is %d \n",i, face_2);
         path_2 = cal_coord(theta, phi, coord, face_2, shape, label_list, full_iteration);
@@ -1519,7 +1642,7 @@ double ray_tracing_sampling(
         // printArrayD(numbers_2, 4);
 
         absorption = cal_rate(numbers_1, numbers_2, coefficients, 1);
-        
+
         if (test_mod)
         {
             printf("numbers_1 is  ");
@@ -1580,4 +1703,3 @@ double ray_tracing_sampling(
     // free(numbers_2);
     return absorption_mean;
 }
-
