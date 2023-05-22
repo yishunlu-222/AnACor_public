@@ -10,7 +10,7 @@
 #include "testkit.h"
 // #include "ray_tracing.h"
 #define M_PI 3.14159265358979323846
-#define test_mod 0
+#define test_mod 1
 
 typedef struct
 {
@@ -1509,15 +1509,13 @@ double ib_test(
     free(ibpath_2.boundary_list);
     free(numbers_1);
     free(numbers_2);
-    if (i==0){
-        break;
-    }
+
     }
     // free(numbers_2);
 
 
     absorption_mean = absorption_sum / len_coord_list;
-    printf("absorption_mean: %f\n", absorption_mean);
+    // printf("absorption_mean: %f\n", absorption_mean);
     return absorption_mean;
 }
 
@@ -1576,7 +1574,7 @@ double ray_tracing_sampling(
     double xray_direction[3], scattered_direction[3];
     dials_2_numpy(x_ray_trans, xray_direction);
     dials_2_numpy(rotated_s1_trans, scattered_direction);
-    printArrayD(xray_direction, 3);
+
     // if (test_mod)
     // {
     //     theta_1 = 0.660531;
