@@ -288,6 +288,15 @@ def main ( ) :
     if args.create3D is True :
         ModelGenerator = Image2Model( args.segimg_path , model_path,logger )
         model_storepath = ModelGenerator.run( )
+
+        with open('./default_preprocess_input.yaml', 'r' ) as f0 :
+                pre_config = yaml.safe_load( f0 )
+
+        pre_config[ 'model_storepath' ] = model_storepath
+
+        with open( './default_preprocess_input.yaml' , 'w' ) as file :
+            yaml.dump( pre_config , file, default_flow_style=False, sort_keys=False, indent=4)
+
     logger.info( "\n3D model file is already created... \n" )
     print( "\n3D model file is already created... \n" )
 
