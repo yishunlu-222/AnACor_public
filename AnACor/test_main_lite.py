@@ -387,7 +387,7 @@ def worker_function(t1,low, up,dataset,selected_data ,label_list,
                     path_length_arr = np.concatenate(
                         (path_length_arr , np.expand_dims( path_length_arr_single , axis = 0 )) , axis = 0 )
             result = absorp.mean( )
-        print('result_c is ',result)
+        print('result_c is ',result_c)
         t2 = time.time( )
         if printing:
             print( '[{}/{}] theta: {:.4f}, phi: {:.4f} , rotation: {:.4f},  absorption: {:.4f}'.format( low + i ,

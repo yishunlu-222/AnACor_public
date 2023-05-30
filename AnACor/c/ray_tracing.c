@@ -10,7 +10,7 @@
 #include "testkit.h"
 // #include "ray_tracing.h"
 #define M_PI 3.14159265358979323846
-#define test_mod 1
+#define test_mod 0
 
 typedef struct
 {
@@ -390,6 +390,7 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
         increment_ratio_x = -1;
         increment_ratio_y = tan(theta) / cos(phi);
         increment_ratio_z = tan(phi);
+
         for (int64_t increment = 0; increment <= x - 0; increment++)
         {
 
@@ -432,7 +433,9 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
                 new_z = 0;
             }
             int64_t potential_coord[3] = {new_z, new_y, new_x};
+
             int64_t label = label_list[new_z][new_y][new_x];
+
             if (!full_iteration)
             {
                 if (label == 0)
@@ -1223,10 +1226,10 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
     result.len_path_2 = len_path_2;
     result.len_classes = len_classes;
     result.len_classes_posi = len_classes_posi;
+
     result.posi = realloc(classes_posi, len_classes_posi * sizeof(int64_t));
     result.classes = realloc(classes, len_classes * sizeof(int64_t));
     result.ray = realloc(path_2, len_path_2 * 3 * sizeof(int64_t));
-
     // result.posi = malloc(len_classes_posi * sizeof(int64_t));
     // result.classes = malloc(len_classes * sizeof(int64_t));
     // result.ray = malloc(len_path_2 * 3 * sizeof(int64_t));
@@ -1543,10 +1546,10 @@ double ray_tracing_sampling(
 
     double x_ray_angle[3], x_ray_trans[3];
     double rotated_s1_angle[3], rotated_s1_trans[3];
-    // memcpy(x_ray_angle, xray, sizeof(xray));
-    // memcpy(x_ray_trans, xray, sizeof(xray));
-    // memcpy(rotated_s1_angle, rotated_s1, sizeof(rotated_s1));
-    // memcpy(rotated_s1_trans, rotated_s1, sizeof(rotated_s1));
+    memcpy(x_ray_angle, xray, 3*sizeof(xray));
+    memcpy(x_ray_trans, xray,3* sizeof(xray));
+    memcpy(rotated_s1_angle, rotated_s1, 3*sizeof(rotated_s1));
+    memcpy(rotated_s1_trans, rotated_s1, 3*sizeof(rotated_s1));
 
     // for (int64_t i = 0; i < 3; i++)
     // {
@@ -1622,6 +1625,8 @@ double ray_tracing_sampling(
             printf("phi is %f \n", phi);
         }
         // printf("face_2 at %d is %d \n",i, face_2);
+
+
         path_2 = cal_coord(theta, phi, coord, face_2, shape, label_list, full_iteration);
         if (test_mod)
         {

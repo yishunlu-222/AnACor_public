@@ -1227,11 +1227,14 @@ class RunAbsorptionCoefficient( AbsorptionCoefficient ) :
         percent = 1
         # 1 has to be the first to constraint the range of histogram
         order = [1 , 0.75 , 0.5 , 0.25]
-        liac_list = []
-        loac_list = []
-        crac_list = []
-        buac_list = []
-
+        liac_mean_list = []
+        loac_mean_list = []
+        crac_mean_list = []
+        buac_mean_list = []
+        liac_median_list = []
+        loac_median_list = []
+        crac_median_list = []
+        buac_median_list = []
         variable_dict_x = {
             'li' : x_list_li ,
             'lo' : x_list_lo ,
@@ -1244,12 +1247,16 @@ class RunAbsorptionCoefficient( AbsorptionCoefficient ) :
             'lo' : y_list_lo ,
             'cr' : y_list_cr ,
         }
-        variable_dict_list = {
-            'li' : liac_list ,
-            'lo' : loac_list ,
-            'cr' : crac_list ,
+        variable_mean_dict_list = {
+            'li' : liac_mean_list ,
+            'lo' : loac_mean_list ,
+            'cr' : crac_mean_list ,
         }
-
+        variable_median_dict_list = {
+            'li' : liac_median_list ,
+            'lo' : loac_median_list ,
+            'cr' : crac_median_list ,
+        }
         variable_region_back = {
             'li' : self.li_region_back ,
             'lo' : self.lo_region_back ,
@@ -1267,7 +1274,8 @@ class RunAbsorptionCoefficient( AbsorptionCoefficient ) :
         if number_cls == 5:
             variable_dict_x['bu'] = x_list_bu
             variable_dict_y['bu'] = y_list_bu
-            variable_dict_list['bu'] = buac_list
+            variable_mean_dict_list['bu'] = buac_mean_list
+            variable_median_dict_list['bu'] = buac_median_list
             variable_region_back['bu'] = self.bu_region_back
             
             variable_flags['bu'] = 0
@@ -1280,7 +1288,10 @@ class RunAbsorptionCoefficient( AbsorptionCoefficient ) :
                 main_classes.append(key)
 
         name_list=main_classes.copy()
-        main_classes.remove( self.base )
+        try:
+            main_classes.remove( self.base )
+        except:
+            pass
         
         if singlecls :
 
@@ -1306,8 +1317,11 @@ class RunAbsorptionCoefficient( AbsorptionCoefficient ) :
 
                     # self.coe_li = roi_base.mean()
                     self.variable_coe[self.base] = roi_base.mean( )
-                    variable_dict_list[self.base].append( roi_base.mean( ) )
-
+                    variable_mean_dict_list[self.base].append( roi_base.mean( ) )
+                    variable_median_dict_list[self.base].append( np.median( roi_base ) )
+                else:
+                    variable_mean_dict_list[self.base].append( self.variable_coe[self.base]  )
+                    variable_median_dict_list[self.base].append( self.variable_coe[self.base]  )
                 for other_cls in main_classes :
                     # try:
                     if variable_flags[other_cls] == 0 :
@@ -1321,13 +1335,19 @@ class RunAbsorptionCoefficient( AbsorptionCoefficient ) :
                                                                             other_cls] , single = False )
                             # coe_othercls = roi_othercls.mean()
                             self.variable_coe[other_cls] = roi_othercls.mean( )
+                            variable_mean_dict_list[other_cls].append( roi_othercls.mean( ) )
+                            variable_median_dict_list[other_cls].append( np.median( roi_othercls ) )
                             # pdb.set_trace()
                         else :
                             self.variable_coe[other_cls] = 0
+                            variable_mean_dict_list[other_cls].append(0 )
+                            variable_median_dict_list[other_cls].append( 0 )
+                    else:
+                        variable_mean_dict_list[other_cls].append( self.variable_coe[other_cls] )
+                        variable_median_dict_list[other_cls].append( self.variable_coe[other_cls] )
                         # except:
                         #     coe_othercls
 
-                        variable_dict_list[other_cls].append( self.variable_coe[other_cls] )
                 """set the classes except liquor and crystal to be 0 to determine the area
                 (note: but now the loop absorption coefficients are assumed to be measured by Ramona)"""
 
@@ -1397,15 +1417,25 @@ class RunAbsorptionCoefficient( AbsorptionCoefficient ) :
 
             output = [order]
             output.append(name_list )
-            output.append( liac_list )
-            output.append( loac_list )
-            output.append( crac_list )
+            output.append( liac_mean_list )
+            output.append( loac_mean_list )
+            output.append(  crac_mean_list )
             if number_cls == 5 :
-                output.append( buac_list )
+                output.append( buac_mean_list )
             # pdb.set_trace()
-            with open( os.path.join( self.save_dir , "coefficients_with_percentage.json" ) , 'w' ) as f1 :
+            with open( os.path.join( self.save_dir , "mean_coefficients_with_percentage.json" ) , 'w' ) as f1 :
                 json.dump( output , f1 , indent = 2 )
 
+            output = [order]
+            output.append(name_list )
+            output.append( liac_median_list )
+            output.append( loac_median_list)
+            output.append( crac_median_list)
+            if number_cls == 5 :
+                output.append( buac_median_list )
+            # pdb.set_trace()
+            with open( os.path.join( self.save_dir , "median_coefficients_with_percentage.json" ) , 'w' ) as f1 :
+                json.dump( output , f1 , indent = 2 )
 
 def tablization ( dataset , centre = 0 , save_dir = './' ) :
     import pandas as pd
