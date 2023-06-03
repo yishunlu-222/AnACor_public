@@ -8,6 +8,8 @@
 #include <sys/resource.h>
 #include "bisection.h"
 #include "testkit.h"
+#include "matrices.h"
+
 // #include "ray_tracing.h"
 #define M_PI 3.14159265358979323846
 #define test_mod 0
@@ -27,6 +29,11 @@ typedef struct
     double theta;
     double phi;
 } ThetaPhi;
+
+typedef struct {
+    char key[100];
+    char value[100];
+} DictionaryEntry;
 
 ThetaPhi dials_2_thetaphi_22(double rotated_s1[3], int64_t L1)
 {
@@ -66,6 +73,11 @@ ThetaPhi dials_2_thetaphi_22(double rotated_s1[3], int64_t L1)
 
     return result;
 }
+
+
+
+
+
 
 void dials_2_numpy(double vector[3], double result[3])
 {
@@ -1530,7 +1542,8 @@ double ray_tracing_sampling(
     int8_t ***label_list, int64_t *shape, int full_iteration,
     int64_t store_paths)
 {
-
+    // print_matrix(rotated_s1, 1, 3);
+    // print_matrix(xray, 1, 3);
     // printArray(crystal_coordinate_shape, 3);
     // printArrayD(rotated_s1, 3);
     // printArrayD(xray, 3);
@@ -1562,13 +1575,20 @@ double ray_tracing_sampling(
     // printf("%d ", len_coordinate_list);
     ThetaPhi result_2 = dials_2_thetaphi_22(rotated_s1_angle, 0);
     ThetaPhi result_1 = dials_2_thetaphi_22(x_ray_angle, 1);
+    // printf("rotated_s1_angle \n");
+    // print_matrix(rotated_s1_angle, 1, 3);
+    // printf("x_ray_angle \n");
+    // print_matrix(x_ray_angle, 1, 3);
     // printf("\n");
     double theta = result_2.theta;
     double phi = result_2.phi;
     double theta_1 = result_1.theta;
     double phi_1 = result_1.phi;
     // printf("\n");
-
+    // printf("theta: %f\n", theta);
+    // printf("phi: %f\n", phi);
+    // printf("theta_1: %f\n", theta_1);
+    // printf("phi_1: %f\n", phi_1);
     Path2_c path_2, path_1;
     double *numbers_1, *numbers_2;
     double absorption;
@@ -1577,7 +1597,7 @@ double ray_tracing_sampling(
     double xray_direction[3], scattered_direction[3];
     dials_2_numpy(x_ray_trans, xray_direction);
     dials_2_numpy(rotated_s1_trans, scattered_direction);
-
+    
     // if (test_mod)
     // {
     //     theta_1 = 0.660531;
@@ -1706,3 +1726,75 @@ double ray_tracing_sampling(
     // free(numbers_2);
     return absorption_mean;
 }
+
+
+double *ray_tracing_overall(
+    int64_t *coord_list,
+    int64_t len_coord_list,
+    const double *scattering_vector_list, const double *omega_list,
+    const double *raw_xray,
+    const double *omega_axis,const double *kp_rotation_matrix,
+    int64_t len_result,
+    double *voxel_size, double *coefficients,
+    int8_t ***label_list, int64_t *shape, int full_iteration,
+    int64_t store_paths){
+
+        // double *result_list = malloc( len_result* sizeof(double));
+    // size_t len_result_double = (int32_t) len_result* sizeof(double);
+    int32_t len_result_double = (int32_t) len_result;
+
+    double *result_list = malloc(len_result_double * sizeof(double));
+
+    // printf("result_list is %p \n", result_list);
+    for (int64_t i = 0; i < len_result; i++){
+        double result;
+        double rotation_matrix_frame_omega[9];
+        double rotation_matrix[9];
+        double total_rotation_matrix[9];
+        double xray[3];
+        double rotated_s1[3];   
+        // printf("kap roation  \n");
+        kp_rotation( omega_axis , omega_list[i], (double*)rotation_matrix_frame_omega);
+        // printf("rotation_matrix_frame_omega is \n");
+        // print_matrix((double*)rotation_matrix_frame_omega,3,3);
+        dot_product( (double*)rotation_matrix_frame_omega , kp_rotation_matrix, (double*)rotation_matrix,3,3,3 );
+        
+        transpose( (double*)rotation_matrix,3,3,(double*)total_rotation_matrix); 
+        // printf("total_rotation_matrix is \n");
+        // print_matrix((double*)total_rotation_matrix,3,3);
+
+        // printf("xray is \n");
+        // print_matrix(raw_xray,1,3);
+        dot_product( (double*)total_rotation_matrix , raw_xray, (double*)xray,3,3,1 );
+        // printf("xray is \n");
+        // print_matrix(xray,1,3);
+        double scattering_vector[3]={scattering_vector_list[i*3],
+                                    scattering_vector_list[i*3+1],
+                                    scattering_vector_list[i*3+2]};
+        dot_product( (double*)total_rotation_matrix , (double*)scattering_vector, (double*)rotated_s1,3,3,1 );
+        // printf("rotated_s1 is \n");
+        // print_matrix(rotated_s1,1,3);
+        // ThetaPhi scattering_angles = dials_2_thetaphi_22((double *)rotated_s1, 0);
+        // // printf("scattering_angles is \n");
+        // // printf("theta is %f \n",scattering_angles.theta);
+        // // printf("phi is %f \n",scattering_angles.phi);
+        // ThetaPhi incident_angles = dials_2_thetaphi_22((double *)xray, 1);
+        // printf("incident_angles is %f\n",incident_angles.theta);
+        // printf("incident_angles is %f\n",incident_angles.phi);
+        
+
+        result = ray_tracing_sampling(
+            coord_list, len_coord_list,
+            (double*)rotated_s1, (double*)xray,
+            voxel_size, coefficients,
+            label_list, shape, full_iteration,
+            store_paths);
+        // printf("result is %f \n",result);
+        result_list[i] = result;
+        printf("index is %d, result is %f \n",i,result);
+        // printArrayD(result_list, 10);
+
+    }
+    
+    return result_list;
+    }
