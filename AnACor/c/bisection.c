@@ -462,5 +462,8 @@ Path_iterative_bisection iterative_bisection(double theta, double phi,
     result.classes = realloc(classes, path_2_size * sizeof(int8_t));
     result.boundary_list = realloc(boundary_list, path_2_size * sizeof(int8_t));
     result.length = path_2_size;
+    // free(path_2);
+    // free(classes);
+    // free(boundary_list);
     return result;
 }

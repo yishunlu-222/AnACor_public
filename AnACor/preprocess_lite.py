@@ -7,11 +7,11 @@ import sys
 import logging
 import argparse
 try:
-    from AnACor.image_process import Image2Model
-    from AnACor.absorption_coefficient import RunAbsorptionCoefficient
+    from AnACor.utils.image_process import Image2Model
+    from AnACor.utils.absorption_coefficient import RunAbsorptionCoefficient
 except:
-    from image_process import Image2Model
-    from absorption_coefficient import RunAbsorptionCoefficient
+    from utils.image_process import Image2Model
+    from utils.absorption_coefficient import RunAbsorptionCoefficient
 
 
 
@@ -312,7 +312,7 @@ def main ( ) :
         else:
             models_list = []
             for file in os.listdir(save_dir ):
-                  if dataset in file and ".npy" in file:
+                  if str(dataset) in file and ".npy" in file:
                       models_list.append(file)
 
             try:

@@ -1231,7 +1231,8 @@ def cube_face ( ray_origin , ray_direction , cube_size , L1 = False ) :
     # if L1 is True:
     #     ray_direction = -ray_direction
     # L1=False
-
+    if L1 is True:
+        ray_direction = -ray_direction
     min_x = 0
     max_x = cube_size[2]
     min_y = 0
@@ -1263,57 +1264,75 @@ def cube_face ( ray_origin , ray_direction , cube_size , L1 = False ) :
         t_min = max( non_negative_numbers )
         print( "t_min is max at {}".format( ray_direction ) )
         print( "t_min is max at {}".format( ray_origin ) )
-    # else:
-    # try:
-    #         t_min=max(t_mini,t_max)
-    # except:
-    #     pdb.set_trace()
 
-    # print(t_numbers)
-    # pdb.set_trace()
-    # if t_min > t_max :
-    #     # The ray doesn't intersect with the cube
-    #     return None
-    # print( "t_min is {}".format( t_min ) )
     if t_min == tx_min :
         # The ray intersects with the left face of the cube]
-        if L1 is True :
-            return "FRONTZY"
-        else :
+
             return "BACKZY"
     elif t_min == tx_max :
         # The ray intersects with the right face of the cube
-        if L1 is True :
-            return "BACKZY"
-        else :
+
             return "FRONTZY"
     elif t_min == ty_min :
         # The ray intersects with the bottom face of the cube
-        if L1 is True :
-            return 'BOTZX'
-        else :
+
             return 'TOPZX'
     elif t_min == ty_max :
         # The ray intersects with the top face of the cube
-        if L1 is True :
-            return 'TOPZX'
-        else :
+
             return 'BOTZX'
     elif t_min == tz_min :
         # The ray intersects with the front face of the cube
-        if L1 is True :
-            return 'RIYX'
-        else :
+
             return 'LEYX'
     elif t_min == tz_max :
         # The ray intersects with the back face of the cube
-        if L1 is True :
-            return 'LEYX'
-        else :
+
             return 'RIYX'
     else :
         RuntimeError( 'face determination has a problem with direction {}'
                       'and position {}'.format( ray_direction , ray_origin ) )
+
+    
+    # if t_min == tx_min :
+    #     # The ray intersects with the left face of the cube]
+    #     if L1 is True :
+    #         return "FRONTZY"
+    #     else :
+    #         return "BACKZY"
+    # elif t_min == tx_max :
+    #     # The ray intersects with the right face of the cube
+    #     if L1 is True :
+    #         return "BACKZY"
+    #     else :
+    #         return "FRONTZY"
+    # elif t_min == ty_min :
+    #     # The ray intersects with the bottom face of the cube
+    #     if L1 is True :
+    #         return 'BOTZX'
+    #     else :
+    #         return 'TOPZX'
+    # elif t_min == ty_max :
+    #     # The ray intersects with the top face of the cube
+    #     if L1 is True :
+    #         return 'TOPZX'
+    #     else :
+    #         return 'BOTZX'
+    # elif t_min == tz_min :
+    #     # The ray intersects with the front face of the cube
+    #     if L1 is True :
+    #         return 'RIYX'
+    #     else :
+    #         return 'LEYX'
+    # elif t_min == tz_max :
+    #     # The ray intersects with the back face of the cube
+    #     if L1 is True :
+    #         return 'LEYX'
+    #     else :
+    #         return 'RIYX'
+    # else :
+    #     RuntimeError( 'face determination has a problem with direction {}'
+    #                   'and position {}'.format( ray_direction , ray_origin ) )
 
 
 # @jit(nopython=True)
