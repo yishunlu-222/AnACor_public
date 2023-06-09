@@ -398,12 +398,12 @@ def test_worker_function(t1, low, up, dataset, selected_data, label_list,
 
             # if by_c :
             if args.bisection:
-                result = dials_lib.ib_test(
+                result_ib = dials_lib.ib_test(
                                 coord_list,len(coord_list) ,
                                 rotated_s1, xray, voxel_size,
                             coefficients, label_list_c, shape,
                             args.full_iteration, args.store_paths)
-            else:
+            # else:
                 # result = dials_lib.ray_tracing_sampling(
                 #     coord_list, len(coord_list),
                 #     rotated_s1, xray, voxel_size,
@@ -418,18 +418,17 @@ def test_worker_function(t1, low, up, dataset, selected_data, label_list,
                 #     coord = crystal_coordinate[index]
                 absorp = np.empty( len( coord_list ) )
                 for k , coord in enumerate( coord_list ) :
-                    if k<3209:
-                        continue
+
                     # face_1 = which_face_2(coord, shape, theta_1, phi_1)
                     # face_2 = which_face_2(coord, shape, theta, phi)
-                    print('the coord is {}'.format(coord))
-                    print('theta_1 is {} and phi_1 is {}'.format(theta_1,phi_1))
-                    print('theta is {} and phi is {}'.format(theta,phi))
+                    # print('the coord is {}'.format(coord))
+                    # print('theta_1 is {} and phi_1 is {}'.format(theta_1,phi_1))
+                    # print('theta is {} and phi is {}'.format(theta,phi))
                     face_1 = cube_face( coord , xray_direction , shape , L1 = True )
                     face_2 = cube_face( coord , ray_direction , shape )
                     path_1 = cal_coord_2( theta_1 , phi_1 , coord , face_1 , shape , label_list )  # 37
                     path_2 = cal_coord_2( theta , phi , coord , face_2 , shape , label_list )  # 16
-                    print('face_1 is {} and face_2 is {}'.format(face_1,face_2))
+                    # print('face_1 is {} and face_2 is {}'.format(face_1,face_2))
                     numbers_1 = cal_num( path_1 , voxel_size )  # 3.5s
                     numbers_2 = cal_num( path_2 , voxel_size )  # 3.5s
                     
@@ -453,6 +452,8 @@ def test_worker_function(t1, low, up, dataset, selected_data, label_list,
                         path_length_arr = np.concatenate(
                             (path_length_arr , np.expand_dims( path_length_arr_single , axis = 0 )) , axis = 0 )
                 result = absorp.mean( )
+            print('the result is {}'.format(result))
+            print('the result_ib is {}'.format(result_ib))
             pdb.set_trace()
             t2 = time.time()
             if printing:

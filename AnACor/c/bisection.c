@@ -58,7 +58,7 @@ Increment3D increments(int face, double theta, double phi,
     }
     else if (face == 5)
     {
-
+        assert (theta<0);
         if (fabs(theta) < M_PI / 2)
         {
             double increment_ratio_x = -cos(fabs(phi)) / (tan(fabs(theta)));
@@ -81,7 +81,7 @@ Increment3D increments(int face, double theta, double phi,
     }
     else if (face == 6)
     {
-        // assert(fabs(theta) < M_PI / 2);
+        assert(fabs(theta) <= M_PI / 2);
         double increment_ratio_x = -1;
         double increment_ratio_y = tan(theta) / cos(phi);
         double increment_ratio_z = tan(phi);
@@ -92,6 +92,7 @@ Increment3D increments(int face, double theta, double phi,
     }
     else if (face == 1)
     {
+        assert(fabs(theta) >= M_PI / 2);
         double increment_ratio_x = 1;
         double increment_ratio_y = tan(M_PI - theta) / cos(fabs(phi));
         double increment_ratio_z = -tan(phi);
@@ -104,12 +105,14 @@ Increment3D increments(int face, double theta, double phi,
     {
         if (fabs(theta) < M_PI / 2)
         {
+            assert (phi < 0);
             result.ratio_x = -1 / (tan(fabs(phi)));
             result.ratio_y = tan(theta) / sin(fabs(phi));
             result.ratio_z = -1;
         }
         else
         {
+            assert (phi > 0);
             result.ratio_x = 1 / (tan(fabs(phi)));
             result.ratio_y = tan(M_PI - theta) / sin(fabs(phi));
             result.ratio_z = -1;
@@ -120,12 +123,14 @@ Increment3D increments(int face, double theta, double phi,
     {
         if (fabs(theta) < M_PI / 2)
         {
+            assert (phi > 0);
             result.ratio_x = -1 / (tan(fabs(phi)));
             result.ratio_y = tan(theta) / sin(fabs(phi));
             result.ratio_z = 1;
         }
         else
         {
+            assert (phi<0);
             result.ratio_x = 1 / (tan(fabs(phi)));
             result.ratio_y = tan(M_PI - theta) / sin(fabs(phi));
             result.ratio_z = 1;

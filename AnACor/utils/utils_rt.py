@@ -1267,7 +1267,12 @@ def cube_face ( ray_origin , ray_direction , cube_size , L1 = False ) :
 
     if t_min == tx_min :
         # The ray intersects with the left face of the cube]
-
+#    /*  'FRONTZY' = 1;
+# *   'LEYX' = 2 ;
+# *   'RIYX' = 3;
+#     'TOPZX' = 4;
+#     'BOTZX' = 5;
+#     "BACKZY" = 6 ;
             return "BACKZY"
     elif t_min == tx_max :
         # The ray intersects with the right face of the cube
