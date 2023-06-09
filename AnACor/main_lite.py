@@ -285,6 +285,7 @@ def worker_function(t1,low, up,dataset,selected_data ,label_list,
             np.ctypeslib.ndpointer( dtype = np.float64 ) ,  # voxel_size
             np.ctypeslib.ndpointer( dtype = np.float64 ) ,  # coefficients
             ct.POINTER( ct.POINTER( ct.POINTER( ct.c_int8 ) ) ) ,  # label_list
+            ct.POINTER( ct.c_int8 ) ,  # label_list
             np.ctypeslib.ndpointer( dtype = np.int64 ) ,  # shape
             ct.c_int ,  # full_iteration
             ct.c_int  # store_paths
@@ -319,13 +320,8 @@ def worker_function(t1,low, up,dataset,selected_data ,label_list,
             result = dials_lib.ray_tracing_sampling(
                 coord_list , len( coord_list ) ,
                 rotated_s1 , xray , voxel_size ,
-                coefficients , label_list_c , shape ,
+                coefficients , label_list_c , label_list.ctypes.data_as(ct.POINTER(ct.c_int8)) , shape ,
                 full_iteration , store_paths )
-            # result = dials_lib.ray_tracing(crystal_coordinate, crystal_coordinate_shape,
-            #                     coordinate_list,len(coordinate_list) ,
-            #                     rotated_s1, xray, voxel_size,
-            #                 coefficients, label_list_c, shape,
-            #                 args.full_iteration, args.store_paths)
         else :
             ray_direction = dials_2_numpy_11( rotated_s1 )
             xray_direction = dials_2_numpy_11( xray )
@@ -375,7 +371,7 @@ def worker_function(t1,low, up,dataset,selected_data ,label_list,
                                                                                                     result ) )
         # pdb.set_trace()
 
-        print( 'process {} it spends {}'.format( os.getpid(),t2 -
+            print( 'process {} it spends {}'.format( os.getpid(),t2 -
                                                     t1 ) )
         
         corr.append( result )

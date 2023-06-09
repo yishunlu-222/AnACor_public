@@ -288,24 +288,11 @@ def main ( ) :
     if args.create3D is True :
         ModelGenerator = Image2Model( args.segimg_path , model_path,logger )
         model_storepath = ModelGenerator.run( )
-
-        with open('./default_preprocess_input.yaml', 'r' ) as f0 :
-                pre_config = yaml.safe_load( f0 )
-        try:
-            model_storepath.replace('./','')
-        except:
-            pass
-
-        pre_config[ 'model_storepath' ] = model_storepath
-
-        with open( './default_preprocess_input.yaml' , 'w' ) as file :
-            yaml.dump( pre_config , file, default_flow_style=False, sort_keys=False, indent=4)
-
     logger.info( "\n3D model file is already created... \n" )
     print( "\n3D model file is already created... \n" )
 
     if args.cal_coefficient is True :
-        
+
         if args.model_storepath is not None and args.model_storepath.isspace() is not True\
                 and args.model_storepath !='' :
             pass
@@ -324,29 +311,7 @@ def main ( ) :
             coefficient_viewing= args.coefficient_viewing
         except:
             coefficient_viewing=0
-
-        if hasattr(args, 'coe_li'):
-            pass
-        else:
-            args.coe_li = 0.0
-        if hasattr(args, 'coe_lo'):
-            pass
-        else:
-            args.coe_lo = 0.0
-        if hasattr(args, 'coe_cr'):
-            pass
-        else:
-            args.coe_cr = 0.0
-        if hasattr(args, 'coe_bu'):
-            pass
-        else:
-            args.coe_bu = 0.0
-
         coefficient_model = RunAbsorptionCoefficient( args.rawimg_path , model_storepath ,
-                                                     coe_li= args.coe_li ,
-                                                     coe_lo= args.coe_lo ,
-                                                        coe_cr= args.coe_cr ,
-                                                        coe_bu= args.coe_bu ,
                                                       logger=logger,
                                                       auto_orientation = args.coefficient_auto_orientation ,
                                                       auto_viewing= args.coefficient_auto_viewing ,
@@ -376,7 +341,7 @@ def main ( ) :
     mp_config[ 'dataset' ] = args.dataset
 
     try:
-        with open(os.path.join( result_path , "absorption_coefficient","median_coefficients_with_percentage.json" )) as f2:
+        with open(os.path.join( result_path , "absorption_coefficient","coefficients_with_percentage.json" )) as f2:
             coe = json.load(f2)
         
         mp_config[ 'liac' ] =coe[2][2]

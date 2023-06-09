@@ -213,16 +213,6 @@ def main ( ) :
                                 'please use --refl_path --expt-filename to specify' )
 
     py_pth = os.path.join( os.path.dirname( os.path.abspath( __file__ ) ) , 'main_lite.py' )
-
-
-    ### define the default values of some optional arguments  ###
-
-    if hasattr(args, 'by_c'):
-            pass
-    else:
-        args.by_c=True
-
-
     with open( os.path.join( save_dir , "mpprocess_script.sh" ) , "w" ) as f :
 
         f.write( "#!/bin/sh\n" )
