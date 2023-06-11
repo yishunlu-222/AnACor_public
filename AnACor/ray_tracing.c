@@ -1881,7 +1881,8 @@ double *cal_path2_plus(Path2_c path_2_cal_result, double *voxel_size)
         else {
         }
     }
-
+	int64_t sum = cr_l_2_int + li_l_2_int + lo_l_2_int + bu_l_2_int;
+	//printf("total_length=%f; len_path_2=%f; sum=%ld; dst=[%f; %f; %f]\n", total_length, (double) len_path_2, sum, dist_x, dist_y, dist_z);
     double cr_l_2 = total_length*(((double) cr_l_2_int)/((double) len_path_2));
     double li_l_2 = total_length*(((double) li_l_2_int)/((double) len_path_2));
     double bu_l_2 = total_length*(((double) bu_l_2_int)/((double) len_path_2));
@@ -2040,7 +2041,7 @@ double ray_tracing_sampling(
 	
 	printf("----> GPU version FINISHED;\n");
     
-	printf("-----> Testing label_list_1d:");
+	printf("-----> Testing label_list_1d: ");
 	int64_t errors_in_label_list = compare_voxels(label_list, label_list_1d, shape);
 	if(errors_in_label_list==0) printf("PASSED\n");
 	else printf("FAILED\n");
@@ -2050,7 +2051,7 @@ double ray_tracing_sampling(
     double xray_direction[3], scattered_direction[3];
     double xray_switched[3], scattered_switched[3];
     dials_2_numpy(xray, xray_direction);
-	printf("Old order: [%f ; %f ; %f] New: [%f ; %f ; %f]\n", xray[0], xray[1], xray[2], xray_direction[0], xray_direction[1], xray_direction[2]);
+	//printf("Old order: [%f ; %f ; %f] New: [%f ; %f ; %f]\n", xray[0], xray[1], xray[2], xray_direction[0], xray_direction[1], xray_direction[2]);
     dials_2_numpy(rotated_s1, scattered_direction);
     memcpy(x_ray_angle, xray, 3*sizeof(double));
     memcpy(rotated_s1_angle, rotated_s1, 3*sizeof(double));
@@ -2062,8 +2063,8 @@ double ray_tracing_sampling(
     double theta_xray = result_xray.theta;
     double phi_xray = result_xray.phi;
 
-	printf("rotated_s1 angles: theta: CPU=%f; GPU=%f || phi: CPU=%f; GPU=%f;\n", theta, h_angles[0], phi, h_angles[1]);
-	printf("xray angles: theta: CPU=%f; GPU=%f || phi: CPU=%f; GPU=%f;\n", theta_xray, h_angles[2], phi_xray, h_angles[3]);
+	//printf("rotated_s1 angles: theta: CPU=%f; GPU=%f diff=%f|| phi: CPU=%f; GPU=%f; diff=%f\n", theta, h_angles[0], abs(theta - h_angles[0]), phi, h_angles[1], abs(phi - h_angles[1]));
+	//printf("xray angles: theta: CPU=%f; GPU=%f diff=%f|| phi: CPU=%f; GPU=%f; diff=%f\n", theta_xray, h_angles[2], abs(theta_xray - h_angles[2]), phi_xray, h_angles[3], abs(phi_xray - h_angles[3]));
 	
 	//printf("-------> Increment test:\n");
 	//double ix, iy, iz;
@@ -2087,6 +2088,7 @@ double ray_tracing_sampling(
     double absorption_sum = 0, absorption_mean = 0;
     
 	int64_t nFaceErrors = 0;
+	int64_t nAbsorptionErrors = 0;
 	int64_t nClassesErrors = 0, path2error = 0, path1error = 0;
     for (int64_t i = 0; i < len_coord_list; i++) {
 		
@@ -2128,6 +2130,19 @@ double ray_tracing_sampling(
 				path2error++;
 			}
 		}
+		
+		//if(i==0){
+		//	for(int f=0; f<path_2.len_path_2+10; f++){
+		//		int CPU_class = 0;
+		//		if(f<path_2.len_path_2){
+		//			CPU_class = (int) path_2.ray_classes[f];
+		//		}
+		//		int64_t GPU_pos = (2*i + 0)*diagonal + f;
+		//		int GPU_class = h_ray_classes[GPU_pos];
+		//		printf("[%d ; %d] ", (int) CPU_class, (int) GPU_class);
+		//	}
+		//	printf("\n");
+		//}
 		
 		if(path2error>0){
 			//for(int f=0; f<path_2.len_path_2+10; f++){
@@ -2184,6 +2199,7 @@ double ray_tracing_sampling(
         compare_classes_lengths(numbers_2, numbers_2_ref);
 
         absorption = cal_rate(numbers_1, numbers_2, coefficients, 1);
+		//printf("i=%d; CPU=%f; GPU=%f+%f=%f; diff=%f;\n", (int) i, absorption, h_absorption[2*i+0], h_absorption[2*i+1], h_absorption[2*i+0] + h_absorption[2*i+1], abs(absorption - exp(-(h_absorption[2*i+0] + h_absorption[2*i+1]))) );
 
         absorption_sum += absorption;
         
@@ -2218,9 +2234,24 @@ double ray_tracing_sampling(
 		path1error = 0;
     }
     absorption_mean = absorption_sum / len_coord_list;
-    printf("--> Number of face errors:%ld;\n", nFaceErrors);
-    printf("--> Number of class errors:%ld;\n", nClassesErrors);
+    int64_t nAngleErrors = 0;
+	if( abs(theta - h_angles[0]) > 1.0e-4 ) nAngleErrors++;
+	if( abs(phi - h_angles[1]) > 1.0e-4 ) nAngleErrors++;
+	if( abs(theta_xray - h_angles[2]) > 1.0e-4 ) nAngleErrors++;
+	if( abs(phi_xray - h_angles[3]) > 1.0e-4 ) nAngleErrors++;
+	//printf("rotated_s1 angles: theta: CPU=%f; GPU=%f diff=%f|| phi: CPU=%f; GPU=%f; diff=%f\n", theta, h_angles[0], abs(theta - h_angles[0]), phi, h_angles[1], abs(phi - h_angles[1]));
+	//printf("xray angles: theta: CPU=%f; GPU=%f diff=%f|| phi: CPU=%f; GPU=%f; diff=%f\n", theta_xray, h_angles[2], abs(theta_xray - h_angles[2]), phi_xray, h_angles[3], abs(phi_xray - h_angles[3]));
 	
+	double gpu_absorption = 0;
+	for(int64_t i=0; i<len_coord_list; i++){
+		gpu_absorption += exp(-(h_absorption[2*i+0] + h_absorption[2*i+1]));
+	}
+	double gpu_absorption_mean = gpu_absorption/ ((double) len_coord_list);
+	printf("CPU mean absorption: %f; GPU mean absorption: %f;\n", absorption_mean, gpu_absorption_mean);
+	
+    printf("--> Number of angle errors: %ld;\n", nAngleErrors);
+    printf("--> Number of face errors: %ld;\n", nFaceErrors);
+    printf("--> Number of class errors: %ld;\n", nClassesErrors);
 	
 	free(h_face);
 	free(h_ray_classes);
