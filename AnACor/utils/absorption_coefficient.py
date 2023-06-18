@@ -21,136 +21,6 @@ rate_list = {'li' : 1 , 'lo' : 2 , 'cr' : 3 , 'bu' : 4}
 np.seterr( divide = 'ignore' , invalid = 'ignore' )
 
 
-def rgb2mask ( rgb , COLOR = None ) :
-    """
-
-    :param bgr: input mask to be converted to rgb image
-    :param COLOR: 1:liquor,blue; 2: loop, green ; 3: crystal, red
-    :return: rgb image
-    """
-    if COLOR is None :
-        COLOR = {0 : [0 , 0 , 0] , 1 : [255 , 0 , 0] , 2 : [
-            0 , 255 , 0] , 3 : [0 , 0 , 255] , 4 : [255 , 255 , 0]}
-    mask = np.zeros( (rgb.shape[0] , rgb.shape[1]) )
-
-    for k , v in COLOR.items( ) :
-        mask[np.all( rgb == v , axis = 2 )] = k
-
-    return mask
-
-
-def mask2rgb ( mask , COLOR = None ) :
-    """
-
-    :param mask: input mask to be converted to rgb image
-    :param COLOR: 1:liquor,blue; 2: loop, green ; 3: crystal, red
-    :return: rgb image
-    """
-    if COLOR is None :
-        COLOR = {0 : [0 , 0 , 0] , 1 : [255 , 0 , 0] , 2 : [
-            0 , 255 , 0] , 3 : [0 , 0 , 255] , 4 : [255 , 255 , 0]}
-
-    rgb = np.zeros( mask.shape + (3 ,) , dtype = np.uint8 )
-
-    for i in np.unique( mask ) :
-        rgb[mask == i] = COLOR[i]
-
-    return rgb
-
-
-def mask2mask ( mask , COLOR = None ) :
-    """
-
-    :param mask: input mask to be converted to rgb image
-    :param COLOR: 1:liquor,blue; 2: loop, green ; 3: crystal, red
-    :return: rgb image
-    """
-    if COLOR is None :
-        COLOR = {0 : 0 , 1 : 3 , 2 : 2 , 3 : 1 , 4 : 4}
-
-    new = np.zeros( mask.shape )
-
-    for i in np.unique( mask ) :
-        new[mask == i] = COLOR[i]
-
-    return new
-
-
-def save_npy ( path , reverse , filename = '13304_label_1C.npy' , label = True , crop = False , vflip = False ) :
-    """
-
-    :param path: path should directed to image path
-    :param filename:
-    :param label:
-    :param crop:  #[y1:y2,x1:x2]
-    :return:
-    """
-
-    na = []
-    for root , dir , files in os.walk( path ) :
-        for file in files :
-            if 'tif' in file :
-                na.append( os.path.join( root , file ) )
-
-    # pdb.set_trace()
-    def take_num ( ele ) :
-        return int( re.findall( r'\d+' , ele )[-1] )
-        # return  int(ele.split('.')[-2].split('_')[-1])
-
-    # sort the list according to the last index of the filename
-    na.sort( key = take_num , reverse = reverse )
-
-    for i , file in enumerate( na ) :
-
-        if i == 0 :
-            file = os.path.join( path , file )
-            img = io.imread( file )
-            if vflip :
-                img = cv2.flip( img , 0 )
-            # img = cv2.rotate(img,cv2.ROTATE_90_COUNTERCLOCKWISE)
-
-            if crop :
-                img = img[crop[0] :crop[1] , crop[2] :crop[3]]  # [y1:y2,x1:x2]
-
-            if label :
-                if len( img.shape ) == 2 :
-                    img = mask2mask( img )
-                    img = img.astype( np.int8 )
-                else :
-                    img = rgb2mask( img )
-                    img = img.astype( np.int8 )
-            img = np.expand_dims( img , axis = 0 )
-            stack = img
-            # pdb.set_trace()
-        else :
-
-            # index = file.split('.')[0][-4:].lstrip('0')
-            index = re.findall( r'\d+' , file )[-1]
-
-            # assert i == int(index)
-            file = os.path.join( path , file )
-            img = io.imread( file )
-            if vflip :
-                img = cv2.flip( img , 0 )
-            # img = cv2.rotate(img,cv2.ROTATE_90_COUNTERCLOCKWISE)
-            if crop :
-                img = img[crop[0] :crop[1] , crop[2] :crop[3]]  # [y1:y2,x1:x2]
-            if label :
-                if len( img.shape ) == 2 :
-                    img = mask2mask( img )
-                    img = img.astype( np.int8 )
-                else :
-                    img = rgb2mask( img )
-                    img = img.astype( np.int8 )
-            img = np.expand_dims( img , axis = 0 )
-            stack = np.concatenate( (stack , img) , axis = 0 )
-            print( '{} is attached'.format( index ) )
-    if label :
-        stack_int = stack.astype( np.int8 )
-        np.save( filename , stack_int )
-    else :
-        np.save( filename , stack )
-
 
 class AbsorptionCoefficient( object ) :
     def __init__ ( self , tomo_img_path , ModelFilename , auto_orientation , auto_viewing , logger , coe_li = 0 , coe_lo = 0 ,
@@ -1313,7 +1183,7 @@ class RunAbsorptionCoefficient( AbsorptionCoefficient ) :
                                                             region_back = variable_region_back[self.base] ,
                                                             target = rate_list[
                                                                 self.base] , single = True ,
-                                                            determine_peaks = True , lower_peak = False )
+                                                            determine_peaks = False , lower_peak = False )
 
                     # self.coe_li = roi_base.mean()
                     self.variable_coe[self.base] = roi_base.mean( )

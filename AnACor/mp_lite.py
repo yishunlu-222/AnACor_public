@@ -220,7 +220,7 @@ def main ( ) :
     if hasattr(args, 'by_c'):
             pass
     else:
-        args.by_c=True
+        args.by_c=False
 
 
     with open( os.path.join( save_dir , "mpprocess_script.sh" ) , "w" ) as f :

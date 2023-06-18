@@ -10,8 +10,9 @@ try:
     from AnACor.utils.image_process import Image2Model
     from AnACor.utils.absorption_coefficient import RunAbsorptionCoefficient
 except:
-    from utils.image_process import Image2Model
-    from utils.absorption_coefficient import RunAbsorptionCoefficient
+        from utils.image_process import Image2Model
+        from utils.absorption_coefficient import RunAbsorptionCoefficient
+
 
 
 
@@ -341,7 +342,10 @@ def main ( ) :
             pass
         else:
             args.coe_bu = 0.0
-
+        if hasattr(args, 'abs_base_cls'):
+            pass
+        else:
+            args.abs_base_cls = 'li'
         coefficient_model = RunAbsorptionCoefficient( args.rawimg_path , model_storepath ,
                                                      coe_li= args.coe_li ,
                                                      coe_lo= args.coe_lo ,
@@ -356,7 +360,7 @@ def main ( ) :
                                                       angle = coefficient_viewing ,
                                                       kernel_square = (5 , 5) ,
                                                       full = False , thresholding = args.coefficient_thresholding,
-                                                      flat_fielded=args.flat_field_name)
+                                                      flat_fielded=args.flat_field_name,base=args.abs_base_cls,)
         coefficient_model.run( )
 
     preprocess_dial_lite( args , save_dir )

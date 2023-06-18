@@ -10,8 +10,8 @@ try:
     from utils.utils_rt import *
     from utils.utils_ib import *
 except:
-    from utils_rt import *
-    from utils_ib import *
+    from AnACor.utils.utils_rt import *
+    from AnACor.utils.utils_ib import *
 import ctypes as ct
 import multiprocessing as mp    
 # try:
@@ -135,55 +135,61 @@ def set_parser():
         "--sampling-num",
         type=int,
         default=5000,
-        help="pixel size of tomography",
+        help="sampling for picking crystal point to calculate",
     )
     parser.add_argument(
         "--auto-sampling",
         type=str2bool,
         default=True,
-        help="pixel size of tomography",
+        help="automatically determine sampling number",
     )
     parser.add_argument(
         "--full-iteration",
         type=int,
         default=0,
-        help="pixel size of tomography",
+        help="whether to do full iteration(break when encounter an air point)",
     )
     parser.add_argument(
         "--pixel-size",
         type=float,
         default=0.3,
-        help="pixel size of tomography",
+        help="overall pixel size of tomography",
     )
     parser.add_argument(
         "--pixel-size-x",
         type=float,
         default=0.3,
-        help="pixel size of tomography",
+        help="overall pixel size of tomography in x dimension",
     )
     parser.add_argument(
         "--pixel-size-y",
         type=float,
         default=0.3,
-        help="pixel size of tomography",
+        help="overall pixel size of tomography in y dimension",
     )
     parser.add_argument(
         "--pixel-size-z",
         type=float,
         default=0.3,
-        help="pixel size of tomography",
+        help="overall pixel size of tomography in z dimension",
     )
     parser.add_argument(
         "--by-c",
         type=str2bool,
+        default=False,
+        help="calculate by c instead of python",
+    )
+    parser.add_argument(
+        "--single-c",
+        type=str2bool,
         default=True,
-        help="pixel size of tomography",
+        help="calculate by c instead of python",
     )
     parser.add_argument(
         "--slicing",
         type=str,
         default='z',
-        help="pixel size of tomography",
+        help="slicing sampling direction",
     )
     parser.add_argument(
         "--num-workers",
@@ -195,7 +201,7 @@ def set_parser():
         "--test-mode",
         type=str2bool,
         default=False,
-        help="number of workers",
+        help="test mode",
     )
     parser.add_argument(
         "--bisection" ,
@@ -378,7 +384,15 @@ def worker_function(t1, low, up, dataset, selected_data, label_list,
                                 rotated_s1, xray, voxel_size,
                             coefficients, label_list_c, shape,
                             args.full_iteration, args.store_paths)
+            elif args.single_c:
+                                result = dials_lib.ray_tracing_sampling(
+                    coord_list, len(coord_list),
+                    rotated_s1, xray, voxel_size,
+                    coefficients, label_list_c, shape,
+                    full_iteration, store_paths)
+            
             else:
+                
                 # result = dials_lib.ray_tracing_sampling(
                 #     coord_list, len(coord_list),
                 #     rotated_s1, xray, voxel_size,
