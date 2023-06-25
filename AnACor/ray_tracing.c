@@ -1896,9 +1896,9 @@ double *cal_path2_plus(Path2_c path_2_cal_result, double *voxel_size)
 		pow(dist_z * voxel_length_z, 2) +
         pow(dist_x * voxel_length_x, 2)
 	);
-    printf("CPU:==>total_length=%f; ", total_length);
-    printf ("len_path_2=%ld\n", len_path_2);
-    printf ("dist_x=%f , dist_y=%f, dist_z=%f \n", dist_x, dist_y, dist_z);
+    // printf("CPU:==>total_length=%f; ", total_length);
+    // printf ("len_path_2=%ld\n", len_path_2);
+    // printf ("dist_x=%f , dist_y=%f, dist_z=%f \n", dist_x, dist_y, dist_z);
     int64_t cr_l_2_int = 0;
     int64_t li_l_2_int = 0;
     int64_t bu_l_2_int = 0;
@@ -1912,10 +1912,10 @@ double *cal_path2_plus(Path2_c path_2_cal_result, double *voxel_size)
         else {
         }
     }
-    printf("li_l_2_int=%ld; ", li_l_2_int);
-    printf("lo_l_2_int=%ld; ", lo_l_2_int);
-    printf("cr_l_2_int=%ld; ", cr_l_2_int);
-    printf("bu_l_2_int=%ld\n", bu_l_2_int);
+    // printf("li_l_2_int=%ld; ", li_l_2_int);
+    // printf("lo_l_2_int=%ld; ", lo_l_2_int);
+    // printf("cr_l_2_int=%ld; ", cr_l_2_int);
+    // printf("bu_l_2_int=%ld\n", bu_l_2_int);
     // printf("path_ray_classes is \n")   ;
     // for(int k =0; k<len_path_2;k++){
     //     printf(" %d",path_ray_classes[k]);
@@ -2318,26 +2318,38 @@ double ray_tracing_sampling(
         numbers_2 = cal_path2_plus(path_2, voxel_size);
         compare_classes_lengths(numbers_2, numbers_2_ref);
  
-        if (i<1){
-            // test_ray_classes(path_1, coord, h_ray_classes, diagonal); 
-            printf("numbers_1:%f, %f, %f, %f \n",numbers_1[0]*coefficients[0],numbers_1[1]*coefficients[1],numbers_1[2]*coefficients[2],numbers_1[3]*coefficients[3]);
-            printf("numbers_2:%f, %f, %f, %f \n",numbers_2[0]*coefficients[0],numbers_2[1]*coefficients[1],numbers_2[2]*coefficients[2],numbers_2[3]*coefficients[3]);
-            printf("numbers_1:%f, %f, %f, %f \n",numbers_1[0],numbers_1[1],numbers_1[2],numbers_1[3]);
-            printf("numbers_2:%f, %f, %f, %f \n",numbers_2[0],numbers_2[1],numbers_2[2],numbers_2[3]);
-        }
-        if (i>1){
-            break;
-        }
+        // if (i<1){
+        //     // test_ray_classes(path_1, coord, h_ray_classes, diagonal); 
+        //     printf("numbers_1:%f, %f, %f, %f \n",numbers_1[0]*coefficients[0],numbers_1[1]*coefficients[1],numbers_1[2]*coefficients[2],numbers_1[3]*coefficients[3]);
+        //     printf("numbers_2:%f, %f, %f, %f \n",numbers_2[0]*coefficients[0],numbers_2[1]*coefficients[1],numbers_2[2]*coefficients[2],numbers_2[3]*coefficients[3]);
+        //     printf("numbers_1:%f, %f, %f, %f \n",numbers_1[0],numbers_1[1],numbers_1[2],numbers_1[3]);
+        //     printf("numbers_2:%f, %f, %f, %f \n",numbers_2[0],numbers_2[1],numbers_2[2],numbers_2[3]);
+        //     printf(" path_2.coordinte s is \n");
+        //     for(int k=0; k<path_2.len_path_2; k++){
+        //         printf(" [%ld,%ld,%ld] ", path_2.ray[k*3+0], path_2.ray[k*3+1], path_2.ray[k*3+2]);
+        //     }
+        //     printf ("\n ");
+        //     printf(" path_2.ray_classes is \n");
+        //     for(int k=0; k<path_2.len_path_2; k++){
+        //         printf("%d ", path_2.ray_classes[k]);
+        //     }
+        //     printf ("\n ");
+        // }
+        // if (i>1){
+        //     break;
+        // }
 
         // absorption = cal_rate(numbers_1, numbers_2, coefficients, 1);
         absorption_1 = cal_rate_single(numbers_1,coefficients, 0);
         absorption_2 = cal_rate_single(numbers_2,coefficients, 0);
 
         absorption =exp( -(absorption_1 + absorption_2));
+
         // printf("i = %d; CPU = %f; GPU = %f; diff = %f;\n", (int) i, absorption, exp(-(h_absorption[2*i+0] + h_absorption[2*i+1])), abs(absorption - (exp(-(h_absorption[2*i+0] + h_absorption[2*i+1])))) );
         // printf("i = %d;path_1; face_c=%d, face_g = %d;CPU = %f; GPU = %f; diff = %f;\n", (int) i, face_1,h_face[2*i+1],absorption_1, h_absorption[2*i+1] , abs(absorption_1 -h_absorption[2*i+1] ) );
         // printf("i = %d;path_2; face_c=%d, face_g = %d;CPU = %f; GPU = %f; diff = %f;\n", (int) i,face_2, h_face[2*i+0],absorption_2, h_absorption[2*i+0] , abs(absorption_2 -h_absorption[2*i+0] ) );
         absorption_sum += absorption;
+        
         
         
         free(path_1.ray);

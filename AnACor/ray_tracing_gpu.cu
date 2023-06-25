@@ -604,14 +604,51 @@ __inline__ __device__ void get_distance_2(double *total_length, double s_sum, do
 		dist_y = (s_sum - 1.0f) * increment_ratio_y;
 		dist_z = (s_sum - 1.0f) * increment_ratio_z;
 	}
+	// 	if (face == 1)
+	// {
+	// 	dist_x = (s_sum  );
+	// 	dist_y = (s_sum  ) * increment_ratio_y;
+	// 	dist_z = (s_sum  ) * increment_ratio_z;
+	// }
+	// else if (face == 2)
+	// {
+	// 	dist_x = (s_sum  ) * increment_ratio_x;
+	// 	dist_y = (s_sum  ) * increment_ratio_y;
+	// 	dist_z = (s_sum  );
+	// }
+	// else if (face == 3)
+	// {
+	// 	dist_x = (s_sum  ) * increment_ratio_x;
+	// 	dist_y = (s_sum  ) * increment_ratio_y;
+	// 	dist_z = (s_sum  );
+	// }
+	// else if (face == 4)
+	// {
+	// 	dist_x = (s_sum  ) * increment_ratio_x;
+	// 	dist_y = (s_sum  );
+	// 	dist_z = (s_sum  ) * increment_ratio_z;
+	// }
+	// else if (face == 5)
+	// {
+	// 	dist_x = (s_sum  ) * increment_ratio_x;
+	// 	dist_y = (s_sum  );
+	// 	dist_z = (s_sum  ) * increment_ratio_z;
+	// }
+	// else if (face == 6)
+	// {
+	// 	dist_x = (s_sum  );
+	// 	dist_y = (s_sum  ) * increment_ratio_y;
+	// 	dist_z = (s_sum  ) * increment_ratio_z;
+	// }
 	else
 	{
 		dist_x = 0;
 		dist_y = 0;
 		dist_z = 0;
 	}
-	if (id <2){
-	printf("id: %d dist_x: %f, dist_y: %f, dist_z: %f\n",id, dist_x, dist_y, dist_z);}
+	// if (id <2){
+	// printf("id: %d dist_x: %f, dist_y: %f, dist_z: %f\n",id, dist_x, dist_y, dist_z);
+	// }
 	*total_length = sqrt(
 		(dist_x * voxel_length_x) * (dist_x * voxel_length_x) +
 		(dist_y * voxel_length_y) * (dist_y * voxel_length_y) +
@@ -792,16 +829,21 @@ __global__ void rt_gpu_absorption(int *d_ray_classes, double *d_absorption, int8
 	// }
 	__syncthreads();
 	double total_length;
-	get_distance_2(&total_length, s_sum, voxel_length_x, voxel_length_y, voxel_length_z, increments[0], increments[1], increments[2], face,id);
+	// get_distance_2(&total_length, s_sum, voxel_length_x, voxel_length_y, voxel_length_z, increments[0], increments[1], increments[2], face,id);
+	get_distance_2(&total_length, diagonal, voxel_length_x, voxel_length_y, voxel_length_z, increments[0], increments[1], increments[2], face,id);
 	if(blockIdx.x <2 && threadIdx.x == 0) {
 
 		printf("bl:%d; coord is [%d %d %d] total_length=%f; sum = %f;\n",blockIdx.x, (int)coord[0],(int)coord[1],(int)coord[2],total_length, s_sum);
 	}
 
-	double cr_l = (total_length * cr_l_2_int) / ((double)s_sum);
-	double li_l = (total_length * li_l_2_int) / ((double)s_sum);
-	double lo_l = (total_length * lo_l_2_int) / ((double)s_sum);
-	double bu_l = (total_length * bu_l_2_int) / ((double)s_sum);
+	// double cr_l = (total_length * cr_l_2_int) / ((double)s_sum);
+	// double li_l = (total_length * li_l_2_int) / ((double)s_sum);
+	// double lo_l = (total_length * lo_l_2_int) / ((double)s_sum);
+	// double bu_l = (total_length * bu_l_2_int) / ((double)s_sum);
+	double cr_l = (total_length * cr_l_2_int) / ((double)diagonal);
+	double li_l = (total_length * li_l_2_int) / ((double)diagonal);
+	double lo_l = (total_length * lo_l_2_int) / ((double)diagonal);
+	double bu_l = (total_length * bu_l_2_int) / ((double)diagonal);
 
 	double absorption = 0;
 	double li_absorption = 0;
