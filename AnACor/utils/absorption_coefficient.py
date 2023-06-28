@@ -24,7 +24,7 @@ np.seterr( divide = 'ignore' , invalid = 'ignore' )
 
 class AbsorptionCoefficient( object ) :
     def __init__ ( self , tomo_img_path , ModelFilename , auto_orientation , auto_viewing , logger , coe_li = 0 , coe_lo = 0 ,
-                   coe_cr = 0 , coe_bu = 0 , base = 'li' , crop = None , thresholding = 'mean' , angle = 0 , save_dir = "./" ,
+                   coe_cr = 0 , coe_bu = 0 , base = 'li' , crop = None ,pad=None, thresholding = 'mean' , angle = 0 , save_dir = "./" ,
                    pixel_size = 0.3 ,
                    kernel_square = (15 , 15) , full = False , offset = 0 , v_flip = False , h_flip = False ,
                    ModelRotate = -90 , flat_fielded = None , *args ) :
@@ -51,6 +51,7 @@ class AbsorptionCoefficient( object ) :
         self.save_dir = save_dir
         self.thresholding = thresholding
         self.crop = crop
+        self.pad=pad
         self.full = full
         self.angle = angle
         self.ModelFilename = ModelFilename
@@ -621,7 +622,13 @@ class AbsorptionCoefficient( object ) :
             file = os.path.join( self.tomo_img_path , flat_fielded )
         else :
             afterfix = len( os.listdir( self.tomo_img_path ) ) / 180
+
             fileindex = int( angle * afterfix )
+            if fileindex == 0 :
+                pass
+            else:
+                fileindex -= 1
+            print("the fileindex is {}".format(fileindex))
             for f in os.listdir( self.tomo_img_path ) :
                 index = int( re.findall( r'\d+' , f )[-1] )
                 if index == fileindex :
@@ -629,6 +636,10 @@ class AbsorptionCoefficient( object ) :
                     break
             file = os.path.join( self.tomo_img_path , filename )
 
+        self.logger.info(
+            "the examined flat-fielded corrected image is {}".format( os.path.basename( file ) ) )
+        print(
+            "the examined flat-fielded corrected image is {}".format( os.path.basename( file ) ) )
         new1 = self.img_list.mean( axis = 1 )
         self.img = cv2.imread( file , 2 )
 
@@ -638,12 +649,12 @@ class AbsorptionCoefficient( object ) :
         if self.h_flip :
             # 1 : flip over horizontal ; 0 : flip over vertical
             self.img = cv2.flip( self.img , 1 )
-
-        self.img , new1 = self.cropping( self.img , new1 , crop = self.crop )
-        self.logger.info(
-            "the examined flat-fielded corrected image is {}".format( os.path.basename( file ) ) )
-        print(
-            "the examined flat-fielded corrected image is {}".format( os.path.basename( file ) ) )
+        if self.img.shape[0] != new1.shape[0] :
+            if self.img.shape[0] > new1.shape[0]:
+                self.img , new1 = self.cropping( self.img , new1 , crop = self.crop )
+            else:
+                self.img , new1 = self.padding( self.img , new1 , pad = self.pad )
+         
 
         candidate_img = cv2.normalize( self.img , None , 0 , 255 , cv2.NORM_MINMAX ).astype(
             'uint8' )
@@ -654,11 +665,11 @@ class AbsorptionCoefficient( object ) :
         mask_label = self.mask_generation( img_label , thresh = 255 )
         shifted_mask , xyshift = self.skimage_translation_matching(
             candidate_mask , mask_label )
-
+     
         self.imagemask_overlapping( candidate_img , shifted_mask ,
-                                    "threshold_of_angle_{}_yellow_is_the_projection_of_3d_model".format( angle ) )
+                                    "Overlap_threshold_of_angle_{}_yellow_is_the_projection_of_3d_model".format( angle ) )
         self.imagemask_overlapping_tri( candidate_img , candidate_mask , shifted_mask ,
-                                        "threshold_of_angle_of_{}_degree\n"
+                                        "Debug_threshold_of_angle_of_{}_degree\n"
                                         "yellow is the thresholding of flat-field \n"
                                         "blue is the projection of 3D model \n"
                                         "green is where they overlap".format( angle ) )
@@ -667,8 +678,13 @@ class AbsorptionCoefficient( object ) :
 
         if self.crop is not None :
             top , bot , left , right = self.crop
-            y_max , x_max = self.img.shape
-            self.img = self.img[top :(y_max - bot) , left :(x_max - right)]
+            img_y , img_x = img.shape
+            label_img_y , label_img_x = label_img.shape
+            if img_x > label_img_x :
+                img = self.img[top :bot-1, left :right]
+            else:
+                label_img= label_img[top :bot, left :right]
+
         else :
             if label_img.shape != img.shape :
                 img_y , img_x = img.shape
@@ -689,28 +705,30 @@ class AbsorptionCoefficient( object ) :
 
         return img , label_img
 
-    def padding ( self , img , label_img ) :
+    def padding ( self , img , label_img,pad = None) :
         # if two images have different sizes, pad the smaller one
-        if label_img.shape != img.shape :
-            img_y , img_x = img.shape
-            label_img_y , label_img_x = label_img.shape
-            if img_x > label_img_x :
-                pad_width = img_x - label_img_x
-                padding = np.zeros( (label_img_y , pad_width) )
-                label_img = np.concatenate( (label_img , padding) , axis = 1 )
-            else :
-                pad_width = label_img_x - img_x
-                padding = np.zeros( (img_y , pad_width) )
-                img = np.concatenate( (img , padding) , axis = 1 )
+        if pad is None :
+            pad = img[0][0]
+        img_y , img_x = img.shape
+        label_img_y , label_img_x = label_img.shape
+        
+        if img_x > label_img_x :
+            pad_width = img_x - label_img_x
+            padding = np.ones( (label_img_y , pad_width) ) *pad
+            label_img = np.concatenate( (label_img , padding) , axis = 1 )
+        else :
+            pad_width = label_img_x - img_x
+            padding =  np.ones( (img_y , pad_width) ) *pad
+            img = np.concatenate( (img , padding) , axis = 1 )
 
-            if img_y > label_img_y :
-                pad_height = img_y - label_img_y
-                padding = np.zeros( (pad_height , label_img_x) )
-                label_img = np.concatenate( (label_img , padding) , axis = 0 )
-            else :
-                pad_height = label_img_y - img_y
-                padding = np.zeros( (pad_height , img_x) )
-                img = np.concatenate( (img , padding) , axis = 0 )
+        if img_y > label_img_y :
+            pad_height = img_y - label_img_y
+            padding =  np.ones( (pad_height , img_x) ) *pad
+            label_img = np.concatenate( (label_img , padding) , axis = 0 )
+        else :
+            pad_height = label_img_y - img_y
+            padding =  np.ones( (pad_height , label_img_x) ) *pad
+            img = np.concatenate( (img , padding) , axis = 0 )
 
         return img , label_img
 
@@ -818,6 +836,7 @@ class AbsorptionCoefficient( object ) :
         proportion_list.sort( key = sorting , reverse = True )
 
         prop_list = proportion_list[:int( len( proportion_list ) * percentile )]
+        
         for j , thingoi in enumerate( prop_list ) :
             index = thingoi[0]
             lengths = thingoi[2]
@@ -1028,7 +1047,7 @@ class RunAbsorptionCoefficient( AbsorptionCoefficient ) :
                    coe_cr = 0 , coe_bu = 0 , base = 'li' ,
                    angle = 0 , save_dir = './' , pixel_size = 0.3 ,
                    kernel_square = (15 , 15) , full = False , offset = 0 , v_flip = False , h_flip = False ,
-                   ModelRotate = -90 , crop = None , thresholding = 'triangle' , flat_fielded = None ) :
+                   ModelRotate = -90 , crop = None , thresholding = 'triangle' , flat_fielded = None) :
         super( ).__init__( tomo_img_path , ModelFilename , angle = angle , logger = logger , coe_li = coe_li , coe_lo = coe_lo ,
                            coe_cr = coe_cr , coe_bu = coe_bu , base = base ,
                            auto_viewing = auto_viewing , auto_orientation = auto_orientation ,

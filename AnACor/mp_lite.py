@@ -4,6 +4,10 @@ import json
 import os
 import pdb
 import yaml
+try:
+    from AnACor.preprocess_lite import create_save_dir,preprocess_dial_lite
+except:
+    from preprocess_lite import create_save_dir,preprocess_dial_lite
 
 def str2bool ( v ) :
     if isinstance( v , bool ) :
@@ -15,6 +19,31 @@ def str2bool ( v ) :
     else :
         raise argparse.ArgumentTypeError( 'Boolean value expected.' )
 
+def preprocess_dial_lite ( args , save_dir ) :
+    # from dials.util.filter_reflections import *
+    import subprocess
+    print('preprocessing dials data.....')
+    with open( os.path.join( save_dir , "preprocess_script.sh" ) , "w" ) as f :
+        f.write( "#!/bin/bash \n" )
+        f.write( "{} \n".format( args.dials_dependancy ) )
+        f.write( "expt_pth=\'{}\' \n".format( args.expt_path) )
+        f.write( "refl_pth=\'{}\' \n".format( args.refl_path ) )
+        f.write( "store_dir=\'{}\' \n".format( save_dir ) )
+        f.write( "dataset={} \n".format( args.dataset ) )
+        f.write( "full={} \n".format( args.full_reflection ) )
+        f.write( "dials.python {}  --dataset ${{dataset}} " 
+                 " --refl-filename ${{refl_pth}} " 
+                 "--expt-filename ${{expt_pth}} --full ${{full}} "
+                 "--save-dir ${{store_dir}}\n".format(os.path.join(os.path.dirname(os.path.abspath(__file__)),'lite/refl_2_json.py')) )
+
+    subprocess.run( ["chmod" , "+x" , os.path.join( save_dir , "preprocess_script.sh" )] )
+    try :
+        result = subprocess.run( ["bash" , os.path.join( save_dir , "preprocess_script.sh" )] , check = True ,
+                                 capture_output = True )
+        print( result.stdout.decode( ) )
+
+    except subprocess.CalledProcessError as e :
+        print( "Error: " , e )
 
 def set_parser ( ) :
     parser = argparse.ArgumentParser( description = "analytical absorption correction data preprocessing" )
@@ -162,6 +191,7 @@ def main ( ) :
 
 
     save_dir = os.path.join( args.store_dir , '{}_save_data'.format( args.dataset ) )
+    create_save_dir(args)
     if args.model_storepath == 'None' or len(args.model_storepath) < 2 :
         models_list = []
         for file in os.listdir( save_dir ) :
@@ -180,7 +210,10 @@ def main ( ) :
                     args.dataset ) )
     else :
         model_storepath = args.model_storepath
-
+        
+    if os.path.isfile(os.path.join( save_dir , 'preprocess_script.sh' )) is False:
+        
+        preprocess_dial_lite( args , save_dir )
     for file in os.listdir( save_dir ) :
         if '.json' in file :
             if args.full_reflection:
@@ -202,6 +235,8 @@ def main ( ) :
         print( "reflection table is loaded... \n" )
     except :
         try :
+
+
             with open( args.expt_path ) as f2 :
                 axes_data = json.load( f2 )
             print( "experimental data is loaded... \n" )
@@ -220,8 +255,12 @@ def main ( ) :
     if hasattr(args, 'by_c'):
             pass
     else:
-        args.by_c=False
+        args.by_c=True
 
+    if hasattr(args, 'full_iter'):
+            pass
+    else:
+        args.full_iter=0
 
     with open( os.path.join( save_dir , "mpprocess_script.sh" ) , "w" ) as f :
 
@@ -240,7 +279,7 @@ def main ( ) :
         f.write( "end={}\n".format( len( data ) ) )
         f.write( "py_file={}\n".format( py_pth ) )
         f.write( "model_storepath={}\n".format( model_storepath ) )
-        f.write( "full_iter={} \n".format( 0 ) )
+        f.write( "full_iter={} \n".format( args.full_iter ) )
         f.write( "by_c={} \n".format( args.by_c ) )
         try :
             f.write( "refl_pth={}\n".format( refl_path ) )
@@ -294,8 +333,8 @@ def main ( ) :
             result_path = os.path.join( save_dir , 'ResultData' , 'absorption_factors' )
             dials_dir = os.path.join( save_dir , 'ResultData' , 'dials_output' )
             dials_save_name = 'anacor_{}.refl'.format( dataset )
-            stackingpy_pth = os.path.join( os.path.dirname( os.path.abspath( __file__ ) ) , 'stacking.py' )
-            intoflexpy_pth = os.path.join( os.path.dirname( os.path.abspath( __file__ ) ) , 'into_flex.py' )
+            stackingpy_pth = os.path.join( os.path.dirname( os.path.abspath( __file__ ) ) , 'utils','stacking.py' )
+            intoflexpy_pth = os.path.join( os.path.dirname( os.path.abspath( __file__ ) ) , 'utils', 'into_flex.py' )
             f.write( "{}\n".format( args.dials_dependancy ) )
             f.write( "\n" )
             f.write(

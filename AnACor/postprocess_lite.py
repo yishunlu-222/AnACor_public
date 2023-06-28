@@ -109,8 +109,8 @@ def main ( ) :
     dials_dir = os.path.join( save_dir , 'ResultData' , 'dials_output' )
 
 
-    stackingpy_pth = os.path.join( os.path.dirname( os.path.abspath( __file__ ) ) , 'stacking.py' )
-    intoflexpy_pth = os.path.join( os.path.dirname( os.path.abspath( __file__ ) ) , 'into_flex.py' )
+    stackingpy_pth = os.path.join( os.path.dirname( os.path.abspath( __file__ ) ) , 'utils', 'stacking.py' )
+    intoflexpy_pth = os.path.join( os.path.dirname( os.path.abspath( __file__ ) ) , 'utils', 'into_flex.py' )
     dials_save_name='anacor_{}.refl'.format(args.dataset)
 
     with open( os.path.join( save_dir , "dialsprocess_script.sh" ) , "w" ) as f :

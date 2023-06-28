@@ -159,19 +159,19 @@ def set_parser():
         "--pixel-size-x",
         type=float,
         default=0.3,
-        help="overall pixel size of tomography in x dimension",
+        help="overall pixel size of tomography in x dimension in  mm",
     )
     parser.add_argument(
         "--pixel-size-y",
         type=float,
         default=0.3,
-        help="overall pixel size of tomography in y dimension",
+        help="overall pixel size of tomography in y dimension in  mm",
     )
     parser.add_argument(
         "--pixel-size-z",
         type=float,
         default=0.3,
-        help="overall pixel size of tomography in z dimension",
+        help="overall pixel size of tomography in z dimension in  mm",
     )
     parser.add_argument(
         "--by-c",
@@ -182,7 +182,7 @@ def set_parser():
     parser.add_argument(
         "--single-c",
         type=str2bool,
-        default=True,
+        default=False,
         help="calculate by c instead of python",
     )
     parser.add_argument(
@@ -206,7 +206,7 @@ def set_parser():
     parser.add_argument(
         "--bisection" ,
         type = str2bool,
-        default = True ,
+        default = False ,
         help = "activate bisection method" ,
     )
     global args

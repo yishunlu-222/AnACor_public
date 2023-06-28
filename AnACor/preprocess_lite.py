@@ -230,24 +230,8 @@ def preprocess_dial ( reflections , reflection_path , save_dir , args ) :
     refls.as_file( path )
     return refls
 
-
-
-
-# if __name__ == "__main__":
-def main ( ) :
-    args = set_parser( )
-    dataset = args.dataset
-
-
-
-
-
-    model_name = './{}_.npy'.format( dataset )
-    # segimg_path="D:/lys/studystudy/phd/absorption_correction/dataset/13304_segmentation_labels_tifs/dls/i23" \
-    #             "/data/2019/nr23571-5/processing/tomography/recon/13304/avizo/segmentation_labels_tiffs"
-
-    # ModelGenerator = Image2Model(segimg_path , model_name ).run()
-    save_dir = os.path.join( args.store_dir , '{}_save_data'.format( dataset ) )
+def create_save_dir ( args ) :
+    save_dir = os.path.join( args.store_dir , '{}_save_data'.format( args.dataset ) )
     if os.path.exists( save_dir ) is False :
         os.makedirs( save_dir )
         os.makedirs( os.path.join( save_dir , "Logging" ) )
@@ -268,6 +252,24 @@ def main ( ) :
         os.makedirs( os.path.join( result_path , "absorption_coefficient" ) )
         os.makedirs( os.path.join( result_path , "dials_output" ) )
 
+
+# if __name__ == "__main__":
+def main ( ) :
+    args = set_parser( )
+    dataset = args.dataset
+    save_dir = os.path.join( args.store_dir , '{}_save_data'.format( args.dataset ) )
+    result_path = os.path.join( save_dir , 'ResultData' )
+
+
+
+
+    model_name = './{}_.npy'.format( dataset )
+    # segimg_path="D:/lys/studystudy/phd/absorption_correction/dataset/13304_segmentation_labels_tifs/dls/i23" \
+    #             "/data/2019/nr23571-5/processing/tomography/recon/13304/avizo/segmentation_labels_tiffs"
+
+    # ModelGenerator = Image2Model(segimg_path , model_name ).run()
+    create_save_dir( args )
+    save_dir = os.path.join( args.store_dir , '{}_save_data'.format( args.dataset ) )
 
     logger = logging.getLogger( )
     logger.setLevel( logging.INFO )
@@ -346,6 +348,10 @@ def main ( ) :
             pass
         else:
             args.abs_base_cls = 'li'
+        if hasattr(args, 'crop'):
+            args.crop = list(args.crop)
+        else:
+            args.crop = None
         coefficient_model = RunAbsorptionCoefficient( args.rawimg_path , model_storepath ,
                                                      coe_li= args.coe_li ,
                                                      coe_lo= args.coe_lo ,
@@ -360,7 +366,8 @@ def main ( ) :
                                                       angle = coefficient_viewing ,
                                                       kernel_square = (5 , 5) ,
                                                       full = False , thresholding = args.coefficient_thresholding,
-                                                      flat_fielded=args.flat_field_name,base=args.abs_base_cls,)
+                                                      flat_fielded=args.flat_field_name,base=args.abs_base_cls, crop=args.crop)
+                                                  
         coefficient_model.run( )
 
     preprocess_dial_lite( args , save_dir )

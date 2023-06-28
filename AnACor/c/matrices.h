@@ -35,6 +35,15 @@ void print_matrix(const double* matrix, int rows, int cols) {
     }
 }
 
+void print_matrixI(const int64_t* matrix, int rows, int cols) {
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            printf("%g ", matrix[i * cols + j]);
+        }
+        printf("\n");
+    }
+}
+
 void kp_rotation(const double* axis, double theta, double* result) {
     double x = axis[0];
     double y = axis[1];

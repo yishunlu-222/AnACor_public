@@ -238,7 +238,22 @@ double ray_tracing_sampling(
 
         int64_t face_1 = cube_face(coord, xray_direction, shape, 1);
         int64_t face_2 = cube_face(coord, scattered_direction, shape, 0);
-
+        if (face_1 == 1 && fabs(theta_1)<M_PI/2)
+        {
+            printArray(coord, 3);
+            printf("face_1 is  %d \n", face_1);
+            printf("theta_1 is %f ", theta_1);
+            printf("phi_1 is %f \n", phi_1);
+            print_matrix(xray, 1, 3);
+        }
+        if (face_2 == 1 && fabs(theta)<M_PI/2)
+        {
+            printArray(coord, 3);
+            printf("face_2 is  %d \n", face_2);
+            printf("theta is %f ", theta);
+            printf("phi is %f \n", phi);
+            print_matrix(rotated_s1, 1, 3);
+        }
         if (test_mod)
         {
             printf("\n");

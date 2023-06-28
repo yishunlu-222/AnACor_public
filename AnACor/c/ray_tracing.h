@@ -118,7 +118,7 @@ int64_t cube_face(int64_t ray_origin[3], double ray_direction[3], int64_t cube_s
     int64_t max_y = cube_size[1];
     int64_t min_z = 0;
     int64_t max_z = cube_size[0];
-
+    
 
     double tx_min = (min_x - ray_origin[2]) / ray_direction[2];
     double tx_max = (max_x - ray_origin[2]) / ray_direction[2];
@@ -1197,8 +1197,10 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
 
     else if (face == 1)
 
-    {
-        assert(fabs(theta) >= M_PI / 2);
+    {   
+
+        
+        assert(fabs(theta) >= M_PI / 2 );
         increment_ratio_x = -1;
         increment_ratio_y = tan(M_PI - theta) / cos(fabs(phi));
         increment_ratio_z = tan(phi);
