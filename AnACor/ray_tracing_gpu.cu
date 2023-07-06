@@ -798,7 +798,7 @@ __global__ void rt_gpu_ray_classes(int *d_ray_classes, int8_t *d_label_list, int
 	}
 }
 
-__global__ void rt_gpu_absorption(int *d_ray_classes, double *d_absorption, int8_t *d_label_list, int64_t *d_coord_list, int *d_face, double *d_angles, double *d_increments, int x_max, int y_max, int z_max, double voxel_length_x, double voxel_length_y, double voxel_length_z, double coeff_li, double coeff_lo, double coeff_cr, double coeff_bu, int diagonal)
+__global__ void rt_gpu_absorption(int *d_ray_classes, double *d_absorption, int8_t *d_label_list, int64_t *d_coord_list, int *d_face, double *d_angles, double *d_increments, int x_max, int y_max, int z_max, double voxel_length_x, double voxel_length_y, double voxel_length_z, double coeff_li, double coeff_lo, double coeff_cr, double coeff_bu, int diagonal,double * d_result_list, int index,int len_coord_list)
 {
 	size_t id = blockIdx.x;
 	int is_ray_incomming = id & 1;
@@ -953,6 +953,7 @@ __global__ void rt_gpu_absorption(int *d_ray_classes, double *d_absorption, int8
 	if (threadIdx.x == 0)
 	{
 		d_absorption[id] = absorption;
+		d_result_list[index * len_coord_list*2+id] = absorption;
 		// if (id<2){
 		// printf("id: %d, absorption: %f, li_absorption: %f, lo_absorption: %f, cr_absorption: %f, bu_absorption: %f\n",id, absorption, li_absorption, lo_absorption, cr_absorption, bu_absorption);
 		// printf("id: %d,total_length: %f\n",id, total_length);
@@ -1263,7 +1264,7 @@ int ray_tracing_path(int *h_face, double *h_angles, int *h_ray_classes, double *
 				x_max, y_max, z_max,
 				voxel_length_x, voxel_length_y, voxel_length_z,
 				coeff_li, coeff_lo, coeff_cr, coeff_bu,
-				diagonal);
+				diagonal,d_absorption,0,len_coord_list);
 		}
 
 		timer.Stop();
@@ -1389,7 +1390,7 @@ int ray_tracing_gpu_overall_kernel(int32_t low, int32_t up,
 	int64_t coord_list_size = len_coord_list * 3 * sizeof(int64_t);
 	int64_t ray_directions_size = 3 * sizeof(double);
 
-	int64_t result_size = len_result * len_coord_list*sizeof(double);
+	int64_t result_size = len_result *len_coord_list*2* sizeof(double)*0.5;
 	int64_t scattering_vector_list_size = len_result * sizeof(double) * 3;
 	int64_t omega_list_size = len_result * sizeof(double);
 	int64_t raw_xray_size = 3 * sizeof(double);
@@ -1398,11 +1399,10 @@ int ray_tracing_gpu_overall_kernel(int32_t low, int32_t up,
 	int64_t rotated_s1_size = len_result * sizeof(double) * 3;
 	int64_t rotated_xray_size = len_result * sizeof(double) * 3;
 
-	size_t total_memory_required_bytes = face_size + angle_size + increments_size + absorption_size + cube_size + ray_classes_size + coord_list_size + ray_directions_size;
-	if (DEBUG)
-	{
-		printf("--> DEBUG: Total memory required %0.3f MB.\n", (float)total_memory_required_bytes / (1024.0 * 1024.0));
-	}
+	size_t total_memory_required_bytes = face_size + angle_size + increments_size + absorption_size + cube_size + ray_classes_size + coord_list_size + ray_directions_size+result_size+scattering_vector_list_size+omega_list_size+raw_xray_size+omega_axis_size+kp_rotation_matrix_size+rotated_s1_size+rotated_xray_size;
+
+	printf("--> DEBUG: Total memory required %0.3f MB.\n", (float)total_memory_required_bytes / (1024.0 * 1024.0));
+
 	if (total_memory_required_bytes > free_mem)
 	{
 		printf("--> DEBUG: Total memory required %0.3f MB.\n", (float)
@@ -1416,7 +1416,7 @@ int ray_tracing_gpu_overall_kernel(int32_t low, int32_t up,
 	//----------> Memory allocation
 	//---------> Allocating memory on the device
 	// global memory
-	double *d_result_list;
+	double *d_result_list;  // contains i reflections, each with j rays
 	double *d_scattering_vector_list;
 	double *d_omega_list;
 	double *d_raw_xray;
@@ -1437,6 +1437,7 @@ int ray_tracing_gpu_overall_kernel(int32_t low, int32_t up,
 	// output memory
 	double *h_rotated_s1_list = (double *)malloc(rotated_s1_size);
 	double *h_rotated_xray_list = (double *)malloc(rotated_xray_size);
+	// double *h_result_list = (double *)malloc(result_size);
 
 	cudaError = cudaMalloc((void **)&d_result_list, result_size);
 	if (cudaError != cudaSuccess)
@@ -1627,7 +1628,7 @@ int ray_tracing_gpu_overall_kernel(int32_t low, int32_t up,
 		int nBlocks = (len_result + nThreads - 1) / nThreads;
 		dim3 gridSize_rotation(nBlocks, 1, 1);
 		dim3 blockSize_rotation(nThreads, 1, 1);
-		printf("gridSize_rotation: %d, blockSize_rotation: %d\n", gridSize_rotation.x, blockSize_rotation.x);
+
 		ray_tracing_rotation<<<gridSize_rotation, blockSize_rotation>>>(d_omega_axis, d_omega_list, d_kp_rotation_matrix, d_raw_xray, d_scattering_vector_list, d_rotated_xray_list, d_rotated_s1_list);
 
 		timer.Stop();
@@ -1641,11 +1642,13 @@ int ray_tracing_gpu_overall_kernel(int32_t low, int32_t up,
 		print_cuda_error(cudaError);
 		nCUDAErrors++;
 	}
-	else
+	else{
+	if (DEBUG)
 	{
 		printf("No CUDA error.\n");
+		printf("Rotation matrices are calculated\n");
 	}
-
+	}
 	//-----> Copy chunk of output data to host
 	cudaError = cudaMemcpy( h_rotated_xray_list, d_rotated_xray_list, rotated_xray_size, cudaMemcpyDeviceToHost);
 	if (cudaError != cudaSuccess)
@@ -1662,10 +1665,15 @@ int ray_tracing_gpu_overall_kernel(int32_t low, int32_t up,
 	cudaDeviceSynchronize();
 	double total_time = 0;
 	timer.Start();
+	// for (int i = 0; i < 5; i++)
+	// {
 
+	// 	printf("[%d]",i);
+	// 	printf("h_rotated_xray_list =[%f,%f,%f]  ", h_rotated_xray_list[i*3], h_rotated_xray_list[i*3+1], h_rotated_xray_list[i*3+2]);
+	// 	printf("h_rotated_s1_list =[%f,%f,%f] \n",h_rotated_s1_list[i*3], h_rotated_s1_list[i*3+1], h_rotated_s1_list[i*3+2]);
+	// }
 	for (int64_t i = 0; i < len_result; i++)
 	{
-
 
 		if (nCUDAErrors == 0)
 
@@ -1711,25 +1719,6 @@ int ray_tracing_gpu_overall_kernel(int32_t low, int32_t up,
 					d_increments,
 					d_angles);
 			}
-			// cudaError = cudaMemcpy(h_increments, d_increments, increments_size, cudaMemcpyDeviceToHost);
-			// if (cudaError != cudaSuccess)
-			// {
-			// 	printf("ERROR! Copy of d_face has failed.\n");
-			// 	nCUDAErrors++;
-			// }
-
-			// //---------> error check
-			// cudaError = cudaGetLastError();
-			// if (cudaError != cudaSuccess)
-			// {
-			// 	printf("ERROR! GPU Kernel error.\n");
-			// 	print_cuda_error(cudaError);
-			// 	nCUDAErrors++;
-			// }
-			// else
-			// {
-			// 	printf("No CUDA error.\n");
-			// }
 
 			//---------> error check
 			cudaError = cudaGetLastError();
@@ -1768,8 +1757,30 @@ int ray_tracing_gpu_overall_kernel(int32_t low, int32_t up,
 					x_max, y_max, z_max,
 					voxel_length_x, voxel_length_y, voxel_length_z,
 					coeff_li, coeff_lo, coeff_cr, coeff_bu,
-					diagonal);
+					diagonal,d_result_list,i,len_coord_list);
 			}
+
+		}
+		//---------> error check for the first result
+		printf("i is %d\n", i);
+		cudaError = cudaMemcpy(h_result_list,d_result_list,  result_size, cudaMemcpyDeviceToHost);
+		if (cudaError != cudaSuccess)
+		{
+			printf("ERROR! Copy of d_rotated_s1_list has failed.\n");
+			nCUDAErrors++;
+		}
+		double gpu_absorption = 0;
+		for (int64_t j = 0; j < len_coord_list; j++)
+		{
+			gpu_absorption += exp(-(h_result_list[i*len_coord_list+2 * j + 0] + h_result_list[i*len_coord_list+2 * j + 1]));
+
+		}
+		double gpu_absorption_mean = gpu_absorption / ((double)len_coord_list);
+
+		printf("GPU mean absorption in cuda code: %f;\n", gpu_absorption_mean);
+		cudaDeviceSynchronize();
+		if (i==10){
+			break;
 		}
 
 		// double result;
@@ -1788,7 +1799,7 @@ int ray_tracing_gpu_overall_kernel(int32_t low, int32_t up,
 		//                                scattering_vector_list[i * 3 + 1],
 		//                                scattering_vector_list[i * 3 + 2]};
 		// dot_product((double *)total_rotation_matrix, (double *)scattering_vector, (double *)rotated_s1, 3, 3, 1);
-		// if (i < 10){
+		// if (i < 1){
 		// 	printf("rotated xray in host is [%f,%f,%f]\n", xray[0], xray[1], xray[2]);
 		// 	printf("rotated xray in device is [%f,%f,%f]\n", h_rotated_xray_list[i*3+0], h_rotated_xray_list[i*3+1], h_rotated_xray_list[i*3+2]);
 		// 	printf("rotated s1 in host is [%f,%f,%f]\n", rotated_s1[0], rotated_s1[1], rotated_s1[2]);
