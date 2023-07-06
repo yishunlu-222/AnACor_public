@@ -5,10 +5,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <malloc.h>
-#include "unit_test.h"
-#include "ray_tracing.h"
 #include <sys/resource.h>
-#include "matrices.h"
 #define M_PI 3.14159265
 #define test_mod 0
 #define INDEX_3D(N3, N2, N1, I3, I2, I1)    (N1 * (N2 * I3 + I2) + I1)
@@ -17,6 +14,28 @@
 // Use 1d data in ray calculation
 // 
 
+typedef struct
+{
+    int64_t x, y, z;
+} Vector3D;
+
+typedef struct
+{
+    Vector3D *ray;
+    int64_t *posi;
+    char *classes;
+} Path2;
+
+typedef struct
+{
+    int64_t *ray;
+    int64_t *ray_classes;
+    int64_t *posi;
+    int64_t *classes;
+    int64_t len_path_2;
+    int64_t len_classes_posi;
+    int64_t len_classes;
+} Path2_c;
 
 int64_t compare_Path2s(Path2_c *path, Path2_c *path_ref){
 	int64_t total_errors = 0;
@@ -399,15 +418,6 @@ void dials_2_numpy_matrix(double vector[3], double result[3])
 
 int64_t cube_face(int64_t ray_origin[3], double ray_direction[3], int64_t cube_size[3], int L1)
 {
-        // deciding which plane to go out, to see which direction (xyz) has increment of 1
-    /*  'FRONTZY' = 1;
-*   'LEYX' = 2 ;
-*   'RIYX' = 3;
-    'TOPZX' = 4;
-    'BOTZX' = 5;
-    "BACKZY" = 6 ;
-
-*/  
     int64_t min_x = 0;
     int64_t max_x = cube_size[2];
     int64_t min_y = 0;
@@ -415,22 +425,12 @@ int64_t cube_face(int64_t ray_origin[3], double ray_direction[3], int64_t cube_s
     int64_t min_z = 0;
     int64_t max_z = cube_size[0];
 
-
     double tx_min = (min_x - ray_origin[2]) / ray_direction[2];
     double tx_max = (max_x - ray_origin[2]) / ray_direction[2];
     double ty_min = (min_y - ray_origin[1]) / ray_direction[1];
     double ty_max = (max_y - ray_origin[1]) / ray_direction[1];
     double tz_min = (min_z - ray_origin[0]) / ray_direction[0];
     double tz_max = (max_z - ray_origin[0]) / ray_direction[0];
-
-    if (L1){
-        tx_min = -tx_min;
-        tx_max = -tx_max;
-        ty_min = -ty_min;
-        ty_max = -ty_max;
-        tz_min = -tz_min;
-        tz_max = -tz_max;
-    }
 
     double t_numbers[6] = {tx_min, ty_min, tz_min, tx_max, ty_max, tz_max};
     int t_numbers_len = sizeof(t_numbers) / sizeof(t_numbers[0]);
@@ -453,67 +453,37 @@ int64_t cube_face(int64_t ray_origin[3], double ray_direction[3], int64_t cube_s
             t_min = non_negative_numbers[i];
         }
     }
-    // printf("t_min: %f\n", t_min);
-        if (t_min == tx_min)
+    
+    if (t_min == tx_min)
     {
-        return  6;
+        return L1 ? 1 : 6;
     }
     else if (t_min == tx_max)
     {
-        return  1;
+        return L1 ? 6 : 1;
     }
     else if (t_min == ty_min)
     {
-        return  4;
+        return L1 ? 5 : 4;
     }
     else if (t_min == ty_max)
     {
-        return  5;
+        return L1 ? 4 : 5;
     }
     else if (t_min == tz_min)
     {
-        return  2;
+        return L1 ? 3 : 2;
     }
     else if (t_min == tz_max)
     {
-        return  3;
+        return L1 ? 2 : 3;
     }
     else
     {
-        fprintf(stderr, "face determination has a problem with direction %f, %f, %f and position %f, %f, %f\n", ray_direction[0], ray_direction[1],
+        fprintf(stderr, "face determination has a problem with direction %f, %f, %f and position %ld, %ld, %ld\n", ray_direction[0], ray_direction[1],
                 ray_direction[2], ray_origin[0], ray_origin[1], ray_origin[2]);
         exit(EXIT_FAILURE);
     }
-    // if (t_min == tx_min)
-    // {
-    //     return L1 ? 1 : 6;
-    // }
-    // else if (t_min == tx_max)
-    // {
-    //     return L1 ? 6 : 1;
-    // }
-    // else if (t_min == ty_min)
-    // {
-    //     return L1 ? 5 : 4;
-    // }
-    // else if (t_min == ty_max)
-    // {
-    //     return L1 ? 4 : 5;
-    // }
-    // else if (t_min == tz_min)
-    // {
-    //     return L1 ? 3 : 2;
-    // }
-    // else if (t_min == tz_max)
-    // {
-    //     return L1 ? 2 : 3;
-    // }
-    // else
-    // {
-    //     fprintf(stderr, "face determination has a problem with direction %f, %f, %f and position %f, %f, %f\n", ray_direction[0], ray_direction[1],
-    //             ray_direction[2], ray_origin[0], ray_origin[1], ray_origin[2]);
-    //     exit(EXIT_FAILURE);
-    // }
 }
 
 
@@ -1897,9 +1867,7 @@ double *cal_path2_plus(Path2_c path_2_cal_result, double *voxel_size)
 		pow(dist_z * voxel_length_z, 2) +
         pow(dist_x * voxel_length_x, 2)
 	);
-    // printf("CPU:==>total_length=%f; ", total_length);
-    // printf ("len_path_2=%ld\n", len_path_2);
-    // printf ("dist_x=%f , dist_y=%f, dist_z=%f \n", dist_x, dist_y, dist_z);
+	
     int64_t cr_l_2_int = 0;
     int64_t li_l_2_int = 0;
     int64_t bu_l_2_int = 0;
@@ -1913,15 +1881,6 @@ double *cal_path2_plus(Path2_c path_2_cal_result, double *voxel_size)
         else {
         }
     }
-    // printf("li_l_2_int=%ld; ", li_l_2_int);
-    // printf("lo_l_2_int=%ld; ", lo_l_2_int);
-    // printf("cr_l_2_int=%ld; ", cr_l_2_int);
-    // printf("bu_l_2_int=%ld\n", bu_l_2_int);
-    // printf("path_ray_classes is \n")   ;
-    // for(int k =0; k<len_path_2;k++){
-    //     printf(" %d",path_ray_classes[k]);
-    // }
-    // printf("\n");
 	int64_t sum = cr_l_2_int + li_l_2_int + lo_l_2_int + bu_l_2_int;
 	//printf("total_length=%f; len_path_2=%f; sum=%ld; dst=[%f; %f; %f]\n", total_length, (double) len_path_2, sum, dist_x, dist_y, dist_z);
     double cr_l_2 = total_length*(((double) cr_l_2_int)/((double) len_path_2));
@@ -2049,162 +2008,11 @@ double cal_rate(double *numbers_1, double *numbers_2, double *coefficients,
 }
 
 
-double cal_rate_single(double *numbers, double *coefficients,
-                char Isexp)
-{
-
-    double mu_li = coefficients[0];
-    double mu_lo = coefficients[1];
-    double mu_cr = coefficients[2];
-    double mu_bu = coefficients[3];
-
-    double li_l_1 = numbers[0];
-    double lo_l_1 = numbers[1];
-    double cr_l_1 = numbers[2];
-    double bu_l_1 = numbers[3];
-
-
-
-    double result = (mu_li * (li_l_1 ) +
-                     mu_lo * (lo_l_1 ) +
-                     mu_cr * (cr_l_1 ) +
-                     mu_bu * (bu_l_1 ));
-
-    if (Isexp == 1)
-    {
-        result = exp(-result);
-    }
-
-    return result;
-}
-
-
-
 int ray_tracing_path(int *h_face, double *h_angles, int *h_ray_classes, double *h_absorption, int64_t *h_coord_list, int64_t len_coord_list, double *h_rotated_s1, double *h_xray, double *voxel_size, double *coefficients, int8_t *h_label_list_1d, int64_t *shape);
-
-int ray_tracing_gpu_overall_kernel(int32_t low, int32_t up,
-                            int64_t *coord_list,
-                            int32_t len_coord_list,
-                            const double *scattering_vector_list, const double *omega_list,
-                            const double *raw_xray,
-                            const double *omega_axis, const double *kp_rotation_matrix,
-                            int32_t len_result,
-                            double *voxel_size, double *coefficients,
-                            int8_t *label_list_1d, int64_t *shape, int32_t full_iteration,
-                            int32_t store_paths, double *h_result_list);
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-
-double ray_tracing_gpu(
-    int64_t *coord_list,
-    int64_t len_coord_list,
-    double *rotated_s1, double *xray,
-    double *voxel_size, double *coefficients,
-     int8_t *label_list_1d, int64_t *shape, int full_iteration,
-    int64_t store_paths)
-{
-    printf("\n------------------ Ray tracing sampling --------------\n");
-	printf("--------------> GPU version\n");
-	int *h_face, *h_ray_classes;
-	double *h_angles, *h_absorption;
-	int64_t z_max = shape[0], y_max = shape[1], x_max = shape[2];
-	int64_t diagonal = x_max*sqrt(3);
-	int64_t face_size = len_coord_list*2*sizeof(int);
-	int64_t absorption_size = len_coord_list*2*sizeof(double);
-	int64_t ray_classes_size = diagonal*len_coord_list*2*sizeof(int);
-	int64_t angle_size = 4*sizeof(double);
-	
-	h_face = (int *) malloc(face_size);
-	h_ray_classes = (int *) malloc(ray_classes_size);
-	h_angles = (double *) malloc(angle_size); 
-	h_absorption = (double *) malloc(absorption_size);
-	ray_tracing_path(h_face, h_angles, h_ray_classes, h_absorption, coord_list, len_coord_list, rotated_s1, xray, voxel_size, coefficients, label_list_1d, shape);
-	
-	printf("----> GPU version FINISHED;\n");
-
-	
-	double gpu_absorption = 0;
-	for(int64_t i=0; i<len_coord_list; i++){
-		gpu_absorption += exp(-(h_absorption[2*i+0] + h_absorption[2*i+1]));
-	}
-	double gpu_absorption_mean = gpu_absorption/ ((double) len_coord_list);
-
-	
-	
-	free(h_face);
-	free(h_ray_classes);
-	free(h_angles);
-	free(h_absorption);
-    
-    return gpu_absorption_mean;
-}
-
-
-double *ray_tracing_gpu_overall(int32_t low, int32_t up,
-                            int64_t *coord_list,
-                            int32_t len_coord_list,
-                            const double *scattering_vector_list, const double *omega_list,
-                            const double *raw_xray,
-                            const double *omega_axis, const double *kp_rotation_matrix,
-                            int32_t len_result,
-                            double *voxel_size, double *coefficients,
-                            int8_t *label_list_1d, int64_t *shape, int32_t full_iteration,
-                            int32_t store_paths)
-{
-
-    // double *result_list = malloc( len_result* sizeof(double));
-    // size_t len_result_double = (int32_t) len_result* sizeof(double);
-    // int32_t len_result_double = (int32_t) len_result;
-    printf("low is %d \n", low);
-    printf("up is %d \n", up);
-    double *h_result_list = (double*)malloc(len_result * sizeof(double));
-    ray_tracing_gpu_overall_kernel(low, up, coord_list, len_coord_list, scattering_vector_list, omega_list, raw_xray, omega_axis, kp_rotation_matrix, len_result, voxel_size, coefficients, label_list_1d, shape, full_iteration, store_paths, h_result_list);
-    // printf("len_result_double is %d \n", len_result_double);
-    // printf("result_list is %p \n", result_list);
-    return  h_result_list;
-
-    // for (int64_t i = 0; i < len_result; i++)
-    // {
-    //     double result;
-    //     double rotation_matrix_frame_omega[9];
-    //     double rotation_matrix[9];
-    //     double total_rotation_matrix[9];
-    //     double xray[3];
-    //     double rotated_s1[3];
-    //     kp_rotation(omega_axis, omega_list[i], (double *)rotation_matrix_frame_omega);
-    //     dot_product((double *)rotation_matrix_frame_omega, kp_rotation_matrix, (double *)rotation_matrix, 3, 3, 3);
-    //     transpose((double *)rotation_matrix, 3, 3, (double *)total_rotation_matrix);
-    //     dot_product((double *)total_rotation_matrix, raw_xray, (double *)xray, 3, 3, 1);
-    //     // printf("xray is \n");
-    //     // print_matrix(xray,1,3);
-    //     double scattering_vector[3] = {scattering_vector_list[i * 3],
-    //                                    scattering_vector_list[i * 3 + 1],
-    //                                    scattering_vector_list[i * 3 + 2]};
-    //     dot_product((double *)total_rotation_matrix, (double *)scattering_vector, (double *)rotated_s1, 3, 3, 1);
-
-
-    //     result = ray_tracing_gpu(
-    //         coord_list, len_coord_list,
-    //         (double *)rotated_s1, (double *)xray,
-    //         voxel_size, coefficients,
-    //         label_list_1d, shape, full_iteration,
-    //         store_paths);
-    //     // printf("result is %f \n",result);
-    //     result_list[i] = result;
-    //     printf("[%d/%d] rotation: %.4f, absorption: %.4f\n",
-    //            low + i, up, omega_list[i] * 180 / M_PI, result);
-    //     break;
-    //     // printf("index is %d, result is %f \n",i,result);
-    //     // printArrayD(result_list, 10);
-    // }
-
-    // return result_list;
-}
-
-
 
 double ray_tracing_sampling(
     int64_t *coord_list,
@@ -2221,19 +2029,16 @@ double ray_tracing_sampling(
 	int64_t z_max = shape[0], y_max = shape[1], x_max = shape[2];
 	int64_t diagonal = x_max*sqrt(3);
 	int64_t face_size = len_coord_list*2*sizeof(int);
-	int64_t absorption_size = len_coord_list*2*sizeof(double);
+	int64_t absorbtion_size = len_coord_list*2*sizeof(double);
 	int64_t ray_classes_size = diagonal*len_coord_list*2*sizeof(int);
 	int64_t angle_size = 4*sizeof(double);
 	
 	h_face = (int *) malloc(face_size);
 	h_ray_classes = (int *) malloc(ray_classes_size);
 	h_angles = (double *) malloc(angle_size); 
-	h_absorption = (double *) malloc(absorption_size);
+	h_absorption = (double *) malloc(absorbtion_size);
 	ray_tracing_path(h_face, h_angles, h_ray_classes, h_absorption, coord_list, len_coord_list, rotated_s1, xray, voxel_size, coefficients, label_list_1d, shape);
-	// printf("----> GPU : rayclass of the first voxel in for scattering is;\n");
-    // for (int i=0;i<diagonal;i++){
-    //     printf(" %d", h_ray_classes[i]);
-    // }
+	
 	printf("----> GPU version FINISHED;\n");
     
 	printf("-----> Testing label_list_1d: ");
@@ -2258,22 +2063,22 @@ double ray_tracing_sampling(
     double theta_xray = result_xray.theta;
     double phi_xray = result_xray.phi;
 
-	// printf("rotated_s1 angles: theta: CPU=%f; GPU=%f diff=%f|| phi: CPU=%f; GPU=%f; diff=%f\n", theta, h_angles[0], abs(theta - h_angles[0]), phi, h_angles[1], abs(phi - h_angles[1]));
-	// printf("xray angles: theta: CPU=%f; GPU=%f diff=%f|| phi: CPU=%f; GPU=%f; diff=%f\n", theta_xray, h_angles[2], abs(theta_xray - h_angles[2]), phi_xray, h_angles[3], abs(phi_xray - h_angles[3]));
+	//printf("rotated_s1 angles: theta: CPU=%f; GPU=%f diff=%f|| phi: CPU=%f; GPU=%f; diff=%f\n", theta, h_angles[0], abs(theta - h_angles[0]), phi, h_angles[1], abs(phi - h_angles[1]));
+	//printf("xray angles: theta: CPU=%f; GPU=%f diff=%f|| phi: CPU=%f; GPU=%f; diff=%f\n", theta_xray, h_angles[2], abs(theta_xray - h_angles[2]), phi_xray, h_angles[3], abs(phi_xray - h_angles[3]));
 	
-	printf("-------> Increment test:\n");
-	double ix, iy, iz;
-	// printf("Xray:\n");
-	// for(int f=1; f<=6; f++){
-	// 	get_increment_ratio(&ix, &iy, &iz, theta_xray, phi_xray, f);
-	// 	printf("==> CPU: face=%d; i=[%f; %f; %f];\n", f, ix, iy, iz);
-	// }
-	// printf("rotated_s1:\n");
-	// for(int f=1; f<=6; f++){
-	// 	get_increment_ratio(&ix, &iy, &iz, theta, phi, f);
-	// 	printf("==> CPU: face=%d; i=[%f; %f; %f];\n", f, ix, iy, iz);
-	// }
-	printf("-------------------------------<\n");
+	//printf("-------> Increment test:\n");
+	//double ix, iy, iz;
+	//printf("Xray:\n");
+	//for(int f=1; f<=6; f++){
+	//	get_increment_ratio(&ix, &iy, &iz, theta_xray, phi_xray, f);
+	//	printf("==> CPU: face=%d; i=[%f; %f; %f];\n", f, ix, iy, iz);
+	//}
+	//printf("rotated_s1:\n");
+	//for(int f=1; f<=6; f++){
+	//	get_increment_ratio(&ix, &iy, &iz, theta, phi, f);
+	//	printf("==> CPU: face=%d; i=[%f; %f; %f];\n", f, ix, iy, iz);
+	//}
+	//printf("-------------------------------<\n");
 
     Path2_c path_2, path_1;
     Path2_c path_2_ref, path_1_ref;
@@ -2285,7 +2090,6 @@ double ray_tracing_sampling(
 	int64_t nFaceErrors = 0;
 	int64_t nAbsorptionErrors = 0;
 	int64_t nClassesErrors = 0, path2error = 0, path1error = 0;
-    double absorption_1, absorption_2;
     for (int64_t i = 0; i < len_coord_list; i++) {
 		
         int64_t coord[3] = {coord_list[i * 3],
@@ -2385,6 +2189,7 @@ double ray_tracing_sampling(
 			//printf("\n");
 		}
 
+
         numbers_1_ref = cal_path2_plus_ref(path_1, voxel_size);
         numbers_1 = cal_path2_plus(path_1, voxel_size);
         compare_classes_lengths(numbers_1, numbers_1_ref);
@@ -2392,39 +2197,11 @@ double ray_tracing_sampling(
         numbers_2_ref = cal_path2_plus_ref(path_2, voxel_size);
         numbers_2 = cal_path2_plus(path_2, voxel_size);
         compare_classes_lengths(numbers_2, numbers_2_ref);
- 
-        // if (i<1){
-        //     // test_ray_classes(path_1, coord, h_ray_classes, diagonal); 
-        //     printf("numbers_1:%f, %f, %f, %f \n",numbers_1[0]*coefficients[0],numbers_1[1]*coefficients[1],numbers_1[2]*coefficients[2],numbers_1[3]*coefficients[3]);
-        //     printf("numbers_2:%f, %f, %f, %f \n",numbers_2[0]*coefficients[0],numbers_2[1]*coefficients[1],numbers_2[2]*coefficients[2],numbers_2[3]*coefficients[3]);
-        //     printf("numbers_1:%f, %f, %f, %f \n",numbers_1[0],numbers_1[1],numbers_1[2],numbers_1[3]);
-        //     printf("numbers_2:%f, %f, %f, %f \n",numbers_2[0],numbers_2[1],numbers_2[2],numbers_2[3]);
-        //     printf(" path_2.coordinte s is \n");
-        //     for(int k=0; k<path_2.len_path_2; k++){
-        //         printf(" [%ld,%ld,%ld] ", path_2.ray[k*3+0], path_2.ray[k*3+1], path_2.ray[k*3+2]);
-        //     }
-        //     printf ("\n ");
-        //     printf(" path_2.ray_classes is \n");
-        //     for(int k=0; k<path_2.len_path_2; k++){
-        //         printf("%d ", path_2.ray_classes[k]);
-        //     }
-        //     printf ("\n ");
-        // }
-        // if (i>1){
-        //     break;
-        // }
 
-        // absorption = cal_rate(numbers_1, numbers_2, coefficients, 1);
-        absorption_1 = cal_rate_single(numbers_1,coefficients, 0);
-        absorption_2 = cal_rate_single(numbers_2,coefficients, 0);
+        absorption = cal_rate(numbers_1, numbers_2, coefficients, 1);
+		//printf("i=%d; CPU=%f; GPU=%f+%f=%f; diff=%f;\n", (int) i, absorption, h_absorption[2*i+0], h_absorption[2*i+1], h_absorption[2*i+0] + h_absorption[2*i+1], abs(absorption - exp(-(h_absorption[2*i+0] + h_absorption[2*i+1]))) );
 
-        absorption =exp( -(absorption_1 + absorption_2));
-
-        // printf("i = %d; CPU = %f; GPU = %f; diff = %f;\n", (int) i, absorption, exp(-(h_absorption[2*i+0] + h_absorption[2*i+1])), abs(absorption - (exp(-(h_absorption[2*i+0] + h_absorption[2*i+1])))) );
-        // printf("i = %d;path_1; face_c=%d, face_g = %d;CPU = %f; GPU = %f; diff = %f;\n", (int) i, face_1,h_face[2*i+1],absorption_1, h_absorption[2*i+1] , abs(absorption_1 -h_absorption[2*i+1] ) );
-        // printf("i = %d;path_2; face_c=%d, face_g = %d;CPU = %f; GPU = %f; diff = %f;\n", (int) i,face_2, h_face[2*i+0],absorption_2, h_absorption[2*i+0] , abs(absorption_2 -h_absorption[2*i+0] ) );
         absorption_sum += absorption;
-        
         
         
         free(path_1.ray);
@@ -2434,6 +2211,7 @@ double ray_tracing_sampling(
         // free(path_1);
         free(numbers_1_ref);
         free(numbers_1);
+        
         free(path_2.ray);
         free(path_2.ray_classes);
         free(path_2.classes);
@@ -2486,4 +2264,3 @@ double ray_tracing_sampling(
 #ifdef __cplusplus
 }
 #endif
-

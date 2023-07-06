@@ -8,7 +8,6 @@
 #include "unit_test.h"
 #include "ray_tracing.h"
 #include <sys/resource.h>
-#include "matrices.h"
 #define M_PI 3.14159265
 #define test_mod 0
 #define INDEX_3D(N3, N2, N1, I3, I2, I1)    (N1 * (N2 * I3 + I2) + I1)
@@ -2080,408 +2079,66 @@ double cal_rate_single(double *numbers, double *coefficients,
 
 
 
-int ray_tracing_path(int *h_face, double *h_angles, int *h_ray_classes, double *h_absorption, int64_t *h_coord_list, int64_t len_coord_list, double *h_rotated_s1, double *h_xray, double *voxel_size, double *coefficients, int8_t *h_label_list_1d, int64_t *shape);
 
-int ray_tracing_gpu_overall_kernel(int32_t low, int32_t up,
-                            int64_t *coord_list,
-                            int32_t len_coord_list,
-                            const double *scattering_vector_list, const double *omega_list,
-                            const double *raw_xray,
-                            const double *omega_axis, const double *kp_rotation_matrix,
-                            int32_t len_result,
-                            double *voxel_size, double *coefficients,
-                            int8_t *label_list_1d, int64_t *shape, int32_t full_iteration,
-                            int32_t store_paths, double *h_result_list);
+int verificaton_ray_tracing_path(double *h_angle_list,int32_t h_len_result, int64_t * h_coord_list,int32_t h_len_coord_list,int8_t *label_list_1d ,double * voxel_size,double *coefficients,int64_t *shape, double * h_result_list);
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-
-double ray_tracing_gpu(
-    int64_t *coord_list,
-    int64_t len_coord_list,
-    double *rotated_s1, double *xray,
-    double *voxel_size, double *coefficients,
-     int8_t *label_list_1d, int64_t *shape, int full_iteration,
-    int64_t store_paths)
+double* ray_tracing_gpu_verification(
+double *angle_list,int32_t len_result, int64_t * coord_list,int32_t len_coord_list,int8_t *label_list_1d ,double *voxel_size,double *coefficients,int64_t *shape)
 {
     printf("\n------------------ Ray tracing sampling --------------\n");
 	printf("--------------> GPU version\n");
+    double *result_list = (double*) malloc(len_result * sizeof(double));
 	int *h_face, *h_ray_classes;
-	double *h_angles, *h_absorption;
+	double *h_angles, *h_absorption,*h_result_list;
 	int64_t z_max = shape[0], y_max = shape[1], x_max = shape[2];
 	int64_t diagonal = x_max*sqrt(3);
-	int64_t face_size = len_coord_list*2*sizeof(int);
-	int64_t absorption_size = len_coord_list*2*sizeof(double);
+	// int64_t face_size = len_result*len_coord_list*2*sizeof(int);
+	int64_t absorption_size = len_result *sizeof(double);
 	int64_t ray_classes_size = diagonal*len_coord_list*2*sizeof(int);
 	int64_t angle_size = 4*sizeof(double);
-	
-	h_face = (int *) malloc(face_size);
-	h_ray_classes = (int *) malloc(ray_classes_size);
-	h_angles = (double *) malloc(angle_size); 
-	h_absorption = (double *) malloc(absorption_size);
-	ray_tracing_path(h_face, h_angles, h_ray_classes, h_absorption, coord_list, len_coord_list, rotated_s1, xray, voxel_size, coefficients, label_list_1d, shape);
-	
-	printf("----> GPU version FINISHED;\n");
+    h_result_list = (double *) malloc(len_result*sizeof(double));
+	verificaton_ray_tracing_path(angle_list,len_result,  coord_list,len_coord_list,label_list_1d , voxel_size,coefficients,shape,h_result_list);
 
-	
-	double gpu_absorption = 0;
-	for(int64_t i=0; i<len_coord_list; i++){
-		gpu_absorption += exp(-(h_absorption[2*i+0] + h_absorption[2*i+1]));
-	}
-	double gpu_absorption_mean = gpu_absorption/ ((double) len_coord_list);
+	// h_face = (int *) malloc(face_size);
+	// h_ray_classes = (int *) malloc(ray_classes_size);
+	// h_angles = (double *) malloc(angle_size); 
+	// h_absorption = (double *) malloc(absorbtion_size);
 
-	
-	
-	free(h_face);
-	free(h_ray_classes);
-	free(h_angles);
-	free(h_absorption);
-    
-    return gpu_absorption_mean;
-}
+	// ray_tracing_path(h_face, h_angles, h_ray_classes, h_absorption, coord_list, len_coord_list, rotated_s1, xray, voxel_size, coefficients, label_list_1d, shape);
 
-
-double *ray_tracing_gpu_overall(int32_t low, int32_t up,
-                            int64_t *coord_list,
-                            int32_t len_coord_list,
-                            const double *scattering_vector_list, const double *omega_list,
-                            const double *raw_xray,
-                            const double *omega_axis, const double *kp_rotation_matrix,
-                            int32_t len_result,
-                            double *voxel_size, double *coefficients,
-                            int8_t *label_list_1d, int64_t *shape, int32_t full_iteration,
-                            int32_t store_paths)
-{
-
-    // double *result_list = malloc( len_result* sizeof(double));
-    // size_t len_result_double = (int32_t) len_result* sizeof(double);
-    // int32_t len_result_double = (int32_t) len_result;
-    printf("low is %d \n", low);
-    printf("up is %d \n", up);
-    double *h_result_list = (double*)malloc(len_result * sizeof(double));
-    ray_tracing_gpu_overall_kernel(low, up, coord_list, len_coord_list, scattering_vector_list, omega_list, raw_xray, omega_axis, kp_rotation_matrix, len_result, voxel_size, coefficients, label_list_1d, shape, full_iteration, store_paths, h_result_list);
-    // printf("len_result_double is %d \n", len_result_double);
-    // printf("result_list is %p \n", result_list);
-    return  h_result_list;
-
-    // for (int64_t i = 0; i < len_result; i++)
-    // {
-    //     double result;
-    //     double rotation_matrix_frame_omega[9];
-    //     double rotation_matrix[9];
-    //     double total_rotation_matrix[9];
-    //     double xray[3];
-    //     double rotated_s1[3];
-    //     kp_rotation(omega_axis, omega_list[i], (double *)rotation_matrix_frame_omega);
-    //     dot_product((double *)rotation_matrix_frame_omega, kp_rotation_matrix, (double *)rotation_matrix, 3, 3, 3);
-    //     transpose((double *)rotation_matrix, 3, 3, (double *)total_rotation_matrix);
-    //     dot_product((double *)total_rotation_matrix, raw_xray, (double *)xray, 3, 3, 1);
-    //     // printf("xray is \n");
-    //     // print_matrix(xray,1,3);
-    //     double scattering_vector[3] = {scattering_vector_list[i * 3],
-    //                                    scattering_vector_list[i * 3 + 1],
-    //                                    scattering_vector_list[i * 3 + 2]};
-    //     dot_product((double *)total_rotation_matrix, (double *)scattering_vector, (double *)rotated_s1, 3, 3, 1);
-
-
-    //     result = ray_tracing_gpu(
-    //         coord_list, len_coord_list,
-    //         (double *)rotated_s1, (double *)xray,
-    //         voxel_size, coefficients,
-    //         label_list_1d, shape, full_iteration,
-    //         store_paths);
-    //     // printf("result is %f \n",result);
-    //     result_list[i] = result;
-    //     printf("[%d/%d] rotation: %.4f, absorption: %.4f\n",
-    //            low + i, up, omega_list[i] * 180 / M_PI, result);
-    //     break;
-    //     // printf("index is %d, result is %f \n",i,result);
-    //     // printArrayD(result_list, 10);
-    // }
-
-    // return result_list;
-}
-
-
-
-double ray_tracing_sampling(
-    int64_t *coord_list,
-    int64_t len_coord_list,
-    double *rotated_s1, double *xray,
-    double *voxel_size, double *coefficients,
-    int8_t ***label_list, int8_t *label_list_1d, int64_t *shape, int full_iteration,
-    int64_t store_paths)
-{
-    printf("\n------------------ Ray tracing sampling --------------\n");
-	printf("--------------> GPU version\n");
-	int *h_face, *h_ray_classes;
-	double *h_angles, *h_absorption;
-	int64_t z_max = shape[0], y_max = shape[1], x_max = shape[2];
-	int64_t diagonal = x_max*sqrt(3);
-	int64_t face_size = len_coord_list*2*sizeof(int);
-	int64_t absorption_size = len_coord_list*2*sizeof(double);
-	int64_t ray_classes_size = diagonal*len_coord_list*2*sizeof(int);
-	int64_t angle_size = 4*sizeof(double);
-	
-	h_face = (int *) malloc(face_size);
-	h_ray_classes = (int *) malloc(ray_classes_size);
-	h_angles = (double *) malloc(angle_size); 
-	h_absorption = (double *) malloc(absorption_size);
-	ray_tracing_path(h_face, h_angles, h_ray_classes, h_absorption, coord_list, len_coord_list, rotated_s1, xray, voxel_size, coefficients, label_list_1d, shape);
 	// printf("----> GPU : rayclass of the first voxel in for scattering is;\n");
     // for (int i=0;i<diagonal;i++){
     //     printf(" %d", h_ray_classes[i]);
     // }
 	printf("----> GPU version FINISHED;\n");
     
-	printf("-----> Testing label_list_1d: ");
-	int64_t errors_in_label_list = compare_voxels(label_list, label_list_1d, shape);
-	if(errors_in_label_list==0) printf("PASSED\n");
-	else printf("FAILED\n");
-	
-    
-    double x_ray_angle[3], rotated_s1_angle[3];
-    double xray_direction[3], scattered_direction[3];
-    double xray_switched[3], scattered_switched[3];
-    dials_2_numpy(xray, xray_direction);
-	//printf("Old order: [%f ; %f ; %f] New: [%f ; %f ; %f]\n", xray[0], xray[1], xray[2], xray_direction[0], xray_direction[1], xray_direction[2]);
-    dials_2_numpy(rotated_s1, scattered_direction);
-    memcpy(x_ray_angle, xray, 3*sizeof(double));
-    memcpy(rotated_s1_angle, rotated_s1, 3*sizeof(double));
+    // for (int i=0;i<len_result;i++){
+    //     result_list[i] = angle_list[i]/180*M_PI;
+    // }
+    // printf("crystall coordinates: \n");
+    // for (int i=0;i<10;i++){
+    //     printf(" [%ld,%ld,%ld] ", coord_list[i*3+0], coord_list[i*3+1], coord_list[i*3+2]);
 
-    ThetaPhi result_2 = dials_2_thetaphi_22(rotated_s1_angle, 0);
-    ThetaPhi result_xray = dials_2_thetaphi_22(x_ray_angle, 1);
-    double theta = result_2.theta;
-    double phi = result_2.phi;
-    double theta_xray = result_xray.theta;
-    double phi_xray = result_xray.phi;
+    // }
+	// printf("\n");
+    // for (int i=0;i<10;i++){
+    //     int k=i+10;
+    //     printf(" [%d] ",label_list_1d[k]);
 
-	// printf("rotated_s1 angles: theta: CPU=%f; GPU=%f diff=%f|| phi: CPU=%f; GPU=%f; diff=%f\n", theta, h_angles[0], abs(theta - h_angles[0]), phi, h_angles[1], abs(phi - h_angles[1]));
-	// printf("xray angles: theta: CPU=%f; GPU=%f diff=%f|| phi: CPU=%f; GPU=%f; diff=%f\n", theta_xray, h_angles[2], abs(theta_xray - h_angles[2]), phi_xray, h_angles[3], abs(phi_xray - h_angles[3]));
-	
-	printf("-------> Increment test:\n");
-	double ix, iy, iz;
-	// printf("Xray:\n");
-	// for(int f=1; f<=6; f++){
-	// 	get_increment_ratio(&ix, &iy, &iz, theta_xray, phi_xray, f);
-	// 	printf("==> CPU: face=%d; i=[%f; %f; %f];\n", f, ix, iy, iz);
-	// }
-	// printf("rotated_s1:\n");
-	// for(int f=1; f<=6; f++){
-	// 	get_increment_ratio(&ix, &iy, &iz, theta, phi, f);
-	// 	printf("==> CPU: face=%d; i=[%f; %f; %f];\n", f, ix, iy, iz);
-	// }
-	printf("-------------------------------<\n");
-
-    Path2_c path_2, path_1;
-    Path2_c path_2_ref, path_1_ref;
-    double *numbers_1_ref, *numbers_2_ref;
-    double *numbers_1, *numbers_2;
-    double absorption;
-    double absorption_sum = 0, absorption_mean = 0;
-    
-	int64_t nFaceErrors = 0;
-	int64_t nAbsorptionErrors = 0;
-	int64_t nClassesErrors = 0, path2error = 0, path1error = 0;
-    double absorption_1, absorption_2;
-    for (int64_t i = 0; i < len_coord_list; i++) {
-		
-        int64_t coord[3] = {coord_list[i * 3],
-                            coord_list[i * 3 + 1],
-                            coord_list[i * 3 + 2]};
-		
-        int64_t face_1_ref = which_face(coord, shape, theta_xray, phi_xray);
-        int64_t face_2_ref = which_face(coord, shape, theta, phi);
-        int64_t face_1 = cube_face(coord, xray_direction, shape, 1);
-        int64_t face_2 = cube_face(coord, scattered_direction, shape, 0);
-		if( ((int) face_1) != (h_face[2*i+1]) || ((int) face_2) != h_face[2*i+0]) {
-			if(i<32) printf("face1: CPU=%d; GPU=%d || face2: CPU=%d; GPU=%d;\n", (int) face_1, h_face[2*i+1], (int) face_2, h_face[2*i+0]);
-			nFaceErrors++;
-		}
-
-        int64_t errors = 0;
-        path_1_ref = cal_coord_ref(theta_xray, phi_xray, coord, face_1, shape, label_list, full_iteration);
-        path_1 = cal_coord(theta_xray, phi_xray, coord, face_1, shape, label_list_1d, full_iteration);
-        errors = compare_Path2s(&path_1, &path_1_ref);
-        if(errors>0) printf("Comparing path_1: FAILED\n");
-		
-
-
-
-        path_2_ref = cal_coord_ref(theta, phi, coord, face_2, shape, label_list, full_iteration);
-        path_2 = cal_coord(theta, phi, coord, face_2, shape, label_list_1d, full_iteration);
-        compare_Path2s(&path_2, &path_2_ref);
-        errors = compare_Path2s(&path_1, &path_1_ref);
-        if(errors>0) printf("Comparing path_2: FAILED\n");
-		
-		// for is_ray_incoming = 0;
-		// this means even for GPU and path_2
-		for(int f=0; f<path_2.len_path_2; f++){
-			int CPU_class = (int) path_2.ray_classes[f];
-			int64_t GPU_pos = (2*i + 0)*diagonal + f;
-			int GPU_class = h_ray_classes[GPU_pos];
-			if(CPU_class != GPU_class) {
-				path2error++;
-			}
-		}
-		
-		//if(i==0){
-		//	for(int f=0; f<path_2.len_path_2+10; f++){
-		//		int CPU_class = 0;
-		//		if(f<path_2.len_path_2){
-		//			CPU_class = (int) path_2.ray_classes[f];
-		//		}
-		//		int64_t GPU_pos = (2*i + 0)*diagonal + f;
-		//		int GPU_class = h_ray_classes[GPU_pos];
-		//		printf("[%d ; %d] ", (int) CPU_class, (int) GPU_class);
-		//	}
-		//	printf("\n");
-		//}
-		
-		if(path2error>0){
-			//for(int f=0; f<path_2.len_path_2+10; f++){
-			//	int CPU_class = 0;
-			//	if(f<path_2.len_path_2){
-			//		CPU_class = (int) path_2.ray_classes[f];
-			//	}
-			//	int64_t GPU_pos = (2*i + 0)*diagonal + f;
-			//	int GPU_class = h_ray_classes[GPU_pos];
-			//	printf("[%d ; %d] ", (int) CPU_class, (int) GPU_class);
-			//}
-			
-			nClassesErrors++;
-			//printf("\n");
-		}
-		
-		
-		// for is_ray_incoming = 1;
-		// this means even for GPU and path_1
-		//printf("Incoming=1; ");
-		for(int f=0; f<path_1.len_path_2; f++){
-			int CPU_class = (int) path_1.ray_classes[f];
-			int64_t GPU_pos = (2*i + 1)*diagonal + f;
-			int GPU_class = h_ray_classes[GPU_pos];
-			//printf("[%d ; %d] ", (int) CPU_class, (int) GPU_class);
-			if(CPU_class != GPU_class) {
-				path1error++;
-			}
-		}
-		//printf("\n");
-		
-		if(path1error>0){
-			//for(int f=0; f<path_2.len_path_2+10; f++){
-			//	int CPU_class = 0;
-			//	if(f<path_2.len_path_2){
-			//		CPU_class = (int) path_2.ray_classes[f];
-			//	}
-			//	int64_t GPU_pos = (2*i + 0)*diagonal + f;
-			//	int GPU_class = h_ray_classes[GPU_pos];
-			//	printf("[%d ; %d] ", (int) CPU_class, (int) GPU_class);
-			//}
-			
-			nClassesErrors++;
-			//printf("\n");
-		}
-
-        numbers_1_ref = cal_path2_plus_ref(path_1, voxel_size);
-        numbers_1 = cal_path2_plus(path_1, voxel_size);
-        compare_classes_lengths(numbers_1, numbers_1_ref);
-
-        numbers_2_ref = cal_path2_plus_ref(path_2, voxel_size);
-        numbers_2 = cal_path2_plus(path_2, voxel_size);
-        compare_classes_lengths(numbers_2, numbers_2_ref);
- 
-        // if (i<1){
-        //     // test_ray_classes(path_1, coord, h_ray_classes, diagonal); 
-        //     printf("numbers_1:%f, %f, %f, %f \n",numbers_1[0]*coefficients[0],numbers_1[1]*coefficients[1],numbers_1[2]*coefficients[2],numbers_1[3]*coefficients[3]);
-        //     printf("numbers_2:%f, %f, %f, %f \n",numbers_2[0]*coefficients[0],numbers_2[1]*coefficients[1],numbers_2[2]*coefficients[2],numbers_2[3]*coefficients[3]);
-        //     printf("numbers_1:%f, %f, %f, %f \n",numbers_1[0],numbers_1[1],numbers_1[2],numbers_1[3]);
-        //     printf("numbers_2:%f, %f, %f, %f \n",numbers_2[0],numbers_2[1],numbers_2[2],numbers_2[3]);
-        //     printf(" path_2.coordinte s is \n");
-        //     for(int k=0; k<path_2.len_path_2; k++){
-        //         printf(" [%ld,%ld,%ld] ", path_2.ray[k*3+0], path_2.ray[k*3+1], path_2.ray[k*3+2]);
-        //     }
-        //     printf ("\n ");
-        //     printf(" path_2.ray_classes is \n");
-        //     for(int k=0; k<path_2.len_path_2; k++){
-        //         printf("%d ", path_2.ray_classes[k]);
-        //     }
-        //     printf ("\n ");
-        // }
-        // if (i>1){
-        //     break;
-        // }
-
-        // absorption = cal_rate(numbers_1, numbers_2, coefficients, 1);
-        absorption_1 = cal_rate_single(numbers_1,coefficients, 0);
-        absorption_2 = cal_rate_single(numbers_2,coefficients, 0);
-
-        absorption =exp( -(absorption_1 + absorption_2));
-
-        // printf("i = %d; CPU = %f; GPU = %f; diff = %f;\n", (int) i, absorption, exp(-(h_absorption[2*i+0] + h_absorption[2*i+1])), abs(absorption - (exp(-(h_absorption[2*i+0] + h_absorption[2*i+1])))) );
-        // printf("i = %d;path_1; face_c=%d, face_g = %d;CPU = %f; GPU = %f; diff = %f;\n", (int) i, face_1,h_face[2*i+1],absorption_1, h_absorption[2*i+1] , abs(absorption_1 -h_absorption[2*i+1] ) );
-        // printf("i = %d;path_2; face_c=%d, face_g = %d;CPU = %f; GPU = %f; diff = %f;\n", (int) i,face_2, h_face[2*i+0],absorption_2, h_absorption[2*i+0] , abs(absorption_2 -h_absorption[2*i+0] ) );
-        absorption_sum += absorption;
-        
-        
-        
-        free(path_1.ray);
-        free(path_1.ray_classes);
-        free(path_1.classes);
-        free(path_1.posi);
-        // free(path_1);
-        free(numbers_1_ref);
-        free(numbers_1);
-        free(path_2.ray);
-        free(path_2.ray_classes);
-        free(path_2.classes);
-        free(path_2.posi);
-        // free(path_2);
-        free(numbers_2_ref);
-        free(numbers_2);
-        
-        free(path_1_ref.ray);
-        free(path_1_ref.ray_classes);
-        free(path_1_ref.classes);
-        free(path_1_ref.posi);
-        
-        free(path_2_ref.ray);
-        free(path_2_ref.ray_classes);
-        free(path_2_ref.classes);
-        free(path_2_ref.posi);
-		
-		path2error = 0;
-		path1error = 0;
-    }
-    absorption_mean = absorption_sum / len_coord_list;
-    int64_t nAngleErrors = 0;
-	if( abs(theta - h_angles[0]) > 1.0e-4 ) nAngleErrors++;
-	if( abs(phi - h_angles[1]) > 1.0e-4 ) nAngleErrors++;
-	if( abs(theta_xray - h_angles[2]) > 1.0e-4 ) nAngleErrors++;
-	if( abs(phi_xray - h_angles[3]) > 1.0e-4 ) nAngleErrors++;
-	//printf("rotated_s1 angles: theta: CPU=%f; GPU=%f diff=%f|| phi: CPU=%f; GPU=%f; diff=%f\n", theta, h_angles[0], abs(theta - h_angles[0]), phi, h_angles[1], abs(phi - h_angles[1]));
-	//printf("xray angles: theta: CPU=%f; GPU=%f diff=%f|| phi: CPU=%f; GPU=%f; diff=%f\n", theta_xray, h_angles[2], abs(theta_xray - h_angles[2]), phi_xray, h_angles[3], abs(phi_xray - h_angles[3]));
-	
-	double gpu_absorption = 0;
-	for(int64_t i=0; i<len_coord_list; i++){
-		gpu_absorption += exp(-(h_absorption[2*i+0] + h_absorption[2*i+1]));
-	}
-	double gpu_absorption_mean = gpu_absorption/ ((double) len_coord_list);
-	printf("CPU mean absorption: %f; GPU mean absorption: %f;\n", absorption_mean, gpu_absorption_mean);
-	
-    printf("--> Number of angle errors: %ld;\n", nAngleErrors);
-    printf("--> Number of face errors: %ld;\n", nFaceErrors);
-    printf("--> Number of class errors: %ld;\n", nClassesErrors);
-	
+    // }
+    printf("\n");
 	free(h_face);
 	free(h_ray_classes);
 	free(h_angles);
 	free(h_absorption);
     
-    return absorption_mean;
+    return result_list;
 }
+
 
 #ifdef __cplusplus
 }

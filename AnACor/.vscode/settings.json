@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "functional": "c",
+        "cmath": "cpp",
+        "matrices.h": "c"
+    }
+}

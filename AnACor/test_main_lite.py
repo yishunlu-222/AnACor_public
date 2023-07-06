@@ -219,7 +219,11 @@ def worker_function(t1,low, up,dataset,selected_data ,label_list,
                     offset,full_iteration,store_paths,printing):
     corr = []
     dict_corr = []
+    arr_scattering = []
+    arr_omega = []
+    xray = -np.array(axes_data[1]["direction"])
     shape = np.array(label_list.shape)
+
     if by_c :
 
         # class Thetaphi( ct.Structure ) :
@@ -275,20 +279,7 @@ def worker_function(t1,low, up,dataset,selected_data ,label_list,
         # dials_lib = ct.CDLL( './ray_tracing.so' )s
         # gcc -shared -o ray_tracing.so ray_tracing.c -fPIC
 
-        dials_lib.ray_tracing_gpu.restype = ct.c_double
-        dials_lib.ray_tracing_gpu.argtypes = [  # crystal_coordinate_shape
-            np.ctypeslib.ndpointer( dtype = np.int64 ) ,  # coordinate_list
-            ct.c_int ,  # coordinate_list_length
-            np.ctypeslib.ndpointer( dtype = np.float64 ) ,  # rotated_s1
-            np.ctypeslib.ndpointer( dtype = np.float64 ) ,  # xray
-            np.ctypeslib.ndpointer( dtype = np.float64 ) ,  # voxel_size
-            np.ctypeslib.ndpointer( dtype = np.float64 ) ,  # coefficients
-            ct.POINTER( ct.POINTER( ct.POINTER( ct.c_int8 ) ) ) ,  # label_list
-            ct.POINTER( ct.c_int8 ) ,  # label_list
-            np.ctypeslib.ndpointer( dtype = np.int64 ) ,  # shape
-            ct.c_int ,  # full_iteration
-            ct.c_int  # store_paths
-        ]
+
         dials_lib.ray_tracing_sampling.restype = ct.c_double
         dials_lib.ray_tracing_sampling.argtypes = [  # crystal_coordinate_shape
             np.ctypeslib.ndpointer( dtype = np.int64 ) ,  # coordinate_list
@@ -305,7 +296,75 @@ def worker_function(t1,low, up,dataset,selected_data ,label_list,
         ]
         label_list_c = python_2_c_3d( label_list )
         # crystal_coordinate_shape = np.array(crystal_coordinate.shape)
+    try:
+        dials_lib.ray_tracing_gpu.restype = ct.c_double
+        dials_lib.ray_tracing_gpu.argtypes = [  # crystal_coordinate_shape
+            np.ctypeslib.ndpointer( dtype = np.int64 ) ,  # coordinate_list
+            ct.c_int ,  # coordinate_list_length
+            np.ctypeslib.ndpointer( dtype = np.float64 ) ,  # rotated_s1
+            np.ctypeslib.ndpointer( dtype = np.float64 ) ,  # xray
+            np.ctypeslib.ndpointer( dtype = np.float64 ) ,  # voxel_size
+            np.ctypeslib.ndpointer( dtype = np.float64 ) ,  # coefficients
+            ct.POINTER( ct.POINTER( ct.POINTER( ct.c_int8 ) ) ) ,  # label_list
+            ct.POINTER( ct.c_int8 ) ,  # label_list
+            np.ctypeslib.ndpointer( dtype = np.int64 ) ,  # shape
+            ct.c_int ,  # full_iteration
+            ct.c_int  # store_paths
+        ]
+        dials_lib.ray_tracing_gpu_overall.restype = ct.POINTER(ct.c_double)
+        dials_lib.ray_tracing_gpu_overall.argtypes = [  # crystal_coordinate_shape
+            ct.c_int,  # low
+            ct.c_int,  # up
+            np.ctypeslib.ndpointer(dtype=np.int64),  # coordinate_list
+            ct.c_int,  # coordinate_list_length
+            np.ctypeslib.ndpointer(dtype=np.float64),  # scattering_vector_list
+            np.ctypeslib.ndpointer(dtype=np.float64),  # omega_list
+            np.ctypeslib.ndpointer(dtype=np.float64),  # xray
+            np.ctypeslib.ndpointer(dtype=np.float64),  # omega_axis
+            np.ctypeslib.ndpointer(dtype=np.float64),  # kp rotation matrix: F
+            ct.c_int,  # len_result
+            np.ctypeslib.ndpointer(dtype=np.float64),  # voxel_size
+            np.ctypeslib.ndpointer(dtype=np.float64),  # coefficients
+            ct.POINTER( ct.c_int8 ) ,  # label_list flattened
+            np.ctypeslib.ndpointer(dtype=np.int64),  # shape
+            ct.c_int,  # full_iteration
+            ct.c_int  # store_paths
+        ]
+    except:
+        pass
 
+
+        # crystal_coordinate_shape = np.array(crystal_coordinate.shape)
+    for i, row in enumerate(selected_data):
+
+        intensity = float(row['intensity.sum.value'])
+        # all are in x, y , z in the origin dials file
+        miller_index = row['miller_index']
+
+        scattering_vector = literal_eval(row['s1'])
+        rotation_frame_angle = literal_eval(row['xyzobs.mm.value'])[2]
+        rotation_frame_angle += offset / 180 * np.pi
+        arr_scattering.append(scattering_vector)
+        arr_omega.append(rotation_frame_angle)
+
+    arr_scattering = np.array(arr_scattering)
+    arr_omega = np.array(arr_omega)
+    # print('low is {} in processor {} the type is {}'.format( low,os.getpid(),type(low) ))
+    # print('up is {} in processor {} the type is {}'.format( low+len(selected_data),os.getpid(),type(low+len(selected_data)) ))
+
+    # result_list = dials_lib.ray_tracing_gpu_overall(low, low+len(selected_data),
+    #                                             coord_list, len(
+    #                                                 coord_list),
+    #                                             arr_scattering, arr_omega, xray, omega_axis,
+    #                                             F, len(selected_data),
+    #                                             voxel_size,
+    #                                             coefficients, label_list.ctypes.data_as(ct.POINTER(ct.c_int8)), shape,
+    #                                             full_iteration, store_paths)
+    # for i in range(len(selected_data)):
+    #     corr.append(result_list[i])
+    # t2 = time.time()
+    # dials_lib.free(result_list)
+    # pdb.set_trace()
     for i , row in enumerate( selected_data ) :
         # try:
         #     print('up is {} in processor {}'.format( up+i,os.getpid() ))
