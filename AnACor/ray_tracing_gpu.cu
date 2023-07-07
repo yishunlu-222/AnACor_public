@@ -331,6 +331,7 @@ __global__ void rt_gpu_angles(double *d_angles, double *d_rotated_s1_list, doubl
 		d_angles[2 * id + 0] = theta;
 		d_angles[2 * id + 1] = phi;
 	}
+	// printf("d_angles =[%f,%f,%f,%f]  ", d_angles[0], d_angles[1], d_angles[2], d_angles[3]);
 }
 
 __inline__ __device__ void get_increment_ratio(
@@ -858,13 +859,13 @@ __global__ void rt_gpu_absorption(int *d_ray_classes, double *d_absorption, int8
 		// if (threadIdx.x ==0 && blockIdx.x == 0 && lpos == 0) {
 		/* there are 256 threads per block and nIter > 256, so the first thread of the first block will be repeatedly used to print the coordinates of the ray.
 		 */
-		if (DEBUG)
-		{
-			if (threadIdx.x == 0 && lpos == 0)
-			{
-				printf("coord is %d %d %d\n x: %d, y: %d, z: %d; increment_z: %f, increment_y: %f , increment_x: %f , \n lpos %d \n", (int)coord[2], (int)coord[1], (int)coord[0], (int)x, (int)y, (int)z, increments[2], increments[1], increments[0], lpos);
-			}
-		}
+		// if (DEBUG)
+		// {
+		// 	if (threadIdx.x == 0 && lpos == 0)
+		// 	{
+		// 		printf("coord is %d %d %d\n x: %d, y: %d, z: %d; increment_z: %f, increment_y: %f , increment_x: %f , \n lpos %d \n", (int)coord[2], (int)coord[1], (int)coord[0], (int)x, (int)y, (int)z, increments[2], increments[1], increments[0], lpos);
+		// 	}
+		// }
 
 		if (
 			x < x_max && y < y_max && z < z_max &&
@@ -1352,6 +1353,7 @@ int ray_tracing_path(int *h_face, double *h_angles, int *h_ray_classes, double *
 void transpose(double *input, int rows, int cols, double *output);
 void dot_product(const double *A, const double *B, double *C, int m, int n, int p);
 void kp_rotation(const double *axis, double theta, double *result);
+
 int ray_tracing_gpu_overall_kernel(int32_t low, int32_t up,
 								   int64_t *coord_list,
 								   int32_t len_coord_list,
@@ -1361,7 +1363,7 @@ int ray_tracing_gpu_overall_kernel(int32_t low, int32_t up,
 								   int32_t len_result,
 								   double *voxel_size, double *coefficients,
 								   int8_t *label_list_1d, int64_t *shape, int32_t full_iteration,
-								   int32_t store_paths, double *h_result_list)
+								   int32_t store_paths, double *h_result_list,int *h_face,double *h_angles)
 {
 	//---------> Initial nVidia stuff
 	int devCount;
@@ -1672,7 +1674,7 @@ int ray_tracing_gpu_overall_kernel(int32_t low, int32_t up,
 	// 	printf("h_rotated_xray_list =[%f,%f,%f]  ", h_rotated_xray_list[i*3], h_rotated_xray_list[i*3+1], h_rotated_xray_list[i*3+2]);
 	// 	printf("h_rotated_s1_list =[%f,%f,%f] \n",h_rotated_s1_list[i*3], h_rotated_s1_list[i*3+1], h_rotated_s1_list[i*3+2]);
 	// }
-	for (int64_t i = 0; i < len_result; i++)
+	for (int i = 0; i < len_result; i++)
 	{
 
 		if (nCUDAErrors == 0)
@@ -1710,6 +1712,7 @@ int ray_tracing_gpu_overall_kernel(int32_t low, int32_t up,
 					nBatches, i);
 			}
 
+
 			{
 				int nBatches = 1;
 				int nThreads = 12;
@@ -1719,7 +1722,8 @@ int ray_tracing_gpu_overall_kernel(int32_t low, int32_t up,
 					d_increments,
 					d_angles);
 			}
-
+		
+			printf("\n");
 			//---------> error check
 			cudaError = cudaGetLastError();
 			if (cudaError != cudaSuccess)
@@ -1760,6 +1764,7 @@ int ray_tracing_gpu_overall_kernel(int32_t low, int32_t up,
 					diagonal,d_result_list,i,len_coord_list);
 			}
 
+
 		}
 		//---------> error check for the first result
 		printf("i is %d\n", i);
@@ -1772,12 +1777,16 @@ int ray_tracing_gpu_overall_kernel(int32_t low, int32_t up,
 		double gpu_absorption = 0;
 		for (int64_t j = 0; j < len_coord_list; j++)
 		{
-			gpu_absorption += exp(-(h_result_list[i*len_coord_list+2 * j + 0] + h_result_list[i*len_coord_list+2 * j + 1]));
+			gpu_absorption += exp(-(h_result_list[i*len_coord_list*2+2 * j + 0] + h_result_list[i*len_coord_list*2+2 * j + 1]));
+
+
 
 		}
+
 		double gpu_absorption_mean = gpu_absorption / ((double)len_coord_list);
 
 		printf("GPU mean absorption in cuda code: %f;\n", gpu_absorption_mean);
+
 		cudaDeviceSynchronize();
 		if (i==10){
 			break;

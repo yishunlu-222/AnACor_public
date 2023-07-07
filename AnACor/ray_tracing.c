@@ -2160,7 +2160,7 @@ int ray_tracing_gpu_overall_kernel(int32_t low, int32_t up,
                                    int32_t len_result,
                                    double *voxel_size, double *coefficients,
                                    int8_t *label_list_1d, int64_t *shape, int32_t full_iteration,
-                                   int32_t store_paths, double *h_result_list);
+                                   int32_t store_paths, double *h_result_list,int *h_face,double * h_angles);
 
 #ifdef __cplusplus
 extern "C"
@@ -2412,7 +2412,7 @@ double ray_tracing_sampling_old(
         free(path_1.classes);
         free(path_1.posi);
 
-        free(numbers_1);
+        free(numbers_1);    
         free(path_2.ray);
         free(path_2.classes);
         free(path_2.posi);
@@ -2501,16 +2501,16 @@ double ray_tracing_sampling_old(
 
         printf("-------> Increment test:\n");
         double ix, iy, iz;
-        // printf("Xray:\n");
-        // for(int f=1; f<=6; f++){
-        // 	get_increment_ratio(&ix, &iy, &iz, theta_xray, phi_xray, f);
-        // 	printf("==> CPU: face=%d; i=[%f; %f; %f];\n", f, ix, iy, iz);
-        // }
-        // printf("rotated_s1:\n");
-        // for(int f=1; f<=6; f++){
-        // 	get_increment_ratio(&ix, &iy, &iz, theta, phi, f);
-        // 	printf("==> CPU: face=%d; i=[%f; %f; %f];\n", f, ix, iy, iz);
-        // }
+        printf("Xray:\n");
+        for(int f=1; f<=6; f++){
+        	get_increment_ratio(&ix, &iy, &iz, theta_xray, phi_xray, f);
+        	printf("==> CPU: face=%d; i=[%f; %f; %f];\n", f, ix, iy, iz);
+        }
+        printf("rotated_s1:\n");
+        for(int f=1; f<=6; f++){
+        	get_increment_ratio(&ix, &iy, &iz, theta, phi, f);
+        	printf("==> CPU: face=%d; i=[%f; %f; %f];\n", f, ix, iy, iz);
+        }
         printf("-------------------------------<\n");
 
         Path2_c path_2, path_1;
@@ -2754,18 +2754,21 @@ double ray_tracing_sampling_old(
         printf("up is %d \n", up);
         double *h_result_list = (double *)malloc(len_result * len_coord_list * 2 * sizeof(double) * 0.5);
         double *python_result_list = (double *)malloc(len_result * sizeof(double));
-        ray_tracing_gpu_overall_kernel(low, up, coord_list, len_coord_list, scattering_vector_list, omega_list, raw_xray, omega_axis, kp_rotation_matrix, len_result, voxel_size, coefficients, label_list_1d, shape, full_iteration, store_paths, h_result_list);
-
+        int *h_face = (int *)malloc(len_coord_list * 2 * sizeof(int));
+        double *h_angles=   (double *)malloc(4 * sizeof(double));
+        ray_tracing_gpu_overall_kernel(low, up, coord_list, len_coord_list, scattering_vector_list, omega_list, raw_xray, omega_axis, kp_rotation_matrix, len_result, voxel_size, coefficients, label_list_1d, shape, full_iteration, store_paths, h_result_list, h_face, h_angles);
+        // printf("h_angles is [%f, %f, %f, %f]\n", h_angles[0], h_angles[1], h_angles[2], h_angles[3]);
         for (int i = 0; i < len_result; i++)
         {
-            if (i == 10)
+            if (i==10)
             {
-                break;
+                break;/* code */
             }
+            
             double gpu_absorption = 0;
             for (int64_t j = 0; j < len_coord_list; j++)
             {
-                gpu_absorption += exp(-(h_result_list[i * len_coord_list + 2 * j + 0] + h_result_list[i * len_coord_list + 2 * j + 1]));
+                gpu_absorption += exp(-(h_result_list[2*i * len_coord_list + 2 * j + 0] + h_result_list[2*i * len_coord_list + 2 * j + 1]));
 
             }
 
@@ -2808,7 +2811,13 @@ double ray_tracing_sampling_old(
                 voxel_size, coefficients,
                 label_list_1d,  shape, full_iteration,
                 store_paths);
-            // printf("result is %f \n",result);
+            // result = ray_tracing_sampling(
+            //     coord_list, len_coord_list,
+            //     (double *)rotated_s1, (double *)xray,
+            //     voxel_size, coefficients,label_list,
+            //     label_list_1d,  shape, full_iteration,
+            //     store_paths);
+            printf("result is %f \n",result);
 
             printf("[%d/%d] rotation: %.4f, absorption: %.4f\n",
                    low + i, up, omega_list[i] * 180 / M_PI, result);

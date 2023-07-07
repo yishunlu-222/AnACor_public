@@ -2,6 +2,7 @@
     "files.associations": {
         "functional": "c",
         "cmath": "cpp",
-        "matrices.h": "c"
+        "matrices.h": "c",
+        "random": "cpp"
     }
 }
