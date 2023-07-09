@@ -2160,7 +2160,7 @@ int ray_tracing_gpu_overall_kernel(int32_t low, int32_t up,
                                    int32_t len_result,
                                    double *voxel_size, double *coefficients,
                                    int8_t *label_list_1d, int64_t *shape, int32_t full_iteration,
-                                   int32_t store_paths, double *h_result_list,int *h_face,double * h_angles);
+                                   int32_t store_paths, double *h_result_list,int *h_face,double * h_angles,double *h_python_result_list,double factor);
 
 #ifdef __cplusplus
 extern "C"
@@ -2752,82 +2752,84 @@ double ray_tracing_sampling_old(
         // int32_t len_result_double = (int32_t) len_result;
         printf("low is %d \n", low);
         printf("up is %d \n", up);
-        double *h_result_list = (double *)malloc(len_result * len_coord_list * 2 * sizeof(double) * 0.5);
-        double *python_result_list = (double *)malloc(len_result * sizeof(double));
+        double factor=1;
+        double *h_result_list = (double *)malloc(len_result * len_coord_list * 2 * sizeof(double) * factor);
+        double *h_python_result_list = (double *)malloc(len_result * sizeof(double)*factor);
         int *h_face = (int *)malloc(len_coord_list * 2 * sizeof(int));
         double *h_angles=   (double *)malloc(4 * sizeof(double));
-        ray_tracing_gpu_overall_kernel(low, up, coord_list, len_coord_list, scattering_vector_list, omega_list, raw_xray, omega_axis, kp_rotation_matrix, len_result, voxel_size, coefficients, label_list_1d, shape, full_iteration, store_paths, h_result_list, h_face, h_angles);
+  
+        ray_tracing_gpu_overall_kernel(low, up, coord_list, len_coord_list, scattering_vector_list, omega_list, raw_xray, omega_axis, kp_rotation_matrix, len_result, voxel_size, coefficients, label_list_1d, shape, full_iteration, store_paths, h_result_list, h_face, h_angles,h_python_result_list,factor);
         // printf("h_angles is [%f, %f, %f, %f]\n", h_angles[0], h_angles[1], h_angles[2], h_angles[3]);
-        for (int i = 0; i < len_result; i++)
-        {
-            if (i==10)
-            {
-                break;/* code */
-            }
-            
-            double gpu_absorption = 0;
-            for (int64_t j = 0; j < len_coord_list; j++)
-            {
-                gpu_absorption += exp(-(h_result_list[2*i * len_coord_list + 2 * j + 0] + h_result_list[2*i * len_coord_list + 2 * j + 1]));
+        // for (int i = 0; i < len_result; i++)
+        // {
+        //     if (i==100){
+        //         break;
+        //     }
+        //     // double gpu_absorption = 0;
+        //     // for (int64_t j = 0; j < len_coord_list; j++)
+        //     // {
+        //     //     gpu_absorption += exp(-(h_result_list[2*i * len_coord_list + 2 * j + 0] + h_result_list[2*i * len_coord_list + 2 * j + 1]));
 
-            }
+        //     // }
 
 
-            double gpu_absorption_mean = gpu_absorption / ((double)len_coord_list);
-            printf("\n");
-            printf("GPU mean absorption in cpu code: %f;\n", gpu_absorption_mean);
-            python_result_list[i] = gpu_absorption_mean;
-            // continue;
-            double result;
-            double rotation_matrix_frame_omega[9];
-            double rotation_matrix[9];
-            double total_rotation_matrix[9];
-            double xray[3];
-            double rotated_s1[3];
-            // printf("kap roation  \n");
-            kp_rotation(omega_axis, omega_list[i], (double *)rotation_matrix_frame_omega);
-            // printf("rotation_matrix_frame_omega is \n");
-            // print_matrix((double*)rotation_matrix_frame_omega,3,3);
-            dot_product((double *)rotation_matrix_frame_omega, kp_rotation_matrix, (double *)rotation_matrix, 3, 3, 3);
+        //     // double gpu_absorption_mean = gpu_absorption / ((double)len_coord_list);
+        //     double gpu_absorption_mean = h_python_result_list[i];
+        //     printf("\n");
+        //     printf("GPU mean absorption in cpu code: %f;\n", gpu_absorption_mean);
 
-            transpose((double *)rotation_matrix, 3, 3, (double *)total_rotation_matrix);
-            // printf("total_rotation_matrix is \n");
-            // print_matrix((double*)total_rotation_matrix,3,3);
+        //     // continue;
+        //     double result;
+        //     double rotation_matrix_frame_omega[9];
+        //     double rotation_matrix[9];
+        //     double total_rotation_matrix[9];
+        //     double xray[3];
+        //     double rotated_s1[3];
+        //     // printf("kap roation  \n");
+        //     kp_rotation(omega_axis, omega_list[i], (double *)rotation_matrix_frame_omega);
+        //     // printf("rotation_matrix_frame_omega is \n");
+        //     // print_matrix((double*)rotation_matrix_frame_omega,3,3);
+        //     dot_product((double *)rotation_matrix_frame_omega, kp_rotation_matrix, (double *)rotation_matrix, 3, 3, 3);
 
-            // printf("xray is \n");
-            // print_matrix(raw_xray,1,3);
-            dot_product((double *)total_rotation_matrix, raw_xray, (double *)xray, 3, 3, 1);
-            // printf("xray is \n");
-            // print_matrix(xray,1,3);
-            double scattering_vector[3] = {scattering_vector_list[i * 3],
-                                           scattering_vector_list[i * 3 + 1],
-                                           scattering_vector_list[i * 3 + 2]};
-            dot_product((double *)total_rotation_matrix, (double *)scattering_vector, (double *)rotated_s1, 3, 3, 1);
+        //     transpose((double *)rotation_matrix, 3, 3, (double *)total_rotation_matrix);
+        //     // printf("total_rotation_matrix is \n");
+        //     // print_matrix((double*)total_rotation_matrix,3,3);
+
+        //     // printf("xray is \n");
+        //     // print_matrix(raw_xray,1,3);
+        //     dot_product((double *)total_rotation_matrix, raw_xray, (double *)xray, 3, 3, 1);
+        //     // printf("xray is \n");
+        //     // print_matrix(xray,1,3);
+        //     double scattering_vector[3] = {scattering_vector_list[i * 3],
+        //                                    scattering_vector_list[i * 3 + 1],
+        //                                    scattering_vector_list[i * 3 + 2]};
+        //     dot_product((double *)total_rotation_matrix, (double *)scattering_vector, (double *)rotated_s1, 3, 3, 1);
 
 
-            result = ray_tracing_sampling_old(
-                coord_list, len_coord_list,
-                (double *)rotated_s1, (double *)xray,
-                voxel_size, coefficients,
-                label_list_1d,  shape, full_iteration,
-                store_paths);
-            // result = ray_tracing_sampling(
-            //     coord_list, len_coord_list,
-            //     (double *)rotated_s1, (double *)xray,
-            //     voxel_size, coefficients,label_list,
-            //     label_list_1d,  shape, full_iteration,
-            //     store_paths);
-            printf("result is %f \n",result);
+        //     result = ray_tracing_sampling_old(
+        //         coord_list, len_coord_list,
+        //         (double *)rotated_s1, (double *)xray,
+        //         voxel_size, coefficients,
+        //         label_list_1d,  shape, full_iteration,
+        //         store_paths);
+        //     // result = ray_tracing_sampling(
+        //     //     coord_list, len_coord_list,
+        //     //     (double *)rotated_s1, (double *)xray,
+        //     //     voxel_size, coefficients,label_list,
+        //     //     label_list_1d,  shape, full_iteration,
+        //     //     store_paths);
+        //     printf("result is %f \n",result);
 
-            printf("[%d/%d] rotation: %.4f, absorption: %.4f\n",
-                   low + i, up, omega_list[i] * 180 / M_PI, result);
-            printf("gpu_absorption_mean is %f\n", gpu_absorption_mean);
-            printf("difference is %f\n", (gpu_absorption_mean - result) / result * 100);
-        }
+        //     printf("[%d/%d] rotation: %.4f, absorption: %.4f\n",
+        //            low + i, up, omega_list[i] * 180 / M_PI, result);
+        //     printf("gpu_absorption_mean is %f\n", gpu_absorption_mean);
+        //     printf("difference is %f\n", (gpu_absorption_mean - result) / result * 100);
+        // }
 
         // printf("len_result_double is %d \n", len_result_double);
         // printf("result_list is %p \n", result_list);
-        return python_result_list;
+        free(h_result_list);
+        return h_python_result_list;
     }
 
 #ifdef __cplusplus

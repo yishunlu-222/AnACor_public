@@ -189,6 +189,11 @@ def set_parser():
         "--test-mode" ,
         type = str2bool,
         default = False ,
+        help = "number of workers" ,)
+    parser.add_argument(
+        "--gpu" ,
+        type = str2bool,
+        default = True ,
         help = "number of workers" ,
     )
     global args
@@ -352,122 +357,127 @@ def worker_function(t1,low, up,dataset,selected_data ,label_list,
     arr_omega = np.array(arr_omega)
     # print('low is {} in processor {} the type is {}'.format( low,os.getpid(),type(low) ))
     # print('up is {} in processor {} the type is {}'.format( low+len(selected_data),os.getpid(),type(low+len(selected_data)) ))
+    print('GPU is launched')
+    if args.gpu:
+        result_list = dials_lib.ray_tracing_gpu_overall(low, low+len(selected_data),
+                                                    coord_list, len(
+                                                        coord_list),
+                                                    arr_scattering, arr_omega, xray, omega_axis,
+                                                    F, len(selected_data),
+                                                    voxel_size,
+                                                    coefficients, label_list_c,label_list.ctypes.data_as(ct.POINTER(ct.c_int8)), shape,
+                                                    full_iteration, store_paths)
+        for i in range(len(selected_data)):
+            corr.append(result_list[i])
+        t2 = time.time()
+        dials_lib.free(result_list)
+        print('GPU time is {}'.format(t2-t1))
+        # pdb.set_trace()
+    else:
 
-    result_list = dials_lib.ray_tracing_gpu_overall(low, low+len(selected_data),
-                                                coord_list, len(
-                                                    coord_list),
-                                                arr_scattering, arr_omega, xray, omega_axis,
-                                                F, len(selected_data),
-                                                voxel_size,
-                                                coefficients, label_list_c,label_list.ctypes.data_as(ct.POINTER(ct.c_int8)), shape,
-                                                full_iteration, store_paths)
-    for i in range(len(selected_data)):
-        corr.append(result_list[i])
-    t2 = time.time()
-    dials_lib.free(result_list)
-    pdb.set_trace()
-    for i , row in enumerate( selected_data ) :
-        # try:
-        #     print('up is {} in processor {}'.format( up+i,os.getpid() ))
-        # except:
-        #     print('up is {} in processor {}'.format( up,os.getpid() ))
-        intensity = float( row['intensity.sum.value'] )
-        scattering_vector = literal_eval( row['s1'] )  # all are in x, y , z in the origin dials file
-        miller_index = row['miller_index']
+        for i , row in enumerate( selected_data ) :
+            # try:
+            #     print('up is {} in processor {}'.format( up+i,os.getpid() ))
+            # except:
+            #     print('up is {} in processor {}'.format( up,os.getpid() ))
+            intensity = float( row['intensity.sum.value'] )
+            scattering_vector = literal_eval( row['s1'] )  # all are in x, y , z in the origin dials file
+            miller_index = row['miller_index']
 
-        rotation_frame_angle = literal_eval( row['xyzobs.mm.value'] )[2]
-        rotation_frame_angle += offset / 180 * np.pi
-        rotation_matrix_frame_omega = kp_rotation( omega_axis , rotation_frame_angle )
+            rotation_frame_angle = literal_eval( row['xyzobs.mm.value'] )[2]
+            rotation_frame_angle += offset / 180 * np.pi
+            rotation_matrix_frame_omega = kp_rotation( omega_axis , rotation_frame_angle )
 
-        total_rotation_matrix = np.dot( rotation_matrix_frame_omega , F )
-        total_rotation_matrix = np.transpose( total_rotation_matrix )
+            total_rotation_matrix = np.dot( rotation_matrix_frame_omega , F )
+            total_rotation_matrix = np.transpose( total_rotation_matrix )
 
-        xray = -np.array( axes_data[1]["direction"] )
-        xray = np.dot( total_rotation_matrix , xray )
-        rotated_s1 = np.dot( total_rotation_matrix , scattering_vector )
+            xray = -np.array( axes_data[1]["direction"] )
+            xray = np.dot( total_rotation_matrix , xray )
+            rotated_s1 = np.dot( total_rotation_matrix , scattering_vector )
 
-        theta , phi = dials_2_thetaphi_11( rotated_s1 )
-        theta_1 , phi_1 = dials_2_thetaphi_11( xray , L1 = True )
+            theta , phi = dials_2_thetaphi_11( rotated_s1 )
+            theta_1 , phi_1 = dials_2_thetaphi_11( xray , L1 = True )
 
-        if by_c :
-            result = dials_lib.ray_tracing_sampling(
-                coord_list , len( coord_list ) ,
-                rotated_s1 , xray , voxel_size ,
-                coefficients , label_list_c , label_list.ctypes.data_as(ct.POINTER(ct.c_int8)) , shape ,
-                full_iteration , store_paths )
-            # result = dials_lib.ray_tracing_gpu(
-            #     coord_list , len( coord_list ) ,
-            #     rotated_s1 , xray , voxel_size ,
-            #     coefficients , label_list_c , label_list.ctypes.data_as(ct.POINTER(ct.c_int8)) , shape ,
-            #     full_iteration , store_paths )
-        else :
-            ray_direction = dials_2_numpy_11( rotated_s1 )
-            xray_direction = dials_2_numpy_11( xray )
-            # absorp = np.empty(len(coordinate_list))
-            # for k , index in enumerate( coordinate_list ) :
-            #     coord = crystal_coordinate[index]
-            absorp = np.empty( len( coord_list ) )
-            for k , coord in enumerate( coord_list ) :
-                # face_1 = which_face_2(coord, shape, theta_1, phi_1)
-                # face_2 = which_face_2(coord, shape, theta, phi)
-                face_1 = cube_face( coord , xray_direction , shape , L1 = True )
-                face_2 = cube_face( coord , ray_direction , shape )
-                path_1 = cal_coord_2( theta_1 , phi_1 , coord , face_1 , shape , label_list )  # 37
-                path_2 = cal_coord_2( theta , phi , coord , face_2 , shape , label_list )  # 16
+            if by_c :
+                result = dials_lib.ray_tracing_sampling(
+                    coord_list , len( coord_list ) ,
+                    rotated_s1 , xray , voxel_size ,
+                    coefficients , label_list_c , label_list.ctypes.data_as(ct.POINTER(ct.c_int8)) , shape ,
+                    full_iteration , store_paths )
+                # result = dials_lib.ray_tracing_gpu(
+                #     coord_list , len( coord_list ) ,
+                #     rotated_s1 , xray , voxel_size ,
+                #     coefficients , label_list_c , label_list.ctypes.data_as(ct.POINTER(ct.c_int8)) , shape ,
+                #     full_iteration , store_paths )
+            else :
+                ray_direction = dials_2_numpy_11( rotated_s1 )
+                xray_direction = dials_2_numpy_11( xray )
+                # absorp = np.empty(len(coordinate_list))
+                # for k , index in enumerate( coordinate_list ) :
+                #     coord = crystal_coordinate[index]
+                absorp = np.empty( len( coord_list ) )
+                for k , coord in enumerate( coord_list ) :
+                    # face_1 = which_face_2(coord, shape, theta_1, phi_1)
+                    # face_2 = which_face_2(coord, shape, theta, phi)
+                    face_1 = cube_face( coord , xray_direction , shape , L1 = True )
+                    face_2 = cube_face( coord , ray_direction , shape )
+                    path_1 = cal_coord_2( theta_1 , phi_1 , coord , face_1 , shape , label_list )  # 37
+                    path_2 = cal_coord_2( theta , phi , coord , face_2 , shape , label_list )  # 16
 
-                numbers_1 = cal_num( path_1 , voxel_size )  # 3.5s
-                numbers_2 = cal_num( path_2 , voxel_size )  # 3.5s
+                    numbers_1 = cal_num( path_1 , voxel_size )  # 3.5s
+                    numbers_2 = cal_num( path_2 , voxel_size )  # 3.5s
+                    if store_paths == 1 :
+                        if k == 0 :
+                            path_length_arr_single = np.expand_dims( np.array( (numbers_1 + numbers_2) ) , axis = 0 )
+                        else :
+
+                            path_length_arr_single = np.concatenate(
+                                (
+                                path_length_arr_single , np.expand_dims( np.array( (numbers_1 + numbers_2) ) , axis = 0 )) ,
+                                axis = 0 )
+                    absorption = cal_rate( (numbers_1 + numbers_2) , coefficients )
+
+                    absorp[k] = absorption
+
                 if store_paths == 1 :
-                    if k == 0 :
-                        path_length_arr_single = np.expand_dims( np.array( (numbers_1 + numbers_2) ) , axis = 0 )
+                    if i == 0 :
+                        path_length_arr = np.expand_dims( path_length_arr_single , axis = 0 )
                     else :
+                        path_length_arr = np.concatenate(
+                            (path_length_arr , np.expand_dims( path_length_arr_single , axis = 0 )) , axis = 0 )
+                result = absorp.mean( )
 
-                        path_length_arr_single = np.concatenate(
-                            (
-                            path_length_arr_single , np.expand_dims( np.array( (numbers_1 + numbers_2) ) , axis = 0 )) ,
-                            axis = 0 )
-                absorption = cal_rate( (numbers_1 + numbers_2) , coefficients )
+            t2 = time.time( )
+            if printing:
+                print( '[{}/{}] theta: {:.4f}, phi: {:.4f} , rotation: {:.4f},  absorption: {:.4f}'.format( low + i ,
+                                                                                                        low + len(
+                                                                                                            selected_data ) ,
+                                                                                                        theta * 180 / np.pi ,
+                                                                                                        phi * 180 / np.pi ,
+                                                                                                        rotation_frame_angle * 180 / np.pi ,
+                                                                                                        result ) )
+            pdb.set_trace()
 
-                absorp[k] = absorption
-
-            if store_paths == 1 :
-                if i == 0 :
-                    path_length_arr = np.expand_dims( path_length_arr_single , axis = 0 )
-                else :
-                    path_length_arr = np.concatenate(
-                        (path_length_arr , np.expand_dims( path_length_arr_single , axis = 0 )) , axis = 0 )
-            result = absorp.mean( )
-
-        t2 = time.time( )
-        if printing:
-            print( '[{}/{}] theta: {:.4f}, phi: {:.4f} , rotation: {:.4f},  absorption: {:.4f}'.format( low + i ,
-                                                                                                    low + len(
-                                                                                                        selected_data ) ,
-                                                                                                    theta * 180 / np.pi ,
-                                                                                                    phi * 180 / np.pi ,
-                                                                                                    rotation_frame_angle * 180 / np.pi ,
-                                                                                                    result ) )
-        pdb.set_trace()
-
-        print( 'process {} it spends {}'.format( os.getpid(),t2 -
-                                                    t1 ) )
+            print( 'process {} it spends {}'.format( os.getpid(),t2 -
+                                                        t1 ) )
+            
+            corr.append( result )
+            # print( 'it spends {}'.format( t2 - t1 ) )
+            dict_corr.append( {'index' : low + i , 'miller_index' : miller_index ,
+                            'intensity' : intensity , 'corr' : result ,
+                            'theta' : theta * 180 / np.pi ,
+                            'phi' : phi * 180 / np.pi ,
+                            'theta_1' : theta_1 * 180 / np.pi ,
+                            'phi_1' : phi_1 * 180 / np.pi , } )
+            if i % 1000 == 1 :
+                if store_paths == 1 :
+                    np.save( os.path.join( save_dir , "{}_path_lengths_{}.npy".format( dataset , up ) ) , path_length_arr )
+                with open( os.path.join( save_dir , "{}_refl_{}.json".format( dataset , up ) ) , "w" ) as fz :  # Pickling
+                    json.dump( corr , fz , indent = 2 )
+                with open( os.path.join( save_dir , "{}_dict_refl_{}.json".format( dataset , up ) ) ,
+                        "w" ) as f1 :  # Pickling
+                    json.dump( dict_corr , f1 , indent = 2 )
         
-        corr.append( result )
-        # print( 'it spends {}'.format( t2 - t1 ) )
-        dict_corr.append( {'index' : low + i , 'miller_index' : miller_index ,
-                        'intensity' : intensity , 'corr' : result ,
-                        'theta' : theta * 180 / np.pi ,
-                        'phi' : phi * 180 / np.pi ,
-                        'theta_1' : theta_1 * 180 / np.pi ,
-                        'phi_1' : phi_1 * 180 / np.pi , } )
-        if i % 1000 == 1 :
-            if store_paths == 1 :
-                np.save( os.path.join( save_dir , "{}_path_lengths_{}.npy".format( dataset , up ) ) , path_length_arr )
-            with open( os.path.join( save_dir , "{}_refl_{}.json".format( dataset , up ) ) , "w" ) as fz :  # Pickling
-                json.dump( corr , fz , indent = 2 )
-            with open( os.path.join( save_dir , "{}_dict_refl_{}.json".format( dataset , up ) ) ,
-                    "w" ) as f1 :  # Pickling
-                json.dump( dict_corr , f1 , indent = 2 )
     if store_paths == 1 :
         np.save( os.path.join( save_dir , "{}_path_lengths_{}.npy".format( dataset , up ) ) , path_length_arr )
     with open( os.path.join( save_dir , "{}_refl_{}.json".format( dataset , up ) ) , "w" ) as fz :  # Pickling
