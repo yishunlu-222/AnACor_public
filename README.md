@@ -56,16 +56,16 @@ Path length calculation
 	Function RayTracing(S,Ω,n,model):
 	
 		Ray ← S • Ω 
-		face ← which_face( crytal_voxel, Ray  ) # ray exit face of the 3D model
+		face ← cube_face( crytal_voxel, Ray  ) # ray exit face of the 3D model
 		Path ← cal_coord_2( crytal_voxel, Ray, model  ) # Calculate and store the coordinates along the path 
-		Path_len ← cal_num( Path ) # calculate the path lengths of different materials fromt the path coordinates
+		Path_len ← cal_num( Path ) # calculate the path lengths of different materials from the path coordinates
 		
 		return Path_len
 
 ```
-- Once it knows which face the Ray (vector) exits or incident, it knows the direction to step over [`cube_face`] (https://github.com/yishunlu-222/AnACor_public/blob/ea7b21f89c781ed6cfe7ae591947d831168d188f/AnACor/utils/utils_rt.py#L1196).
-- Then, it can step along the direction and store the coordinates where it passes by and it stops until it goes to the edge of the cube (`cal_coord_2` ).  For example, the exiting face is the *Front face* with the crystal voxel of `(z,y,x)`, and the next step will have coordinate of  `(z+dz,y+dz,x+dz)`. For every step, the x will have one increment (`dx=1`), so, y, z will have increments `dy= tan(θ)/cos(φ)`and `dz = tan(φ)` according to the coordinate system in this software. 
-- Finally, it gets a list of coordinates, which allow it to  compute the path lengths of different materials.
+- Once it knows which face the Ray (vector) exits or incident, it knows the direction to step over `cube_face` https://github.com/yishunlu-222/AnACor_public/blob/ea7b21f89c781ed6cfe7ae591947d831168d188f/AnACor/utils/utils_rt.py#L1196
+- Then, it can step along the direction and store the coordinates where it passes by and it stops until it goes to the edge of the cube (`cal_coord_2` ).  For example, the exiting face is the *Front face* with the crystal voxel of `(z,y,x)`, and the next step will have coordinate of  `(z+dz,y+dz,x+dz)`. For every step, the x will have one increment (`dx=1`), so, y, z will have increments `dy= tan(θ)/cos(φ)`and `dz = tan(φ)` according to the coordinate system in this software. https://github.com/yishunlu-222/AnACor_public/blob/ea7b21f89c781ed6cfe7ae591947d831168d188f/AnACor/utils/utils_rt.py#L159
+- Finally, it gets a list of coordinates, which allow it to  compute the path lengths of different materials. https://github.com/yishunlu-222/AnACor_public/blob/ea7b21f89c781ed6cfe7ae591947d831168d188f/AnACor/utils/utils_rt.py#L835C12-L835C12
 
 You might find `which_face`  and `cal_num` in the `class RayTracingBasic` in **RayTracing.py**  and `cal_coord_2` in the **Core_accelerated.py**
 
