@@ -17,7 +17,8 @@ On Linux, after downloading the software package from https://github.com/yishunl
 #### Methodology 
 
 In crystallography, scaling needs to be done to make sure the true intensities of the reflections can be obtained. Absorption correction, a part of scaling, is significant when the absorption is high.
-The absorption correction method in popular Crystallography Scaling Software, such as DIALS (Beilsten-Edmands  et al., 2020) , is spherical harmonics correction. This method relies on the high multiplicity of the dataset to construct an absorption surface that can estimate the relative absorption of each reflection. However, this can be less effective when the absorption is much higher, or the multiplicity of the dataset is lower. The analytical absorption correction can not only address this circumstance but also bring better performance after combining with spherical harmonics correction, as shown in our paper (Lu  et al., 2020). The equations of analytical absorption correction are below:
+The absorption correction method in popular Crystallography Scaling Software, such as DIALS (Beilsten-Edmands  et al., 2020) , is spherical harmonics correction. This method relies on the high multiplicity of the dataset to construct an absorption surface that can estimate the relative absorption of each reflection. However, this can be less effective when the absorption is much higher, or the multiplicity of the dataset is lower. The analytical absorption correction can address this circumstance and improve performance after combining with spherical harmonics correction, as shown in our paper (Lu  et al., 2020). The equations of analytical absorption correction are below:
+
 $$
 \begin{align}
 A_{hkl} = \frac{1}{V} \int_{V} e^{-\mu (L_1+L_2)} \, dV  \tag{1} \\
