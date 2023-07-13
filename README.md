@@ -1,6 +1,6 @@
 # AnACor
 
-**AnACor** is an accelerated absorption correction by tomographic reconstruction software written in Python and C. It's currently built at I23 beamline of Diamond Light Souce 
+**AnACor** is an accelerated absorption correction software for crystallography by written in Python, C and Cuda. It's currently built at I23 beamline of Diamond Light Souce 
 
 ## Installation
 
@@ -13,6 +13,20 @@ On Linux, after downloading the software package from https://github.com/yishunl
 	
 
 ## Software explanation
+
+#### Methodology 
+
+In crystallography, scaling needs to be done to make sure the true intensities of the reflections can be obtained. Absorption correction, a part of scaling, is significant when the absorption is high.
+The absorption correction method in popular Crystallography Scaling Software, such as DIALS (Beilsten-Edmands  et al., 2020) , is spherical harmonics correction. This method relies on the high multiplicity of the dataset to construct an absorption surface that can estimate the relative absorption of each reflection. However, this can be less effective when the absorption is much higher, or the multiplicity of the dataset is lower. The analytical absorption correction can not only address this circumstance but also bring better performance after combining with spherical harmonics correction, as shown in our paper (Lu  et al., 2020). The equations of analytical absorption correction are below:
+$$
+\begin{align}
+A_{hkl} = \frac{1}{V} \int_{V} e^{-\mu (L_1+L_2)} \, dV  \tag{1} \\
+A_{hkl}^{(n)} =   \text{exp} \left[ -\sum\limits_{m=1}^{M} \mu_m L_{m}^{(n)} \right]  \tag{2} \\
+A_{hkl}= \frac{1}{N}   \sum\limits_{n=1}^{N}A_{hkl}^{(n)}  \tag{3}
+\end{align}
+$$
+
+where $V$ is the volume of the diffracting crystal, $N$ is the number of crystal voxels, $M$ represents the number of different materials, $L_1$ and $L_2$ are the incident and diffracting X-ray resepectively, and $\mu$ is the absorption coefficient of the materials. They show that an absorption factor for a reflection is the average of the absorption factors of all the crystal volume. For each absorption factor, it is calculated by the Beer-Lambda law in Equation (2).  In this project, the sample is tomographically reconstructed so an absorption factor for a reflection is determined by the average of the absorption factors of crystal voxels shown in Equation (3).
 
 #### Basics in AnACor
 ![coordinates](https://github.com/yishunlu-222/AnACor_public/blob/main/img/documentation%20of%20codes-7.png)
@@ -68,7 +82,10 @@ The examples are not ready at the moment, but you can find more information in t
 
 When referencing this code, please cite our related paper:
 
-Y. Li, R. Duman, J. Beilsten-Edmands, G. Winter, M. Basham, G. Evans, H. Kwong, K. Beis, A. Wagner, W. Armour, “Ray-tracing analytical absorption correction for X-ray crystallography based on tomographic reconstructions”.
+[1] Y. Lu, R. Duman, J. Beilsten-Edmands, G. Winter, M. Basham, G. Evans, H. Kwong, K. Beis, A. Wagner, W. Armour, “Ray-tracing analytical absorption correction for X-ray crystallography based on tomographic reconstructions”.
+[2]Beilsten-Edmands, J., Winter, G., Gildea, R., Parkhurst, J., Waterman, D. & Evans, G. (2020).  
+Acta Cryst. D76, 385–399
+
 
 ## License
 ![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)
