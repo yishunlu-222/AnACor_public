@@ -94,8 +94,13 @@ else :
 
 corr = np.ones( len( reflections ) )
 
-with open( filename ) as f1 :
-    data = json.load( f1 )
+try:
+  with open( filename ) as f1 :
+      data = json.load( f1 )
+except:
+  filename = os.path.join(args.store_dir  , '{}_refl_overall.json'.format( dataset ) )
+  with open( filename ) as f1 :
+      data = json.load( f1 )
 
 print("len( data )")
 print( len( data ) )   

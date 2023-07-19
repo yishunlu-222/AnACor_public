@@ -7,6 +7,133 @@ from skimage.draw import line
 np.set_printoptions(suppress=True)
 
 
+def slice_sampling(label_list, rate_list, dim='z', sampling_size=5000, auto=True,method='even',sampling_ratio=None):
+    """
+    Probability Sampling: Every member of the population has a known (non-zero) probability of being selected. This includes:
+    ###
+    Simple Random Sampling: As mentioned above, this involves selecting random points in a completely unbiased way where every member of the dataset has an equal chance of getting selected. This is the default behaviour of the numpy's random.choice() function.
+    
+    ###
+    Stratified Sampling: This involves dividing the population into homogeneous subgroups (or "strata") and then taking a simple random sample from each subgroup.
+    Stratified sampling is a method of sampling that involves dividing a population into homogeneous subgroups known as strata, and then selecting a simple random sample from each stratum. In this case, the different values in your distribution can be thought of as different strata.
+
+    Given that your objective is to generate a set of 5000 crystal voxel coordinates, you can perform stratified sampling as follows:
+
+    Create strata: Divide your distribution into different strata, where each stratum corresponds to a range of voxel values or even single voxel values, depending on the distribution of voxel values in your data. This division should reflect the structure of your distribution, and there should be enough voxels in each stratum to make reasonable estimates.
+
+    Allocate samples to strata: The next step is to decide how many samples to draw from each stratum. In proportional allocation, you would choose a number of samples from each stratum proportional to the size of the stratum in relation to the total population.
+
+    Sample from strata: Now, for each stratum, you need to randomly select the required number of samples. The coordinates of these samples represent the coordinates of your crystal voxels.
+    
+    ###
+    Cluster Sampling: The population is divided into clusters (groups) and a set of clusters are chosen at random. All observations in the selected clusters form the sample.
+
+    Systematic Sampling: Involves selecting items from an ordered population using a skip or an interval. For example, you might sample every 10th item from your dataset.
+    """
+    zz, yy, xx = np.where(label_list == rate_list['cr'])  
+    crystal_coordinate = np.stack((zz,yy,xx),axis=1)
+    # Find the indices of the non-zero elements directly
+    if sampling_ratio is not None:
+        sampling_size=int(len(crystal_coordinate)*sampling_ratio/100) # sampling ratio in %
+
+
+    if auto:
+        # When sampling ~= N/2000, the results become stable
+        sampling = len(crystal_coordinate) // 2000
+        
+    else:
+        sampling = len(crystal_coordinate) // sampling_size
+        
+    print(" The sampling number is {}".format(sampling))
+    if method =='even':
+        coord_list_even=[]
+        # zz, yy, xx = np.where(label_list == rate_list['cr'])  # this line occupies 1GB, why???
+        # #crystal_coordinate = zip(zz, yy, xx)  # can be not listise to lower memory usage
+        # crystal_coordinate = np.stack((zz,yy,xx),axis=1)
+        # seg = int(np.round(len(crystal_coordinate) / sampling))
+        seg = sampling
+
+        coordinate_list = np.linspace(0, len(crystal_coordinate), num=seg, endpoint=False, dtype=int)
+        print(" {} voxels in even sampling are calculated".format(len(coordinate_list)))
+        for i in coordinate_list:
+            coord_list_even.append(crystal_coordinate[i])
+       
+        coord_list =  np.array(coord_list_even)
+    
+    elif method =='slice':
+        output_lengths = []
+        if dim == 'z':
+            index = 0
+
+        elif dim == 'y':
+            index = 1
+
+        elif dim == 'x':
+            index = 2
+        zz_u = np.unique(crystal_coordinate[:, index])
+
+        # Sort the crystal_coordinate array using the np.argsort() function
+        sorted_indices = np.argsort(crystal_coordinate[:, index])
+        crystal_coordinate = crystal_coordinate[sorted_indices]
+        # total_size=len(crystal_coordinate)
+
+        # Use np.bincount() to count the number of occurrences of each value in the array
+        output_lengths = np.bincount(
+            crystal_coordinate[:, index], minlength=len(zz_u))
+        zz_u = np.insert(zz_u, 0, np.zeros(len(output_lengths)-len(zz_u)))
+        # Compute the sampling distribution
+        if sampling / len(output_lengths) < 0.5:
+            sorted_indices = np.argsort(output_lengths)[::-1]  # descending order
+            sampling_distribution = np.zeros(len(output_lengths))
+            sampling_distribution[sorted_indices[:sampling]] = 1
+            sampling_distribution=sampling_distribution.astype(int)
+        else:
+            sampling_distribution = np.round(
+                output_lengths / output_lengths.mean() * sampling / len(output_lengths)).astype(int)
+
+        coord_list = []
+    
+        # Use boolean indexing to filter the output array based on the sampling distribution
+        for i, sampling_num in enumerate(sampling_distribution):
+            if sampling_num == 0:
+                continue
+            # output_layer = crystal_coordinate[crystal_coordinate[:, index] == zz_u[i]]
+            # Use np.random.choice() to randomly sample elements from the output arrays
+            before = output_lengths[:i].sum()
+            after = output_lengths[:i + 1].sum()
+            output_layer = crystal_coordinate[before: after]
+            numbers = []
+            for k in range(sampling_num):
+
+                numbers.append(int(output_lengths[i]/(sampling_num+1) * (k+1)))
+
+            for num in numbers:
+                coord_list.append(output_layer[num])
+            # sampled_indices = np.random.choice(range(len(output_layer)), size=int(sampling_num), replace=False)
+            # coord_list.extend(output_layer[sampled_indices])
+            
+        print(" {} voxels in slice sampling are calculated".format(len(coord_list)))
+        coord_list= np.array(coord_list)
+        
+    elif method =='random':
+        # Random sampling
+        coord_list_random=[]
+        arr = np.array(range(len(crystal_coordinate)))
+        np.random.seed(0)  
+        samples =np.sort( np.random.choice(arr, sampling, replace=False))
+        for i in samples:
+            coord_list_random.append(crystal_coordinate[i])
+        print(" {} voxels in random sampling are calculated".format(len(samples)))
+        coord_list= np.array(coord_list_random)
+    else:
+        raise RuntimeError("The sampling method is not defined")
+    
+    return coord_list
+
+
+
+
+
 def dials_2_thetaphi_11(rotated_s1,L1=False):
     if L1 is True:
         # L1 is the incident beam and L2 is the diffracted so they are opposite
@@ -152,7 +279,6 @@ def dials_2_numpy_11(vector):
     back2 = numpy_2_dials_1.dot(vector)
 
     return  back2
-
 
 
 @jit(nopython=True)

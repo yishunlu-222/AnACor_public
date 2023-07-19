@@ -6,9 +6,14 @@ import numpy as np
 # from dials.array_family import flex
 from ast import literal_eval
 import argparse
-from utils.utils_rt import *
+try:
+    from utils.utils_rt import *
+    from utils.utils_ib import *
+except:
+    from AnACor.utils.utils_rt import *
+    from AnACor.utils.utils_ib import *
 import ctypes as ct
-import multiprocessing as mp
+import multiprocessing as mp    
 # try:
 #     from AnACor.RayTracing import RayTracingBasic,kp_rotation
 # except:
@@ -130,55 +135,61 @@ def set_parser():
         "--sampling-num",
         type=int,
         default=5000,
-        help="pixel size of tomography",
+        help="sampling for picking crystal point to calculate",
     )
     parser.add_argument(
         "--auto-sampling",
         type=str2bool,
         default=True,
-        help="pixel size of tomography",
+        help="automatically determine sampling number",
     )
     parser.add_argument(
         "--full-iteration",
         type=int,
         default=0,
-        help="pixel size of tomography",
+        help="whether to do full iteration(break when encounter an air point)",
     )
     parser.add_argument(
         "--pixel-size",
         type=float,
         default=0.3,
-        help="pixel size of tomography",
+        help="overall pixel size of tomography",
     )
     parser.add_argument(
         "--pixel-size-x",
         type=float,
         default=0.3,
-        help="pixel size of tomography",
+        help="overall pixel size of tomography in x dimension in  mm",
     )
     parser.add_argument(
         "--pixel-size-y",
         type=float,
         default=0.3,
-        help="pixel size of tomography",
+        help="overall pixel size of tomography in y dimension in  mm",
     )
     parser.add_argument(
         "--pixel-size-z",
         type=float,
         default=0.3,
-        help="pixel size of tomography",
+        help="overall pixel size of tomography in z dimension in  mm",
     )
     parser.add_argument(
         "--by-c",
         type=str2bool,
-        default=True,
-        help="pixel size of tomography",
+        default=False,
+        help="calculate by c instead of python",
+    )
+    parser.add_argument(
+        "--single-c",
+        type=str2bool,
+        default=False,
+        help="calculate by c instead of python",
     )
     parser.add_argument(
         "--slicing",
         type=str,
         default='z',
-        help="pixel size of tomography",
+        help="slicing sampling direction",
     )
     parser.add_argument(
         "--num-workers",
@@ -190,13 +201,19 @@ def set_parser():
         "--test-mode",
         type=str2bool,
         default=False,
-        help="number of workers",
+        help="test mode",
     )
     parser.add_argument(
         "--bisection" ,
         type = str2bool,
-        default = True ,
+        default = False ,
         help = "activate bisection method" ,
+    )
+    parser.add_argument(
+        "--sampling-method" ,
+        type = str,
+        default = False ,
+        help = "whether to apply sampling evenly" ,
     )
     global args
     args = parser.parse_args()
@@ -247,262 +264,6 @@ def kp_rotation(axis, theta):
     return matrix
 
 
-def test_worker_function(t1, low, up, dataset, selected_data, label_list,
-                         voxel_size, coefficients, F, coord_list,
-                         omega_axis, axes_data, save_dir, by_c,
-                         offset, full_iteration, store_paths, printing):
-    corr = []
-    dict_corr = []
-    arr_scattering = []
-    arr_omega = []
-    xray = -np.array(axes_data[1]["direction"])
-    shape = np.array(label_list.shape)
-    if by_c:
-
-        # class Thetaphi( ct.Structure ) :
-        #     _fields_ = [("theta" , ct.c_double) ,
-        #                 ("phi" , ct.c_double)]
-
-        # class Vector3D( ct.Structure ) :
-        #     _fields_ = [("x" , ct.c_int) ,
-        #                 ("y" , ct.c_int) ,
-        #                 ("z" , ct.c_int)]
-
-        # class Path2( ct.Structure ) :
-        #     _fields_ = [("ray" , ct.POINTER( Vector3D )) ,
-        #                 ("posi" , ct.POINTER( ct.c_int )) ,
-        #                 ("classes" , ct.POINTER( ct.c_char ))]
-
-        # def python_2_c_2d ( arr_2d ) :
-        #     labelPtr = ct.POINTER( ct.c_int )
-        #     labelPtrPtr = ct.POINTER( labelPtr )
-        #     labelPtrMatrix = labelPtr * label_list.shape[0]
-        #     array_tuple = ()
-        #     # Assign the numpy array to the pointer
-        #     for row in arr_2d :
-        #         array_tuple = array_tuple + (row.ctypes.data_as( labelPtr ) ,)
-        #     arr_2d_ptr = ct.cast( labelPtrMatrix( *(array_tuple) ) , labelPtrPtr )
-        #     return arr_2d_ptr
-
-        def python_2_c_3d(label_list):
-            # this is a one 1d conversion
-            # z, y, x = label_list.shape
-            # label_list_ctype = (ct.c_int8 * z * y * x)()
-            # for i in range(z):
-            #     for j in range(y):
-            #         for k in range(x):
-            #             label_list_ctype[i][j][k] = ct.c_int8(label_list[i][j][k])
-            labelPtr = ct.POINTER(ct.c_int8)
-            labelPtrPtr = ct.POINTER(labelPtr)
-            labelPtrPtrPtr = ct.POINTER(labelPtrPtr)
-            labelPtrCube = labelPtrPtr * label_list.shape[0]
-            labelPtrMatrix = labelPtr * label_list.shape[1]
-            matrix_tuple = ()
-            for matrix in label_list:
-                array_tuple = ()
-                for row in matrix:
-                    array_tuple = array_tuple + (row.ctypes.data_as(labelPtr),)
-                matrix_ptr = ct.cast(labelPtrMatrix(
-                    *(array_tuple)), labelPtrPtr)
-                matrix_tuple = matrix_tuple + (matrix_ptr,)
-            label_list_ptr = ct.cast(labelPtrCube(
-                *(matrix_tuple)), labelPtrPtrPtr)
-            return label_list_ptr
-
-        dials_lib = ct.CDLL(os.path.join(os.path.dirname(
-            os.path.abspath(__file__)), './ray_tracing.so'))
-        # dials_lib = ct.CDLL( './ray_tracing.so' )s
-        # gcc -shared -o ray_tracing.so ray_tracing.c -fPIC
-
-        dials_lib.ray_tracing_overall.restype = ct.POINTER(ct.c_double)
-        dials_lib.ray_tracing_overall.argtypes = [  # crystal_coordinate_shape
-            ct.c_int,  # low
-            ct.c_int,  # up
-            np.ctypeslib.ndpointer(dtype=np.int64),  # coordinate_list
-            ct.c_int,  # coordinate_list_length
-            np.ctypeslib.ndpointer(dtype=np.float64),  # scattering_vector_list
-            np.ctypeslib.ndpointer(dtype=np.float64),  # omega_list
-            np.ctypeslib.ndpointer(dtype=np.float64),  # xray
-            np.ctypeslib.ndpointer(dtype=np.float64),  # omega_axis
-            np.ctypeslib.ndpointer(dtype=np.float64),  # kp rotation matrix: F
-            ct.c_int,  # len_result
-            np.ctypeslib.ndpointer(dtype=np.float64),  # voxel_size
-            np.ctypeslib.ndpointer(dtype=np.float64),  # coefficients
-            ct.POINTER(ct.POINTER(ct.POINTER(ct.c_int8))),  # label_list
-            np.ctypeslib.ndpointer(dtype=np.int64),  # shape
-            ct.c_int,  # full_iteration
-            ct.c_int  # store_paths
-        ]
-
-        dials_lib.ray_tracing_sampling.restype = ct.c_double
-        dials_lib.ray_tracing_sampling.argtypes = [  # crystal_coordinate_shape
-            np.ctypeslib.ndpointer(dtype=np.int64),  # coordinate_list
-            ct.c_int,  # coordinate_list_length
-            np.ctypeslib.ndpointer(dtype=np.float64),  # rotated_s1
-            np.ctypeslib.ndpointer(dtype=np.float64),  # xray
-            np.ctypeslib.ndpointer(dtype=np.float64),  # voxel_size
-            np.ctypeslib.ndpointer(dtype=np.float64),  # coefficients
-            ct.POINTER(ct.POINTER(ct.POINTER(ct.c_int8))),  # label_list
-            np.ctypeslib.ndpointer(dtype=np.int64),  # shape
-            ct.c_int,  # full_iteration
-            ct.c_int  # store_paths
-        ]
-        label_list_c = python_2_c_3d(label_list)
-        # crystal_coordinate_shape = np.array(crystal_coordinate.shape)
-        for i, row in enumerate(selected_data):
-            # try:
-            #     print('up is {} in processor {}'.format( up+i,os.getpid() ))
-            # except:
-            #     print('up is {} in processor {}'.format( up,os.getpid() ))
-            intensity = float(row['intensity.sum.value'])
-            # all are in x, y , z in the origin dials file
-            miller_index = row['miller_index']
-
-            scattering_vector = literal_eval(row['s1'])
-            rotation_frame_angle = literal_eval(row['xyzobs.mm.value'])[2]
-            rotation_frame_angle += offset / 180 * np.pi
-            arr_scattering.append(scattering_vector)
-            arr_omega.append(rotation_frame_angle)
-
-        arr_scattering = np.array(arr_scattering)
-        arr_omega = np.array(arr_omega)
-        # print('low is {} in processor {} the type is {}'.format( low,os.getpid(),type(low) ))
-        # print('up is {} in processor {} the type is {}'.format( low+len(selected_data),os.getpid(),type(low+len(selected_data)) ))
-
-        result_list = dials_lib.ray_tracing_overall(low, low+len(selected_data),
-                                                    coord_list, len(
-                                                        coord_list),
-                                                    arr_scattering, arr_omega, xray, omega_axis,
-                                                    F, len(selected_data),
-                                                    voxel_size,
-                                                    coefficients, label_list_c, shape,
-                                                    full_iteration, store_paths)
-        for i in range(len(selected_data)):
-            corr.append(result_list[i])
-        t2 = time.time()
-        dials_lib.free(result_list)
-    else:
-        for i, row in enumerate(selected_data):
-
-            intensity = float(row['intensity.sum.value'])
-            # all are in x, y , z in the origin dials file
-            scattering_vector = literal_eval(row['s1'])
-            miller_index = row['miller_index']
-
-            rotation_frame_angle = literal_eval(row['xyzobs.mm.value'])[2]
-            rotation_frame_angle += offset / 180 * np.pi
-            rotation_matrix_frame_omega = kp_rotation(
-                omega_axis, rotation_frame_angle)
-
-            total_rotation_matrix = np.dot(rotation_matrix_frame_omega, F)
-            total_rotation_matrix = np.transpose(total_rotation_matrix)
-
-            xray = -np.array(axes_data[1]["direction"])
-            xray = np.dot(total_rotation_matrix, xray)
-            rotated_s1 = np.dot(total_rotation_matrix, scattering_vector)
-
-            theta, phi = dials_2_thetaphi_11(rotated_s1)
-            theta_1, phi_1 = dials_2_thetaphi_11(xray, L1=True)
-
-            if by_c:
-                result = dials_lib.ray_tracing_sampling(
-                    coord_list, len(coord_list),
-                    rotated_s1, xray, voxel_size,
-                    coefficients, label_list_c, shape,
-                    full_iteration, store_paths)
-                # result = dials_lib.ray_tracing(crystal_coordinate, crystal_coordinate_shape,
-                #                     coordinate_list,len(coordinate_list) ,
-                #                     rotated_s1, xray, voxel_size,
-                #                 coefficients, label_list_c, shape,
-                #                 args.full_iteration, args.store_paths)
-            else:
-                ray_direction = dials_2_numpy_11(rotated_s1)
-                xray_direction = dials_2_numpy_11(xray)
-                # absorp = np.empty(len(coordinate_list))
-                # for k , index in enumerate( coordinate_list ) :
-                #     coord = crystal_coordinate[index]
-                absorp = np.empty(len(coord_list))
-                for k, coord in enumerate(coord_list):
-                    # face_1 = which_face_2(coord, shape, theta_1, phi_1)
-                    # face_2 = which_face_2(coord, shape, theta, phi)
-                    face_1 = cube_face(coord, xray_direction, shape, L1=True)
-                    face_2 = cube_face(coord, ray_direction, shape)
-                    path_1 = cal_coord_2(
-                        theta_1, phi_1, coord, face_1, shape, label_list)  # 37
-                    path_2 = cal_coord_2(
-                        theta, phi, coord, face_2, shape, label_list)  # 16
-
-                    numbers_1 = cal_num(path_1, voxel_size)  # 3.5s
-                    numbers_2 = cal_num(path_2, voxel_size)  # 3.5s
-                    if store_paths == 1:
-                        if k == 0:
-                            path_length_arr_single = np.expand_dims(
-                                np.array((numbers_1 + numbers_2)), axis=0)
-                        else:
-
-                            path_length_arr_single = np.concatenate(
-                                (
-                                    path_length_arr_single, np.expand_dims(np.array((numbers_1 + numbers_2)), axis=0)),
-                                axis=0)
-                    absorption = cal_rate(
-                        (numbers_1 + numbers_2), coefficients)
-
-                    absorp[k] = absorption
-
-                if store_paths == 1:
-                    if i == 0:
-                        path_length_arr = np.expand_dims(
-                            path_length_arr_single, axis=0)
-                    else:
-                        path_length_arr = np.concatenate(
-                            (path_length_arr, np.expand_dims(path_length_arr_single, axis=0)), axis=0)
-                result = absorp.mean()
-
-            t2 = time.time()
-            if printing:
-                print('[{}/{}] theta: {:.4f}, phi: {:.4f} , rotation: {:.4f},  absorption: {:.4f}'.format(low + i,
-                                                                                                          low + len(
-                                                                                                              selected_data),
-                                                                                                          theta * 180 / np.pi,
-                                                                                                          phi * 180 / np.pi,
-                                                                                                          rotation_frame_angle * 180 / np.pi,
-                                                                                                          result))
-            # pdb.set_trace()
-
-            print('process {} it spends {}'.format(os.getpid(), t2 -
-                                                   t1))
-
-            corr.append(result)
-            # print( 'it spends {}'.format( t2 - t1 ) )
-            dict_corr.append({'index': low + i, 'miller_index': miller_index,
-                              'intensity': intensity, 'corr': result,
-                              'theta': theta * 180 / np.pi,
-                              'phi': phi * 180 / np.pi,
-                              'theta_1': theta_1 * 180 / np.pi,
-                              'phi_1': phi_1 * 180 / np.pi, })
-            if i % 1000 == 1:
-                if store_paths == 1:
-                    np.save(os.path.join(save_dir, "{}_path_lengths_{}.npy".format(
-                        dataset, up)), path_length_arr)
-                with open(os.path.join(save_dir, "{}_refl_{}.json".format(dataset, up)), "w") as fz:  # Pickling
-                    json.dump(corr, fz, indent=2)
-                with open(os.path.join(save_dir, "{}_dict_refl_{}.json".format(dataset, up)),
-                          "w") as f1:  # Pickling
-                    json.dump(dict_corr, f1, indent=2)
-
-    if store_paths == 1:
-        np.save(os.path.join(save_dir, "{}_path_lengths_{}.npy".format(
-            dataset, up)), path_length_arr)
-    with open(os.path.join(save_dir, "{}_refl_{}.json".format(dataset, up)), "w") as fz:  # Pickling
-        json.dump(corr, fz, indent=2)
-
-    with open(os.path.join(save_dir, "{}_dict_refl_{}.json".format(dataset, up)), "w") as f1:  # Pickling
-        json.dump(dict_corr, f1, indent=2)
-    with open(os.path.join(save_dir, "{}_time_{}.json".format(dataset, up)), "w") as f1:  # Pickling
-        json.dump(t2 - t1, f1, indent=2)
-    print('{} ({} ) process is Finish!!!!'.format(os.getpid(), up))
-
-
 def worker_function(t1, low, up, dataset, selected_data, label_list,
                     voxel_size, coefficients, F, coord_list,
                     omega_axis, axes_data, save_dir, by_c,
@@ -551,43 +312,27 @@ def worker_function(t1, low, up, dataset, selected_data, label_list,
         ct.c_int,  # full_iteration
         ct.c_int  # store_paths
     ]
-
+    dials_lib.ib_test.restype = ct.c_double
+    dials_lib.ib_test.argtypes = [# crystal_coordinate_shape
+        np.ctypeslib.ndpointer(dtype=np.int64),      # coordinate_list
+        ct.c_int,                    # coordinate_list_length
+        np.ctypeslib.ndpointer(dtype=np.float64),   # rotated_s1
+        np.ctypeslib.ndpointer(dtype=np.float64),   # xray
+        np.ctypeslib.ndpointer(dtype=np.float64),   # voxel_size
+        np.ctypeslib.ndpointer(dtype=np.float64),   # coefficients
+        ct.POINTER(ct.POINTER(ct.POINTER(ct.c_int8))),     # label_list
+        np.ctypeslib.ndpointer(dtype=np.int64),      # shape
+        ct.c_int,                      # full_iteration
+        ct.c_int                       # store_paths
+    ]
 
     label_list_c = python_2_c_3d(label_list)
     if by_c:
 
-        # class Thetaphi( ct.Structure ) :
-        #     _fields_ = [("theta" , ct.c_double) ,
-        #                 ("phi" , ct.c_double)]
-
-        # class Vector3D( ct.Structure ) :
-        #     _fields_ = [("x" , ct.c_int) ,
-        #                 ("y" , ct.c_int) ,
-        #                 ("z" , ct.c_int)]
-
-        # class Path2( ct.Structure ) :
-        #     _fields_ = [("ray" , ct.POINTER( Vector3D )) ,
-        #                 ("posi" , ct.POINTER( ct.c_int )) ,
-        #                 ("classes" , ct.POINTER( ct.c_char ))]
-
-        # def python_2_c_2d ( arr_2d ) :
-        #     labelPtr = ct.POINTER( ct.c_int )
-        #     labelPtrPtr = ct.POINTER( labelPtr )
-        #     labelPtrMatrix = labelPtr * label_list.shape[0]
-        #     array_tuple = ()
-        #     # Assign the numpy array to the pointer
-        #     for row in arr_2d :
-        #         array_tuple = array_tuple + (row.ctypes.data_as( labelPtr ) ,)
-        #     arr_2d_ptr = ct.cast( labelPtrMatrix( *(array_tuple) ) , labelPtrPtr )
-        #     return arr_2d_ptr
-
 
         # crystal_coordinate_shape = np.array(crystal_coordinate.shape)
         for i, row in enumerate(selected_data):
-            # try:
-            #     print('up is {} in processor {}'.format( up+i,os.getpid() ))
-            # except:
-            #     print('up is {} in processor {}'.format( up,os.getpid() ))
+
             intensity = float(row['intensity.sum.value'])
             # all are in x, y , z in the origin dials file
             miller_index = row['miller_index']
@@ -628,10 +373,12 @@ def worker_function(t1, low, up, dataset, selected_data, label_list,
             rotation_matrix_frame_omega = kp_rotation(
                 omega_axis, rotation_frame_angle)
 
-            total_rotation_matrix = np.dot(rotation_matrix_frame_omega, F)
-            total_rotation_matrix = np.transpose(total_rotation_matrix)
-
+            kp_rotation_matrix = np.dot(rotation_matrix_frame_omega, F)
+            total_rotation_matrix = np.transpose(kp_rotation_matrix)
+            # total_rotation_matrix is orthogonal matrix so transpose is faster than inverse
+            # total_rotation_matrix =np.linalg.inv(kp_rotation_matrix)  
             xray = -np.array(axes_data[1]["direction"])
+
             xray = np.dot(total_rotation_matrix, xray)
             rotated_s1 = np.dot(total_rotation_matrix, scattering_vector)
 
@@ -639,53 +386,61 @@ def worker_function(t1, low, up, dataset, selected_data, label_list,
             theta_1, phi_1 = dials_2_thetaphi_11(xray, L1=True)
 
             # if by_c :
-            result = dials_lib.ray_tracing_sampling(
-                coord_list, len(coord_list),
-                rotated_s1, xray, voxel_size,
-                coefficients, label_list_c, shape,
-                full_iteration, store_paths)
-            # result = dials_lib.ray_tracing(crystal_coordinate, crystal_coordinate_shape,
-            #                     coordinate_list,len(coordinate_list) ,
-            #                     rotated_s1, xray, voxel_size,
-            #                 coefficients, label_list_c, shape,
-            #                 args.full_iteration, args.store_paths)
-            # else :
-            #     ray_direction = dials_2_numpy_11( rotated_s1 )
-            #     xray_direction = dials_2_numpy_11( xray )
-            #     # absorp = np.empty(len(coordinate_list))
-            #     # for k , index in enumerate( coordinate_list ) :
-            #     #     coord = crystal_coordinate[index]
-            #     absorp = np.empty( len( coord_list ) )
-            #     for k , coord in enumerate( coord_list ) :
-            #         # face_1 = which_face_2(coord, shape, theta_1, phi_1)
-            #         # face_2 = which_face_2(coord, shape, theta, phi)
-            #         face_1 = cube_face( coord , xray_direction , shape , L1 = True )
-            #         face_2 = cube_face( coord , ray_direction , shape )
-            #         path_1 = cal_coord_2( theta_1 , phi_1 , coord , face_1 , shape , label_list )  # 37
-            #         path_2 = cal_coord_2( theta , phi , coord , face_2 , shape , label_list )  # 16
+            if args.bisection:
+                result = dials_lib.ib_test(
+                                coord_list,len(coord_list) ,
+                                rotated_s1, xray, voxel_size,
+                            coefficients, label_list_c, shape,
+                            args.full_iteration, args.store_paths)
+            elif args.single_c:
+                                result = dials_lib.ray_tracing_sampling(
+                    coord_list, len(coord_list),
+                    rotated_s1, xray, voxel_size,
+                    coefficients, label_list_c, shape,
+                    full_iteration, store_paths)
+            
+            else:
+                
+                # result = dials_lib.ray_tracing_sampling(
+                #     coord_list, len(coord_list),
+                #     rotated_s1, xray, voxel_size,
+                #     coefficients, label_list_c, shape,
+                #     full_iteration, store_paths)
+                # result = dials_lib.ray_tracing(crystal_coordinate, crystal_coordinate_shape,
+                #                     coordinate_list,len(coordinate_list) ,
+                #                     rotated_s1, xray, voxel_size,
+                #                 coefficients, label_list_c, shape,
+                #                 args.full_iteration, args.store_paths)
+                # else :
+                    ray_direction = dials_2_numpy_11( rotated_s1 )
+                    xray_direction = dials_2_numpy_11( xray )
+                    # absorp = np.empty(len(coordinate_list))
+                    # for k , index in enumerate( coordinate_list ) :
+                    #     coord = crystal_coordinate[index]
+                    absorp = np.empty( len( coord_list ) )
+                    for k , coord in enumerate( coord_list ) :
+                        # face_1 = which_face_2(coord, shape, theta_1, phi_1)
+                        # face_2 = which_face_2(coord, shape, theta, phi)
+                        face_1 = cube_face( coord , xray_direction , shape , L1 = True )
+                        face_2 = cube_face( coord , ray_direction , shape )
+                        path_1 = cal_coord_2( theta_1 , phi_1 , coord , face_1 , shape , label_list )  # 37
+                        path_2 = cal_coord_2( theta , phi , coord , face_2 , shape , label_list )  # 16
 
-            #         numbers_1 = cal_num( path_1 , voxel_size )  # 3.5s
-            #         numbers_2 = cal_num( path_2 , voxel_size )  # 3.5s
-            #         if store_paths == 1 :
-            #             if k == 0 :
-            #                 path_length_arr_single = np.expand_dims( np.array( (numbers_1 + numbers_2) ) , axis = 0 )
-            #             else :
+                        numbers_1 = cal_num( path_1 , voxel_size )  # 3.5s
+                        numbers_2 = cal_num( path_2 , voxel_size )  # 3.5s
+                        if store_paths == 1 :
+                            if k == 0 :
+                                path_length_arr_single = np.expand_dims( np.array( (numbers_1 + numbers_2) ) , axis = 0 )
+                            else :
 
-            #                 path_length_arr_single = np.concatenate(
-            #                     (
-            #                     path_length_arr_single , np.expand_dims( np.array( (numbers_1 + numbers_2) ) , axis = 0 )) ,
-            #                     axis = 0 )
-            #         absorption = cal_rate( (numbers_1 + numbers_2) , coefficients )
+                                path_length_arr_single = np.concatenate(
+                                    (
+                                    path_length_arr_single , np.expand_dims( np.array( (numbers_1 + numbers_2) ) , axis = 0 )) ,
+                                    axis = 0 )
+                        absorption = cal_rate( (numbers_1 + numbers_2) , coefficients )
 
-            #         absorp[k] = absorption
-
-            #     if store_paths == 1 :
-            #         if i == 0 :
-            #             path_length_arr = np.expand_dims( path_length_arr_single , axis = 0 )
-            #         else :
-            #             path_length_arr = np.concatenate(
-            #                 (path_length_arr , np.expand_dims( path_length_arr_single , axis = 0 )) , axis = 0 )
-            #     result = absorp.mean( )
+                        absorp[k] = absorption
+                    result = absorp.mean( )
 
             t2 = time.time()
             if printing:
@@ -710,18 +465,15 @@ def worker_function(t1, low, up, dataset, selected_data, label_list,
                               'theta_1': theta_1 * 180 / np.pi,
                               'phi_1': phi_1 * 180 / np.pi, })
             if i % 1000 == 1:
-                if store_paths == 1:
-                    np.save(os.path.join(save_dir, "{}_path_lengths_{}.npy".format(
-                        dataset, up)), path_length_arr)
+                
+
                 with open(os.path.join(save_dir, "{}_refl_{}.json".format(dataset, up)), "w") as fz:  # Pickling
                     json.dump(corr, fz, indent=2)
                 with open(os.path.join(save_dir, "{}_dict_refl_{}.json".format(dataset, up)),
                           "w") as f1:  # Pickling
                     json.dump(dict_corr, f1, indent=2)
 
-    if store_paths == 1:
-        np.save(os.path.join(save_dir, "{}_path_lengths_{}.npy".format(
-            dataset, up)), path_length_arr)
+
     with open(os.path.join(save_dir, "{}_refl_{}.json".format(dataset, up)), "w") as fz:  # Pickling
         json.dump(corr, fz, indent=2)
 
@@ -731,69 +483,6 @@ def worker_function(t1, low, up, dataset, selected_data, label_list,
         json.dump(t2 - t1, f1, indent=2)
     print('{} ({} ) process is Finish!!!!'.format(os.getpid(), up))
 
-
-def slice_sampling(label_list, rate_list, dim='z', sampling=5000, auto=True):
-
-    # Find the indices of the non-zero elements directly
-    crystal_coordinate = np.argwhere(label_list == rate_list['cr'])
-
-    if auto:
-        # When sampling ~= N/2000, the results become stable
-        sampling = len(crystal_coordinate) // 2000
-        print(" The sampling number is {}".format(sampling))
-
-    output_lengths = []
-    if dim == 'z':
-        index = 0
-
-    elif dim == 'y':
-        index = 1
-
-    elif dim == 'x':
-        index = 2
-    zz_u = np.unique(crystal_coordinate[:, index])
-
-    # Sort the crystal_coordinate array using the np.argsort() function
-    sorted_indices = np.argsort(crystal_coordinate[:, index])
-    crystal_coordinate = crystal_coordinate[sorted_indices]
-    # total_size=len(crystal_coordinate)
-
-    # Use np.bincount() to count the number of occurrences of each value in the array
-    output_lengths = np.bincount(
-        crystal_coordinate[:, index], minlength=len(zz_u))
-    zz_u = np.insert(zz_u, 0, np.zeros(len(output_lengths)-len(zz_u)))
-    # Compute the sampling distribution
-    if sampling / len(output_lengths) < 0.5:
-        sorted_indices = np.argsort(output_lengths)[::-1]  # descending order
-        sampling_distribution = np.zeros(len(output_lengths))
-        sampling_distribution[sorted_indices[:sampling]] = 1
-    else:
-        sampling_distribution = np.round(
-            output_lengths / output_lengths.mean() * sampling / len(output_lengths)).astype(int)
-
-    coord_list = []
-
-    # Use boolean indexing to filter the output array based on the sampling distribution
-    for i, sampling_num in enumerate(sampling_distribution):
-        if sampling_num == 0:
-            continue
-        # output_layer = crystal_coordinate[crystal_coordinate[:, index] == zz_u[i]]
-        # Use np.random.choice() to randomly sample elements from the output arrays
-        before = output_lengths[:i].sum()
-        after = output_lengths[:i + 1].sum()
-        output_layer = crystal_coordinate[before: after]
-        numbers = []
-        for k in range(sampling_num):
-
-            numbers.append(int(output_lengths[i]/(sampling_num+1) * (k+1)))
-
-        for num in numbers:
-            coord_list.append(output_layer[num])
-        # sampled_indices = np.random.choice(range(len(output_layer)), size=int(sampling_num), replace=False)
-        # coord_list.extend(output_layer[sampled_indices])
-        # pdb.set_trace()
-
-    return np.array(coord_list)
 
 
 def main():
@@ -840,9 +529,17 @@ def main():
     label_list = np.load(args.model_storepath).astype(np.int8)
     refl_filename = args.refl_path
     expt_filename = args.expt_path   # only contain axes
-    coord_list = slice_sampling(label_list, dim=args.slicing, sampling=args.sampling_num,
-                                rate_list=rate_list, auto=args.auto_sampling)
+    # coord_list_even = slice_sampling(label_list, dim=args.slicing, sampling_size=args.sampling_num,
+    #                             rate_list=rate_list, auto=args.auto_sampling,method='even')
+    # coord_list_random = slice_sampling(label_list, dim=args.slicing, sampling_size=args.sampling_num,
+    #                             rate_list=rate_list, auto=args.auto_sampling,method='random')
+    # coord_list_slice = slice_sampling(label_list, dim=args.slicing, sampling_size=args.sampling_num,
+    #                             rate_list=rate_list, auto=args.auto_sampling,method='slice')
+    coord_list = slice_sampling(label_list, dim=args.slicing, sampling_size=args.sampling_num,
+                                rate_list=rate_list, auto=args.auto_sampling,method=args.sampling_method)
+
     print(" {} voxels are calculated".format(len(coord_list)))
+  
     """tomography setup """
     # pixel_size = args.pixel_size * 1e-3  # it means how large for a pixel of tomobar in real life
 
@@ -935,7 +632,7 @@ def main():
         for process in processes:
             process.join()
     else:
-        test_worker_function(t1, 0, '-1', dataset, select_data, label_list,
+        worker_function(t1, 0, '-1', dataset, select_data, label_list,
                              voxel_size, coefficients, F, coord_list,
                              omega_axis, axes_data, save_dir, args.by_c,
                              offset, full_iteration, store_paths, printing)

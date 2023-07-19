@@ -155,6 +155,8 @@ double ib_test(
     return absorption_mean;
 }
 
+
+
 double ray_tracing_sampling(
     int64_t *coord_list,
     int64_t len_coord_list,

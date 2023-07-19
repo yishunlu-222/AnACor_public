@@ -209,6 +209,12 @@ def set_parser():
         default = False ,
         help = "activate bisection method" ,
     )
+    parser.add_argument(
+        "--sampling-method" ,
+        type = str,
+        default = False ,
+        help = "whether to apply sampling evenly" ,
+    )
     global args
     args = parser.parse_args()
     return args
@@ -367,10 +373,12 @@ def worker_function(t1, low, up, dataset, selected_data, label_list,
             rotation_matrix_frame_omega = kp_rotation(
                 omega_axis, rotation_frame_angle)
 
-            total_rotation_matrix = np.dot(rotation_matrix_frame_omega, F)
-            total_rotation_matrix = np.transpose(total_rotation_matrix)
-
+            kp_rotation_matrix = np.dot(rotation_matrix_frame_omega, F)
+            total_rotation_matrix = np.transpose(kp_rotation_matrix)
+            # total_rotation_matrix is orthogonal matrix so transpose is faster than inverse
+            # total_rotation_matrix =np.linalg.inv(kp_rotation_matrix)  
             xray = -np.array(axes_data[1]["direction"])
+
             xray = np.dot(total_rotation_matrix, xray)
             rotated_s1 = np.dot(total_rotation_matrix, scattering_vector)
 
@@ -476,69 +484,6 @@ def worker_function(t1, low, up, dataset, selected_data, label_list,
     print('{} ({} ) process is Finish!!!!'.format(os.getpid(), up))
 
 
-def slice_sampling(label_list, rate_list, dim='z', sampling=5000, auto=True):
-
-    # Find the indices of the non-zero elements directly
-    crystal_coordinate = np.argwhere(label_list == rate_list['cr'])
-
-    if auto:
-        # When sampling ~= N/2000, the results become stable
-        sampling = len(crystal_coordinate) // 2000
-        print(" The sampling number is {}".format(sampling))
-
-    output_lengths = []
-    if dim == 'z':
-        index = 0
-
-    elif dim == 'y':
-        index = 1
-
-    elif dim == 'x':
-        index = 2
-    zz_u = np.unique(crystal_coordinate[:, index])
-
-    # Sort the crystal_coordinate array using the np.argsort() function
-    sorted_indices = np.argsort(crystal_coordinate[:, index])
-    crystal_coordinate = crystal_coordinate[sorted_indices]
-    # total_size=len(crystal_coordinate)
-
-    # Use np.bincount() to count the number of occurrences of each value in the array
-    output_lengths = np.bincount(
-        crystal_coordinate[:, index], minlength=len(zz_u))
-    zz_u = np.insert(zz_u, 0, np.zeros(len(output_lengths)-len(zz_u)))
-    # Compute the sampling distribution
-    if sampling / len(output_lengths) < 0.5:
-        sorted_indices = np.argsort(output_lengths)[::-1]  # descending order
-        sampling_distribution = np.zeros(len(output_lengths))
-        sampling_distribution[sorted_indices[:sampling]] = 1
-    else:
-        sampling_distribution = np.round(
-            output_lengths / output_lengths.mean() * sampling / len(output_lengths)).astype(int)
-
-    coord_list = []
-
-    # Use boolean indexing to filter the output array based on the sampling distribution
-    for i, sampling_num in enumerate(sampling_distribution):
-        if sampling_num == 0:
-            continue
-        # output_layer = crystal_coordinate[crystal_coordinate[:, index] == zz_u[i]]
-        # Use np.random.choice() to randomly sample elements from the output arrays
-        before = output_lengths[:i].sum()
-        after = output_lengths[:i + 1].sum()
-        output_layer = crystal_coordinate[before: after]
-        numbers = []
-        for k in range(sampling_num):
-
-            numbers.append(int(output_lengths[i]/(sampling_num+1) * (k+1)))
-
-        for num in numbers:
-            coord_list.append(output_layer[num])
-        # sampled_indices = np.random.choice(range(len(output_layer)), size=int(sampling_num), replace=False)
-        # coord_list.extend(output_layer[sampled_indices])
-        # pdb.set_trace()
-
-    return np.array(coord_list)
-
 
 def main():
     args = set_parser()
@@ -584,9 +529,17 @@ def main():
     label_list = np.load(args.model_storepath).astype(np.int8)
     refl_filename = args.refl_path
     expt_filename = args.expt_path   # only contain axes
-    coord_list = slice_sampling(label_list, dim=args.slicing, sampling=args.sampling_num,
-                                rate_list=rate_list, auto=args.auto_sampling)
+    # coord_list_even = slice_sampling(label_list, dim=args.slicing, sampling_size=args.sampling_num,
+    #                             rate_list=rate_list, auto=args.auto_sampling,method='even')
+    # coord_list_random = slice_sampling(label_list, dim=args.slicing, sampling_size=args.sampling_num,
+    #                             rate_list=rate_list, auto=args.auto_sampling,method='random')
+    # coord_list_slice = slice_sampling(label_list, dim=args.slicing, sampling_size=args.sampling_num,
+    #                             rate_list=rate_list, auto=args.auto_sampling,method='slice')
+    coord_list = slice_sampling(label_list, dim=args.slicing, sampling_size=args.sampling_num,
+                                rate_list=rate_list, auto=args.auto_sampling,method=args.sampling_method)
+
     print(" {} voxels are calculated".format(len(coord_list)))
+  
     """tomography setup """
     # pixel_size = args.pixel_size * 1e-3  # it means how large for a pixel of tomobar in real life
 

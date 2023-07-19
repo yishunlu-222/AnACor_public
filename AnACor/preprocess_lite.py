@@ -352,6 +352,10 @@ def main ( ) :
             args.crop = list(args.crop)
         else:
             args.crop = None
+        if hasattr(args, 'padding'):
+            args.padding = list(args.padding)
+        else:
+            args.padding = None
         coefficient_model = RunAbsorptionCoefficient( args.rawimg_path , model_storepath ,
                                                      coe_li= args.coe_li ,
                                                      coe_lo= args.coe_lo ,
@@ -366,7 +370,7 @@ def main ( ) :
                                                       angle = coefficient_viewing ,
                                                       kernel_square = (5 , 5) ,
                                                       full = False , thresholding = args.coefficient_thresholding,
-                                                      flat_fielded=args.flat_field_name,base=args.abs_base_cls, crop=args.crop)
+                                                      flat_fielded=args.flat_field_name,base=args.abs_base_cls, crop=args.crop,padding=args.padding)
                                                   
         coefficient_model.run( )
 

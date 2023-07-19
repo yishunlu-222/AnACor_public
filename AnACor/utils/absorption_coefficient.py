@@ -24,7 +24,7 @@ np.seterr( divide = 'ignore' , invalid = 'ignore' )
 
 class AbsorptionCoefficient( object ) :
     def __init__ ( self , tomo_img_path , ModelFilename , auto_orientation , auto_viewing , logger , coe_li = 0 , coe_lo = 0 ,
-                   coe_cr = 0 , coe_bu = 0 , base = 'li' , crop = None ,pad=None, thresholding = 'mean' , angle = 0 , save_dir = "./" ,
+                   coe_cr = 0 , coe_bu = 0 , base = 'li' , crop = None ,padding=None, thresholding = 'mean' , angle = 0 , save_dir = "./" ,
                    pixel_size = 0.3 ,
                    kernel_square = (15 , 15) , full = False , offset = 0 , v_flip = False , h_flip = False ,
                    ModelRotate = -90 , flat_fielded = None , *args ) :
@@ -51,7 +51,7 @@ class AbsorptionCoefficient( object ) :
         self.save_dir = save_dir
         self.thresholding = thresholding
         self.crop = crop
-        self.pad=pad
+        self.pad=padding
         self.full = full
         self.angle = angle
         self.ModelFilename = ModelFilename
@@ -654,8 +654,19 @@ class AbsorptionCoefficient( object ) :
                 self.img , new1 = self.cropping( self.img , new1 , crop = self.crop )
             else:
                 self.img , new1 = self.padding( self.img , new1 , pad = self.pad )
-         
 
+        """ special case for partial illumination """
+        new1 = self.img_list.mean( axis = 1 )
+        self.img = cv2.imread( file , 2 )
+        self.img[self.img > 2] = 2
+        self.img[self.img < 0] = 0
+        self.img , new1 = self.padding( self.img , new1 , pad = self.pad )
+        # pdb.set_trace()
+        """ special case for partial illumination"""
+
+        print("the shape of the image is {}".format(self.img.shape))
+        print("the shape of the model is {}".format(new1.shape))
+       
         candidate_img = cv2.normalize( self.img , None , 0 , 255 , cv2.NORM_MINMAX ).astype(
             'uint8' )
         thresh = self.thresholding_method( )( candidate_img )
@@ -665,7 +676,7 @@ class AbsorptionCoefficient( object ) :
         mask_label = self.mask_generation( img_label , thresh = 255 )
         shifted_mask , xyshift = self.skimage_translation_matching(
             candidate_mask , mask_label )
-     
+        # pdb.set_trace()
         self.imagemask_overlapping( candidate_img , shifted_mask ,
                                     "Overlap_threshold_of_angle_{}_yellow_is_the_projection_of_3d_model".format( angle ) )
         self.imagemask_overlapping_tri( candidate_img , candidate_mask , shifted_mask ,
@@ -673,15 +684,15 @@ class AbsorptionCoefficient( object ) :
                                         "yellow is the thresholding of flat-field \n"
                                         "blue is the projection of 3D model \n"
                                         "green is where they overlap".format( angle ) )
-
+        pdb.set_trace()
     def cropping ( self , img , label_img , crop = None ) :
 
         if self.crop is not None :
             top , bot , left , right = self.crop
             img_y , img_x = img.shape
             label_img_y , label_img_x = label_img.shape
-            if img_x > label_img_x :
-                img = self.img[top :bot-1, left :right]
+            if img_x > label_img_x or img_y > label_img_y :
+                img = self.img[top :bot, left :right]
             else:
                 label_img= label_img[top :bot, left :right]
 
@@ -707,27 +718,30 @@ class AbsorptionCoefficient( object ) :
 
     def padding ( self , img , label_img,pad = None) :
         # if two images have different sizes, pad the smaller one
-        if pad is None :
-            pad = img[0][0]
+        # if pad is None :
+        #     pad_y = img[0][0]
+        #     pad_x = img[0][1]
+        # else:   
+        #     pad_y , pad_x = pad
         img_y , img_x = img.shape
         label_img_y , label_img_x = label_img.shape
         
         if img_x > label_img_x :
             pad_width = img_x - label_img_x
-            padding = np.ones( (label_img_y , pad_width) ) *pad
+            padding = np.zeros( (label_img_y , pad_width) ) 
             label_img = np.concatenate( (label_img , padding) , axis = 1 )
         else :
             pad_width = label_img_x - img_x
-            padding =  np.ones( (img_y , pad_width) ) *pad
+            padding =  np.ones( (img_y , pad_width) ) 
             img = np.concatenate( (img , padding) , axis = 1 )
 
         if img_y > label_img_y :
             pad_height = img_y - label_img_y
-            padding =  np.ones( (pad_height , img_x) ) *pad
+            padding =  np.zeros( (pad_height , img_x) ) 
             label_img = np.concatenate( (label_img , padding) , axis = 0 )
         else :
             pad_height = label_img_y - img_y
-            padding =  np.ones( (pad_height , label_img_x) ) *pad
+            padding =  np.zeros( (pad_height , label_img_x) ) 
             img = np.concatenate( (img , padding) , axis = 0 )
 
         return img , label_img
@@ -1047,7 +1061,7 @@ class RunAbsorptionCoefficient( AbsorptionCoefficient ) :
                    coe_cr = 0 , coe_bu = 0 , base = 'li' ,
                    angle = 0 , save_dir = './' , pixel_size = 0.3 ,
                    kernel_square = (15 , 15) , full = False , offset = 0 , v_flip = False , h_flip = False ,
-                   ModelRotate = -90 , crop = None , thresholding = 'triangle' , flat_fielded = None) :
+                   ModelRotate = -90 , crop = None , padding=None,thresholding = 'triangle' , flat_fielded = None) :
         super( ).__init__( tomo_img_path , ModelFilename , angle = angle , logger = logger , coe_li = coe_li , coe_lo = coe_lo ,
                            coe_cr = coe_cr , coe_bu = coe_bu , base = base ,
                            auto_viewing = auto_viewing , auto_orientation = auto_orientation ,
@@ -1055,7 +1069,7 @@ class RunAbsorptionCoefficient( AbsorptionCoefficient ) :
                            kernel_square = kernel_square , full = full ,
                            offset = offset , v_flip = v_flip , h_flip = h_flip ,
                            ModelRotate = ModelRotate , crop = crop , thresholding = thresholding ,
-                           flat_fielded = flat_fielded )
+                           flat_fielded = flat_fielded , padding=padding)
 
     def run ( self , singlecls = False ) :
         # new = self.img_list.mean( axis = 1 )
