@@ -90,16 +90,6 @@ def bottom_increment_ratio(theta, phi):
 
     return increment_ratios
 
-# @jit(nopython=True)
-# def difference_length(start,end,voxel_size):
-#         z1,y1,x1=start
-#         z2,y2,x2=end
-#         z_voxel_size, y_voxel_size, x_voxel_size = voxel_size
-#         length = np.sqrt( ((x2-x1+0.5)*x_voxel_size ) ** 2 +
-#                           ((z2-z1+0.5)*z_voxel_size) ** 2 + 
-#                           ((y2-y1+0.5)*y_voxel_size) ** 2)
-
-#         return length
 
 def difference_length(start,end,voxel_size):
         z1,y1,x1=start
@@ -111,7 +101,7 @@ def difference_length(start,end,voxel_size):
 
         return length
 
-# @jit(nopython=True)
+
 def cal_path2_bisection(path_2,voxel_size):
 
     # pdb.set_trace()
@@ -152,9 +142,6 @@ def cal_path2_bisection(path_2,voxel_size):
     return li_l_2, lo_l_2, cr_l_2,bu_l_2
 
 
-
-
-# @jit(nopython=True)
 def bisection(counter, CrystalLongest, CrystalShortest, resolution, label_list, increment_ratios, coord, boundary, cls):
 
     crystalDifference = CrystalLongest - CrystalShortest

@@ -382,8 +382,8 @@ def worker_function(t1, low, up, dataset, selected_data, label_list,
             xray = np.dot(total_rotation_matrix, xray)
             rotated_s1 = np.dot(total_rotation_matrix, scattering_vector)
 
-            theta, phi = dials_2_thetaphi_11(rotated_s1)
-            theta_1, phi_1 = dials_2_thetaphi_11(xray, L1=True)
+            theta, phi = dials_2_thetaphi(rotated_s1)
+            theta_1, phi_1 = dials_2_thetaphi(xray, L1=True)
 
             # if by_c :
             if args.bisection:
@@ -401,33 +401,20 @@ def worker_function(t1, low, up, dataset, selected_data, label_list,
             
             else:
                 
-                # result = dials_lib.ray_tracing_sampling(
-                #     coord_list, len(coord_list),
-                #     rotated_s1, xray, voxel_size,
-                #     coefficients, label_list_c, shape,
-                #     full_iteration, store_paths)
-                # result = dials_lib.ray_tracing(crystal_coordinate, crystal_coordinate_shape,
-                #                     coordinate_list,len(coordinate_list) ,
-                #                     rotated_s1, xray, voxel_size,
-                #                 coefficients, label_list_c, shape,
-                #                 args.full_iteration, args.store_paths)
-                # else :
-                    ray_direction = dials_2_numpy_11( rotated_s1 )
-                    xray_direction = dials_2_numpy_11( xray )
-                    # absorp = np.empty(len(coordinate_list))
-                    # for k , index in enumerate( coordinate_list ) :
-                    #     coord = crystal_coordinate[index]
+                    ray_direction = dials_2_numpy( rotated_s1 )
+                    xray_direction = dials_2_numpy( xray )
+
                     absorp = np.empty( len( coord_list ) )
                     for k , coord in enumerate( coord_list ) :
                         # face_1 = which_face_2(coord, shape, theta_1, phi_1)
                         # face_2 = which_face_2(coord, shape, theta, phi)
                         face_1 = cube_face( coord , xray_direction , shape , L1 = True )
                         face_2 = cube_face( coord , ray_direction , shape )
-                        path_1 = cal_coord_2( theta_1 , phi_1 , coord , face_1 , shape , label_list )  # 37
-                        path_2 = cal_coord_2( theta , phi , coord , face_2 , shape , label_list )  # 16
+                        path_1 = cal_coord( theta_1 , phi_1 , coord , face_1 , shape , label_list )  # 37
+                        path_2 = cal_coord( theta , phi , coord , face_2 , shape , label_list )  # 16
 
-                        numbers_1 = cal_num( path_1 , voxel_size )  # 3.5s
-                        numbers_2 = cal_num( path_2 , voxel_size )  # 3.5s
+                        numbers_1 = cal_path_plus( path_1 , voxel_size )  # 3.5s
+                        numbers_2 = cal_path_plus( path_2 , voxel_size )  # 3.5s
                         if store_paths == 1 :
                             if k == 0 :
                                 path_length_arr_single = np.expand_dims( np.array( (numbers_1 + numbers_2) ) , axis = 0 )
@@ -535,7 +522,7 @@ def main():
     #                             rate_list=rate_list, auto=args.auto_sampling,method='random')
     # coord_list_slice = slice_sampling(label_list, dim=args.slicing, sampling_size=args.sampling_num,
     #                             rate_list=rate_list, auto=args.auto_sampling,method='slice')
-    coord_list = slice_sampling(label_list, dim=args.slicing, sampling_size=args.sampling_num,
+    coord_list = generate_sampling(label_list, dim=args.slicing, sampling_size=args.sampling_num,
                                 rate_list=rate_list, auto=args.auto_sampling,method=args.sampling_method)
 
     print(" {} voxels are calculated".format(len(coord_list)))
