@@ -27,7 +27,7 @@ A_{hkl}= \frac{1}{N}   \sum\limits_{n=1}^{N}A_{hkl}^{(n)}  \tag{3}
 \end{align}
 $$
 
-where $V$ is the volume of the diffracting crystal, $N$ is the number of crystal voxels, $M$ represents the number of different materials, $L_1$ and $L_2$ are the incident and diffracting X-ray resepectively, and $\mu$ is the absorption coefficient of the materials. They show that an absorption factor for a reflection is the average of the absorption factors of all the crystal volumes. Each absorption factor is calculated by the Beer-Lambda law in Equation (2).  In this project, the sample is tomographically reconstructed, so an absorption factor for a reflection is determined by the average of the absorption factors of crystal voxels shown in Equation (3).
+where $V$ is the volume of the diffracting crystal, $N$ is the number of crystal voxels, $M$ represents the number of different materials, $L_1$ and $L_2$ are the incident and diffracting X-ray respectively, and $\mu$ is the absorption coefficient of the materials. They show that an absorption factor for a reflection is the average of the absorption factors of all the crystal volumes. Each absorption factor is calculated by the Beer-Lambda law in Equation (2).  In this project, the sample is tomographically reconstructed, so an absorption factor for a reflection is determined by the average of the absorption factors of crystal voxels shown in Equation (3).
 
 Conventions in AnACor
 ![coordinates](https://github.com/yishunlu-222/AnACor_public/blob/main/img/documentation%20of%20codes-7.png)
