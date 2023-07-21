@@ -17,19 +17,27 @@ On Linux, after downloading the software package from https://github.com/yishunl
 #### Methodology 
 
 In crystallography, scaling needs to be done to make sure the true intensities of the reflections can be obtained. Absorption correction, a part of scaling, is significant when the absorption is high.
-The absorption correction method in popular Crystallography Scaling Software, such as DIALS (Beilsten-Edmands  et al., 2020), is spherical harmonics correction. This method relies on the high multiplicity of the dataset to construct an absorption surface that can estimate the relative absorption of each reflection. However, this can be less effective when the absorption is much higher, or the multiplicity of the dataset is lower.  The analytical absorption correction can address this circumstance and improve performance after combining with spherical harmonics correction, as shown in our paper (Lu  et al., 2020). The equations of analytical absorption correction are below:
+The absorption correction method in popular Crystallography Scaling Software, such as DIALS (Beilsten-Edmands  et al., 2020), is spherical harmonics correction. This method relies on the high multiplicity of the dataset to construct an absorption surface that can estimate the relative absorption of each reflection. However, this can be less effective when the absorption is much higher, or the multiplicity of the dataset is lower.  The analytical absorption correction can address this circumstance and improve performance after combining with spherical harmonics correction, as shown in our paper (Lu  et al., 2023). The equation of analytical absorption correction for a reflection $n$ is below:
+
 
 $$
 \begin{align}
-A_{hkl} = \frac{1}{V} \int_{V} e^{-\mu (L_1+L_2)} \, dV  \tag{1} \\
-A_{hkl}^{(n)} =   \text{exp} \left[ -\sum\limits_{m=1}^{M} \mu_m L_{m}^{(n)} \right]  \tag{2} \\
-A_{hkl}= \frac{1}{N}   \sum\limits_{n=1}^{N}A_{hkl}^{(n)}  \tag{3}
+A_{h}^{(n)} = \frac{1}{V} \int_{V} e^{-\mu (L_1+L_2)} \, dV  \tag{1} \\
 \end{align}
 $$
 
-where $V$ is the volume of the diffracting crystal, $N$ is the number of crystal voxels, $M$ represents the number of different materials, $L_1$ and $L_2$ are the incident and diffracting X-ray respectively, and $\mu$ is the absorption coefficient of the materials. They show that an absorption factor for a reflection is the average of the absorption factors of all the crystal volumes. Each absorption factor is calculated by the Beer-Lambda law in Equation (2).  In this project, the sample is tomographically reconstructed, so an absorption factor for a reflection is determined by the average of the absorption factors of crystal voxels shown in Equation (3).
+where $V$ is the volume of the diffracting crystal, $L_1$ and $L_2$ are the incident and diffracting X-ray respectively, and  $\mu$ is the absorption coefficient of the material that the X-ray passes through. However, there are more materials in the real experiment, so for each crystal element $dV$, the absorption factor can be written as Eq. 2, where $L_m$ is the sum of the $L_1$ and $L_2$ for material $m$. To move from the continuous integral in Eq. 1 to a discrete equation that numerically solved on a computer, we treat the volume element $dV$ as a single crystal voxel $\Delta V$ from the tomographic reconstruction of our sample. Hence, the integral can be rewritten discretely as Eq. 3.
 
-Conventions in AnACor
+$$
+\begin{align}
+A_{h}^{(v)} =   \text{exp} \left[ -\sum\limits_{m=1}^{M} \mu_m L_{m}^{(v)} \right]  \tag{2} \\
+A_{h}=\frac{1}{V}   \sum\limits_{n=1}^{N}A_{h}^{(n)} *\Delta V = \frac{1}{N}   \sum\limits_{n=1}^{N}A_{h}^{(n)}   \tag{3}
+\end{align}
+$$
+
+where $N$ is the number of the crystal voxels in the 3D model that are bathed in the X-ray beam. When $N$ tends to be infinity and $\Delta V$ is approaching to be $0$, Eq. 3 can recover Eq. 1. Therefore, an absorption factor for reflection $h$ is determined by the average of the $N$ absorption factors, which are calculated from their corresponding crystal voxel $n$ by Beer-Lambda Law in Eq. 2.
+
+#### Conventions in AnACor
 ![coordinates](https://github.com/yishunlu-222/AnACor_public/blob/main/img/documentation%20of%20codes-7.png)
 
 - The 3D model in this software is a stack of segmented slices from tomographic reconstruction so that it can be seen as a 3D cuboid. The six faces of the 3D cuboid are labelled and will be used during the calculation. 
@@ -63,7 +71,7 @@ Path length calculation
 		return Path_len
 
 ```
-- Once it knows which face the Ray (vector) exits or incident by `cube_face`, it knows the direction to carry on. https://github.com/yishunlu-222/AnACor_public/blob/main/AnACor/utils/utils_rt.py#L1154
+- Once it knows which face the Ray (vector) exits or incident by `cube_face`, it knows the direction to carry on.  https://github.com/yishunlu-222/AnACor_public/blob/0ae41e62e7c1f89412b6bc1a6f6836747ae20114/AnACor/utils/utils_rt.py#L1154
 - Then, it can step along the direction and store the coordinates where it passes by, and it stops until it goes to the edge of the cube (`cal_coord` ) or encounters air/vacuum.  For example, the exiting face is the *Front face* with the crystal voxel of `(z,y,x)`, and the next step will have a coordinate of  `(z+dz,y+dz,x+dz)`. For every step, the x will have one increment (`dx=1`), so y, z will have increments `dy= tan(θ)/cos(φ)` and `dz = tan(φ)` according to the coordinate system in this software. https://github.com/yishunlu-222/AnACor_public/blob/3b670a742b23e096703acd23d952a3465cdb2518/AnACor/utils/utils_rt.py#L283
 - After this, it gets a list of coordinates, which allows it to  compute the path lengths $L_m$ of different materials.  https://github.com/yishunlu-222/AnACor_public/blob/3b670a742b23e096703acd23d952a3465cdb2518/AnACor/utils/utils_rt.py#L959
 - Finally, calculate the absorption factor of this crystal voxel according to Equation (2) (`cal_rate`). https://github.com/yishunlu-222/AnACor_public/blob/3b670a742b23e096703acd23d952a3465cdb2518/AnACor/utils/utils_rt.py#L1095
