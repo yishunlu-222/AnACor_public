@@ -131,6 +131,28 @@ def generate_sampling(label_list, rate_list, dim='z', sampling_size=5000, auto=T
     return coord_list
 
 
+def partial_illumination_selection(xray_region, total_rotation_matrix, coord, point_on_axis,rotated=False):
+        
+    y_min_xray, y_max_xray, z_min_xray, z_max_xray = xray_region
+    if rotated is False:
+
+        # point_on_axis[2] = coord[2]
+        # Define the rotation matrix for rotation around Z-axis
+        # Translate the voxel to the origin, rotate it, then translate it back
+        translated_coord = np.array(coord) - point_on_axis
+        rotated_translated_coord = np.dot(total_rotation_matrix, translated_coord)
+        # rotated_coord = np.around(rotated_translated_coord + point_on_axis)
+        rotated_coord = rotated_translated_coord + point_on_axis
+        # Check if the rotated voxel coordinates are within the x-ray boundaries
+        
+    else:
+        rotated_coord=coord
+    # print('rotated_coord is {}'.format(rotated_coord))
+    if y_min_xray <= rotated_coord[1] <= y_max_xray and z_min_xray <= rotated_coord[0] <= z_max_xray:
+
+        return True
+    else:
+        return False
 
 def dials_2_thetaphi(rotated_s1,L1=False):
     if L1 is True:

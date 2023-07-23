@@ -139,13 +139,13 @@ class Image2Model(object):
         correct_pixel="no"
         while correct_pixel != 'y' and correct_pixel != 'yes':
             input_air = input( "Please type down the rgb colours of the background class and press Enter \n"
-                  "e.g. background=[ 0, 0, 0] or [0] (with closed square brackets)\n")
+                  "e.g. background=[ 0, 0, 0] or [0] if there is none enter [255] (with closed square brackets) \n")
             input_cr = input( "Please type down the rgb colours of the crystal class and press Enter \n"
-                  "e.g. crystal=[ 0, 0, 255] or [1] (with closed square brackets)\n")
+                  "e.g. crystal=[ 0, 0, 255] or [1] if there is none enter [255] (with closed square brackets) \n")
             input_li = input( "Please type down the rgb colours of the liquor class and press Enter \n"
-                  "e.g. liquor=[ 0, 255, ] or [3] (with closed square brackets)\n")
+                  "e.g. liquor=[ 0, 255, ] or [3] if there is none enter [255] (with closed square brackets) \n")
             input_lo = input( "Please type down the rgb colours of the loop class and press Enter \n"
-                  "e.g. loop=[ 255, 0, 255] or [2] (with closed square brackets) \n")
+                  "e.g. loop=[ 255, 0, 255] or [2] if there is none enter [255] (with closed square brackets) \n")
             input_bu = input( "Please type down the rgb colours of the bubble class and press Enter \n"
                   "e.g. bubble=[ 255, 255, 255] or [4] if there is none enter [255] (with closed square brackets) \n")
             try:

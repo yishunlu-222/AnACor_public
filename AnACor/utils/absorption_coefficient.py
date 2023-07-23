@@ -603,6 +603,12 @@ class AbsorptionCoefficient( object ) :
                 angle_start + view_peak_2 ) )
             self.angle = (angle_start + view_peak_2)
 
+    def rotate_3D(self,img_list,angle_inv):
+        for i , slice in enumerate( img_list ) :
+                result = self.rotate_image( slice , angle_inv )
+                img_list[i] = result
+        return img_list
+         
     def differet_orientation ( self , angle , flat_fielded = None ) :
 
         angle_inv = -(angle + self.offset)
@@ -614,9 +620,7 @@ class AbsorptionCoefficient( object ) :
         # self.img_list = np.rot90(self.img_list,k=counter,axes=(1,2))  # rotate clockwisely along 0 axis, if axes(2,1), anti-clockwise
 
         if angle_inv != 0 :
-            for i , slice in enumerate( self.img_list ) :
-                result = self.rotate_image( slice , angle_inv )
-                self.img_list[i] = result
+            self.img_list = self.rotate_3D(self.img_list,angle_inv)
         if flat_fielded is not None and flat_fielded.isspace( ) is not True \
                 and flat_fielded != '' :
             file = os.path.join( self.tomo_img_path , flat_fielded )
@@ -635,14 +639,14 @@ class AbsorptionCoefficient( object ) :
                     filename = f
                     break
             file = os.path.join( self.tomo_img_path , filename )
-
+   
         self.logger.info(
             "the examined flat-fielded corrected image is {}".format( os.path.basename( file ) ) )
         print(
             "the examined flat-fielded corrected image is {}".format( os.path.basename( file ) ) )
         new1 = self.img_list.mean( axis = 1 )
         self.img = cv2.imread( file , 2 )
-
+        
         if self.v_flip :
             # 1 : flip over horizontal ; 0 : flip over vertical
             self.img = cv2.flip( self.img , 0 )
@@ -654,7 +658,7 @@ class AbsorptionCoefficient( object ) :
                 self.img , new1 = self.cropping( self.img , new1 , crop = self.crop )
             else:
                 self.img , new1 = self.padding( self.img , new1 , pad = self.pad )
-
+        
         """ special case for partial illumination """
         new1 = self.img_list.mean( axis = 1 )
         self.img = cv2.imread( file , 2 )
@@ -684,7 +688,7 @@ class AbsorptionCoefficient( object ) :
                                         "yellow is the thresholding of flat-field \n"
                                         "blue is the projection of 3D model \n"
                                         "green is where they overlap".format( angle ) )
-        pdb.set_trace()
+        
     def cropping ( self , img , label_img , crop = None ) :
 
         if self.crop is not None :
