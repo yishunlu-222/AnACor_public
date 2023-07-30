@@ -3,6 +3,10 @@
         "functional": "c",
         "cmath": "cpp",
         "matrices.h": "c",
-        "random": "cpp"
+        "random": "cpp",
+        "ray_tracing.h": "c",
+        "math.h": "c",
+        "*.tcc": "cpp",
+        "cstdlib": "cpp"
     }
 }
