@@ -2160,7 +2160,7 @@ int ray_tracing_gpu_overall_kernel(int32_t low, int32_t up,
                                    int32_t len_result,
                                    double *voxel_size, double *coefficients,
                                    int8_t *label_list_1d, int64_t *shape, int32_t full_iteration,
-                                   int32_t store_paths, double *h_result_list,int *h_face,double * h_angles,double *h_python_result_list,double factor);
+                                   int32_t store_paths, double *h_result_list,int *h_face,double * h_angles,double *h_python_result_list);
 
 #ifdef __cplusplus
 extern "C"
@@ -2753,12 +2753,14 @@ double ray_tracing_sampling_old(
         printf("low is %d \n", low);
         printf("up is %d \n", up);
         double factor=1;
-        double *h_result_list = (double *)malloc(len_result * len_coord_list * 2 * sizeof(double) * factor);
-        double *h_python_result_list = (double *)malloc(len_result * sizeof(double)*factor);
+        len_result = (int)(len_result*factor);
+        printf("len_result is %d \n", len_result);
+        double *h_result_list = (double *)malloc(len_result * len_coord_list * 2 * sizeof(double) );
+        double *h_python_result_list = (double *)malloc(len_result * sizeof(double));
         int *h_face = (int *)malloc(len_coord_list * 2 * sizeof(int));
         double *h_angles=   (double *)malloc(4 * sizeof(double));
   
-        ray_tracing_gpu_overall_kernel(low, up, coord_list, len_coord_list, scattering_vector_list, omega_list, raw_xray, omega_axis, kp_rotation_matrix, len_result, voxel_size, coefficients, label_list_1d, shape, full_iteration, store_paths, h_result_list, h_face, h_angles,h_python_result_list,factor);
+        ray_tracing_gpu_overall_kernel(low, up, coord_list, len_coord_list, scattering_vector_list, omega_list, raw_xray, omega_axis, kp_rotation_matrix, len_result, voxel_size, coefficients, label_list_1d, shape, full_iteration, store_paths, h_result_list, h_face, h_angles,h_python_result_list);
         // printf("h_angles is [%f, %f, %f, %f]\n", h_angles[0], h_angles[1], h_angles[2], h_angles[3]);
         // for (int i = 0; i < len_result; i++)
         // {
