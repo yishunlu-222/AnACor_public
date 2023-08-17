@@ -280,10 +280,10 @@ def worker_function(t1,low, up,dataset,selected_data ,label_list,
             label_list_ptr = ct.cast( labelPtrCube( *(matrix_tuple) ) , labelPtrPtrPtr )
             return label_list_ptr
 
-        dials_lib = ct.CDLL( os.path.join( os.path.dirname( os.path.abspath( __file__ )), './ray_tracing.so' ))
+        dials_lib = ct.CDLL( os.path.join( os.path.dirname( os.path.abspath( __file__ )), './ray_tracing_f.so' ))
         # dials_lib = ct.CDLL( './ray_tracing.so' )s
         # gcc -shared -o ray_tracing.so ray_tracing.c -fPIC
-        time.sleep(30)
+
 
         dials_lib.ray_tracing_sampling.restype = ct.c_double
         dials_lib.ray_tracing_sampling.argtypes = [  # crystal_coordinate_shape
@@ -316,20 +316,20 @@ def worker_function(t1,low, up,dataset,selected_data ,label_list,
             ct.c_int ,  # full_iteration
             ct.c_int  # store_paths
         ]
-        dials_lib.ray_tracing_gpu_overall.restype = ct.POINTER(ct.c_double)
+        dials_lib.ray_tracing_gpu_overall.restype = ct.POINTER(ct.c_float)
         dials_lib.ray_tracing_gpu_overall.argtypes = [  # crystal_coordinate_shape
             ct.c_int,  # low
             ct.c_int,  # up
             np.ctypeslib.ndpointer(dtype=np.int64),  # coordinate_list
             ct.c_int,  # coordinate_list_length
-            np.ctypeslib.ndpointer(dtype=np.float64),  # scattering_vector_list
-            np.ctypeslib.ndpointer(dtype=np.float64),  # omega_list
-            np.ctypeslib.ndpointer(dtype=np.float64),  # xray
-            np.ctypeslib.ndpointer(dtype=np.float64),  # omega_axis
-            np.ctypeslib.ndpointer(dtype=np.float64),  # kp rotation matrix: F
+            np.ctypeslib.ndpointer(dtype=np.float32),  # scattering_vector_list
+            np.ctypeslib.ndpointer(dtype=np.float32),  # omega_list
+            np.ctypeslib.ndpointer(dtype=np.float32),  # xray
+            np.ctypeslib.ndpointer(dtype=np.float32),  # omega_axis
+            np.ctypeslib.ndpointer(dtype=np.float32),  # kp rotation matrix: F
             ct.c_int,  # len_result
-            np.ctypeslib.ndpointer(dtype=np.float64),  # voxel_size
-            np.ctypeslib.ndpointer(dtype=np.float64),  # coefficients
+            np.ctypeslib.ndpointer(dtype=np.float32),  # voxel_size
+            np.ctypeslib.ndpointer(dtype=np.float32),  # coefficients
             ct.POINTER( ct.POINTER( ct.POINTER( ct.c_int8 ) ) ) ,  # label_list
             ct.POINTER( ct.c_int8 ) ,  # label_list flattened
             np.ctypeslib.ndpointer(dtype=np.int64),  # shape
@@ -358,16 +358,14 @@ def worker_function(t1,low, up,dataset,selected_data ,label_list,
     # print('low is {} in processor {} the type is {}'.format( low,os.getpid(),type(low) ))
     # print('up is {} in processor {} the type is {}'.format( low+len(selected_data),os.getpid(),type(low+len(selected_data)) ))
     print('GPU is launched')
-    # pdb.set_trace()
     if args.gpu:
-        t1 = time.time()
         result_list = dials_lib.ray_tracing_gpu_overall(low, low+len(selected_data),
                                                     coord_list, len(
                                                         coord_list),
-                                                    arr_scattering, arr_omega, xray, omega_axis,
-                                                    F, len(selected_data),
-                                                    voxel_size,
-                                                    coefficients, label_list_c,label_list.ctypes.data_as(ct.POINTER(ct.c_int8)), shape,
+                                                    arr_scattering.astype(np.float32), arr_omega.astype(np.float32), xray.astype(np.float32), omega_axis.astype(np.float32),
+                                                    F.astype(np.float32), len(selected_data),
+                                                    voxel_size.astype(np.float32),
+                                                    coefficients.astype(np.float32), label_list_c,label_list.ctypes.data_as(ct.POINTER(ct.c_int8)), shape,
                                                     full_iteration, store_paths)
         for i in range(len(selected_data)):
             corr.append(result_list[i])
@@ -616,7 +614,7 @@ def main():
         axes_data = json.load(f2)
     with open(refl_filename) as f1:
         data = json.load(f1)
-
+    print('The total size of the dataset is {}'.format(len(data)))
 
     voxel_size=np.array([args.pixel_size_z* 1e-3 ,
                          args.pixel_size_y* 1e-3 ,
@@ -628,7 +626,7 @@ def main():
         select_data = data[low:]
     else:
         select_data = data[low:up]
-    print('The total size of the dataset is {}'.format(len(select_data)))
+
     del data
     coefficients = np.array([mu_li, mu_lo, mu_cr, mu_bu])
 
@@ -690,7 +688,7 @@ def main():
         for process in processes:
             process.join()
     else:
-        worker_function(t1,0, up,dataset,select_data ,label_list,
+        worker_function(t1,0, '-1',dataset,select_data ,label_list,
                     voxel_size,coefficients,F,coord_list,
                     omega_axis,axes_data,save_dir,args.by_c,
                     offset,full_iteration,store_paths,printing)
