@@ -26,15 +26,6 @@ ray_tracing_d.o: ray_tracing.c
 	$(GCC) -c ray_tracing.c $(GCC_OPTS_D) -o ray_tracing_d.o
 
 
-sharedlibrary_f: ray_tracing_f.o ray_tracing_gpu_f.o Makefile
-	$(NVCC) $(NVCCFLAGS) $(INC) $(LIB) -shared -o ray_tracing_f.so ray_tracing_f.o ray_tracing_gpu_f.o
-
-ray_tracing_gpu_f.o: ray_tracing_gpu_f.cu
-	$(NVCC) -c ray_tracing_gpu_f.cu $(NVCCFLAGS)
-
-ray_tracing_f.o: ray_tracing_f.c
-	$(GCC) -c ray_tracing_f.c $(GCC_OPTS)
-
 
 sharedlibrary: ray_tracing.o ray_tracing_gpu.o Makefile
 	$(NVCC) $(NVCCFLAGS) $(INC) $(LIB) -shared -o ray_tracing.so ray_tracing.o ray_tracing_gpu.o
