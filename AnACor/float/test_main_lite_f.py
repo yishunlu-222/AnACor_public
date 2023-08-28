@@ -195,6 +195,14 @@ def set_parser():
         type = str2bool,
         default = True ,
         help = "number of workers" ,
+    
+    )
+    parser.add_argument(
+        "--sharelib-name" ,
+        type = str,
+        default = './ray_tracing_f.so' ,
+        help = "number of workers" ,
+    
     )
     global args
     args = parser.parse_args()
@@ -280,7 +288,7 @@ def worker_function(t1,low, up,dataset,selected_data ,label_list,
             label_list_ptr = ct.cast( labelPtrCube( *(matrix_tuple) ) , labelPtrPtrPtr )
             return label_list_ptr
 
-        dials_lib = ct.CDLL( os.path.join( os.path.dirname( os.path.abspath( __file__ )), './ray_tracing_f.so' ))
+        dials_lib = ct.CDLL( os.path.join( os.path.dirname( os.path.abspath( __file__ )), args.sharelib_name ))
         # dials_lib = ct.CDLL( './ray_tracing.so' )s
         # gcc -shared -o ray_tracing.so ray_tracing.c -fPIC
       
@@ -321,13 +329,13 @@ def worker_function(t1,low, up,dataset,selected_data ,label_list,
             ct.c_int,  # low
             ct.c_int,  # up
             np.ctypeslib.ndpointer(dtype=np.int32),  # coordinate_list
-            ct.c_int,  # coordinate_list_length
+            ct.c_int64,  # coordinate_list_length
             np.ctypeslib.ndpointer(dtype=np.float32),  # scattering_vector_list
             np.ctypeslib.ndpointer(dtype=np.float32),  # omega_list
             np.ctypeslib.ndpointer(dtype=np.float32),  # xray
             np.ctypeslib.ndpointer(dtype=np.float32),  # omega_axis
             np.ctypeslib.ndpointer(dtype=np.float32),  # kp rotation matrix: F
-            ct.c_int,  # len_result
+            ct.c_int64,  # len_result
             np.ctypeslib.ndpointer(dtype=np.float32),  # voxel_size
             np.ctypeslib.ndpointer(dtype=np.float32),  # coefficients
             ct.POINTER( ct.POINTER( ct.POINTER( ct.c_int8 ) ) ) ,  # label_list
@@ -361,10 +369,10 @@ def worker_function(t1,low, up,dataset,selected_data ,label_list,
     if args.gpu:
         t1 = time.time()
         result_list = dials_lib.ray_tracing_gpu_overall(low, low+len(selected_data),
-                                                    coord_list.astype(np.int32), len(
-                                                        coord_list),
+                                                    coord_list.astype(np.int32), np.int64(len(
+                                                        coord_list)),
                                                     arr_scattering.astype(np.float32), arr_omega.astype(np.float32), xray.astype(np.float32), omega_axis.astype(np.float32),
-                                                    F.astype(np.float32), np.int32(len(selected_data)),
+                                                    F.astype(np.float32), np.int64(len(selected_data)),
                                                     voxel_size.astype(np.float32),
                                                     coefficients.astype(np.float32), label_list_c,label_list.ctypes.data_as(ct.POINTER(ct.c_int8)), shape.astype(np.int32),
                                                     full_iteration, store_paths)

@@ -23,16 +23,18 @@ void print_cuda_error(cudaError_t code)
 }
 
 
-__global__ void rt_gpu_python_results(int len_coord_list, float * d_result_list, float * d_python_result_list){
+__global__ void rt_gpu_python_results(int len_coord_list, float * d_result_list, float * d_python_result_list,int h_len_result){
 	size_t id =blockDim.x * blockIdx.x + threadIdx.x;
+	if (id < h_len_result)
+	{
 	float gpu_absorption = 0;
 	for (int j = 0; j < len_coord_list; j++)
 	{
-		gpu_absorption += exp(-(d_result_list[id*len_coord_list*2+2 * j + 0] + d_result_list[id*len_coord_list*2+2 * j + 1]));
-
+		gpu_absorption += exp(-(d_result_list[id * len_coord_list * 2 + 2 * j + 0] + d_result_list[id * len_coord_list * 2 + 2 * j + 1]));
 	}
 	float gpu_absorption_mean = gpu_absorption / ((float)len_coord_list);
 	d_python_result_list[id] = gpu_absorption_mean;
+	}
 
 }
 
@@ -868,11 +870,11 @@ void kp_rotation(const float *axis, float theta, float *result);
 
 int ray_tracing_gpu_overall_kernel(int low, int up,
 								   int *coord_list,
-								   int len_coord_list,
+								   int64_t len_coord_list,
 								   const float *scattering_vector_list, const float *omega_list,
 								   const float *raw_xray,
 								   const float *omega_axis, const float *kp_rotation_matrix,
-								   int len_result,
+								   int64_t len_result,
 								   float *voxel_size, float *coefficients,
 								   int8_t *label_list_1d, int *shape, int full_iteration,
 								   int store_paths, float *h_result_list,int *h_face,float *h_angles,float *h_python_result_list)
@@ -1370,7 +1372,7 @@ int ray_tracing_gpu_overall_kernel(int low, int up,
 		int nBlocks = (len_result + nThreads - 1) / nThreads;
 		dim3 gridSize_face(nBlocks, 1, 1);
 		dim3 blockSize_face(nThreads, 1, 1);
-		rt_gpu_python_results<<<gridSize_face,blockSize_face>>>(len_coord_list,  d_result_list, d_python_result_list);
+		rt_gpu_python_results<<<gridSize_face,blockSize_face>>>(len_coord_list,  d_result_list, d_python_result_list, len_result);
 
 		cudaError = cudaMemcpy(h_python_result_list,d_python_result_list,  python_result_size, cudaMemcpyDeviceToHost);
 		if (cudaError != cudaSuccess)

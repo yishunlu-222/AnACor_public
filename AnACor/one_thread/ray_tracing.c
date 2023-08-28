@@ -2153,11 +2153,11 @@ float cal_rate_single(float *numbers, float *coefficients,
 
 int ray_tracing_gpu_overall_kernel(int32_t low, int32_t up,
                                    int *coord_list,
-                                   int32_t len_coord_list,
+                                   int len_coord_list,
                                    const float *scattering_vector_list, const float *omega_list,
                                    const float *raw_xray,
                                    const float *omega_axis, const float *kp_rotation_matrix,
-                                   int32_t len_result,
+                                   int len_result,
                                    float *voxel_size, float *coefficients,
                                    int8_t *label_list_1d, int *shape, int32_t full_iteration,
                                    int32_t store_paths, float *h_result_list, int *h_face, float *h_angles, float *h_python_result_list);
@@ -2766,73 +2766,7 @@ extern "C"
         float *h_angles = (float *)malloc(4 * sizeof(float));
 
         ray_tracing_gpu_overall_kernel(low, up, coord_list, len_coord_list, scattering_vector_list, omega_list, raw_xray, omega_axis, kp_rotation_matrix, len_result, voxel_size, coefficients, label_list_1d, shape, full_iteration, store_paths, h_result_list, h_face, h_angles, h_python_result_list);
-        // printf("h_angles is [%f, %f, %f, %f]\n", h_angles[0], h_angles[1], h_angles[2], h_angles[3]);
-        // for (int i = 0; i < len_result; i++)
-        // {
-        //     if (i==100){
-        //         break;
-        //     }
-        //     // float gpu_absorption = 0;
-        //     // for (int j = 0; j < len_coord_list; j++)
-        //     // {
-        //     //     gpu_absorption += exp(-(h_result_list[2*i * len_coord_list + 2 * j + 0] + h_result_list[2*i * len_coord_list + 2 * j + 1]));
-
-        //     // }
-
-        //     // float gpu_absorption_mean = gpu_absorption / ((float)len_coord_list);
-        //     float gpu_absorption_mean = h_python_result_list[i];
-        //     printf("\n");
-        //     printf("GPU mean absorption in cpu code: %f;\n", gpu_absorption_mean);
-
-        //     // continue;
-        //     float result;
-        //     float rotation_matrix_frame_omega[9];
-        //     float rotation_matrix[9];
-        //     float total_rotation_matrix[9];
-        //     float xray[3];
-        //     float rotated_s1[3];
-        //     // printf("kap roation  \n");
-        //     kp_rotation(omega_axis, omega_list[i], (float *)rotation_matrix_frame_omega);
-        //     // printf("rotation_matrix_frame_omega is \n");
-        //     // print_matrix((float*)rotation_matrix_frame_omega,3,3);
-        //     dot_product((float *)rotation_matrix_frame_omega, kp_rotation_matrix, (float *)rotation_matrix, 3, 3, 3);
-
-        //     transpose((float *)rotation_matrix, 3, 3, (float *)total_rotation_matrix);
-        //     // printf("total_rotation_matrix is \n");
-        //     // print_matrix((float*)total_rotation_matrix,3,3);
-
-        //     // printf("xray is \n");
-        //     // print_matrix(raw_xray,1,3);
-        //     dot_product((float *)total_rotation_matrix, raw_xray, (float *)xray, 3, 3, 1);
-        //     // printf("xray is \n");
-        //     // print_matrix(xray,1,3);
-        //     float scattering_vector[3] = {scattering_vector_list[i * 3],
-        //                                    scattering_vector_list[i * 3 + 1],
-        //                                    scattering_vector_list[i * 3 + 2]};
-        //     dot_product((float *)total_rotation_matrix, (float *)scattering_vector, (float *)rotated_s1, 3, 3, 1);
-
-        //     result = ray_tracing_sampling_od(
-        //         coord_list, len_coord_list,
-        //         (float *)rotated_s1, (float *)xray,
-        //         voxel_size, coefficients,
-        //         label_list_1d,  shape, full_iteration,
-        //         store_paths);
-        //     // result = ray_tracing_sampling(
-        //     //     coord_list, len_coord_list,
-        //     //     (float *)rotated_s1, (float *)xray,
-        //     //     voxel_size, coefficients,label_list,
-        //     //     label_list_1d,  shape, full_iteration,
-        //     //     store_paths);
-        //     printf("result is %f \n",result);
-
-        //     printf("[%d/%d] rotation: %.4f, absorption: %.4f\n",
-        //            low + i, up, omega_list[i] * 180 / M_PI, result);
-        //     printf("gpu_absorption_mean is %f\n", gpu_absorption_mean);
-        //     printf("difference is %f\n", (gpu_absorption_mean - result) / result * 100);
-        // }
-
-        // printf("len_result_float is %d \n", len_result_float);
-        // printf("result_list is %p \n", result_list);
+        
         free(h_result_list);
         return h_python_result_list;
     }

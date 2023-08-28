@@ -2153,11 +2153,11 @@ float cal_rate_single(float *numbers, float *coefficients,
 
 int ray_tracing_gpu_overall_kernel(int32_t low, int32_t up,
                                    int *coord_list,
-                                   int32_t len_coord_list,
+                                   int64_t len_coord_list,
                                    const float *scattering_vector_list, const float *omega_list,
                                    const float *raw_xray,
                                    const float *omega_axis, const float *kp_rotation_matrix,
-                                   int32_t len_result,
+                                   int64_t len_result,
                                    float *voxel_size, float *coefficients,
                                    int8_t *label_list_1d, int *shape, int32_t full_iteration,
                                    int32_t store_paths, float *h_result_list, int *h_face, float *h_angles, float *h_python_result_list);
