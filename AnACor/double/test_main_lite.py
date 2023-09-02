@@ -320,7 +320,7 @@ def worker_function(t1,low, up,dataset,selected_data ,label_list,
     dials_lib.ray_tracing_gpu_overall.argtypes = [  # crystal_coordinate_shape
             ct.c_int,  # low
             ct.c_int,  # up
-            np.ctypeslib.ndpointer(dtype=np.int64),  # coordinate_list
+            np.ctypeslib.ndpointer(dtype=np.int32),  # coordinate_list
             ct.c_int64,  # coordinate_list_length
             np.ctypeslib.ndpointer(dtype=np.float32),  # scattering_vector_list
             np.ctypeslib.ndpointer(dtype=np.float32),  # omega_list
