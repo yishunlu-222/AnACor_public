@@ -34,16 +34,16 @@ def generate_sampling(label_list, cr=3, dim='z', sampling_size=5000, auto=True,m
     crystal_coordinate = np.stack((zz,yy,xx),axis=1)
     # Find the indices of the non-zero elements directly
     if sampling_ratio is not None:
-        sampling=int(len(crystal_coordinate)*sampling_ratio/100) # sampling ratio in %
-        sampling_size=1/sampling_ratio*100
+        sampling_size=int(len(crystal_coordinate)*sampling_ratio/100) # sampling ratio in %
+
+
+    if auto:
+        # When sampling ~= N/2000, the results become stable
+        sampling = len(crystal_coordinate) // 2000
+        
     else:
-        if auto:
-            # When sampling ~= N/2000, the results become stable
-            sampling = len(crystal_coordinate) // 2000
-            
-        else:
-            sampling = len(crystal_coordinate) // sampling_size
-   
+        sampling = len(crystal_coordinate) // sampling_size
+        
     print(" The sampling number is {}".format(sampling))
     if method =='even':
         coord_list_even=[]
@@ -125,22 +125,6 @@ def generate_sampling(label_list, cr=3, dim='z', sampling_size=5000, auto=True,m
             coord_list_random.append(crystal_coordinate[i])
         print(" {} voxels in random sampling are calculated".format(len(samples)))
         coord_list= np.array(coord_list_random)
-    elif method =='evenrandom':
-        # Random sampling
-        coord_list_even = []
-        interval_length =int(sampling_size)
-        random_indices = [np.random.randint(i, i + interval_length) for i in range(0, len(crystal_coordinate), interval_length)]
-
-        # Ensure the number of indices doesn't exceed the sampling value
-        random_indices = random_indices[:sampling]
-
-        print(" {} voxels in evenrandom sampling with randomness are calculated".format(len(random_indices)))
-
-        for i in random_indices:
-            coord_list_even.append(crystal_coordinate[i])
-
-        coord_list = np.array(coord_list_even)
-        
     else:
         raise RuntimeError("The sampling method is not defined")
     
@@ -1039,6 +1023,7 @@ def cal_path_plus(path_2,voxel_size):
         # total_length = ( path_ray[-1][1] - path_ray[0][1] )/ (np.sin(np.abs(omega)))
     if len(path_2[0])==1:
         total_length=np.min(np.array(path_2[0]))
+        # tot
                              
     else:
 
@@ -1425,7 +1410,8 @@ def cal_path2(path_2,coord,label_list,rate_list,omega):
     #             pass
     #
     # posi=[]
-    #    # # the hypothesis is that all components only appear once, not repeated
+    #
+    # # the hypothesis is that all components only appear once, not repeated
     #
     # classes=[]
     # for k,element in enumerate(path_ray):

@@ -269,6 +269,7 @@ def main ( ) :
         # f.write("module load python/3.9 \n")
         f.write( "num={}\n".format( args.num_cores ) )
         f.write( "sampling={}\n".format( args.sampling ) )
+        f.writ( "sampling_method={}\n".format( args.sampling_method ) )
         f.write( "auto_sampling={}\n".format( args.auto_sampling) )
         f.write( "dataset={}\n".format( args.dataset ) )
         f.write( "offset={}\n".format( args.offset ) )
@@ -281,6 +282,9 @@ def main ( ) :
         f.write( "model_storepath={}\n".format( model_storepath ) )
         f.write( "full_iter={} \n".format( args.full_iter ) )
         f.write( "by_c={} \n".format( args.by_c ) )
+        f.write("single_c={} \n".format( args.single_c ))
+
+
         try :
             f.write( "refl_pth={}\n".format( refl_path ) )
             f.write( "expt_pth={}\n".format( expt_path ) )
@@ -293,7 +297,8 @@ def main ( ) :
                  '--loac ${loac} --liac ${liac} --crac ${crac}  --buac ${buac} --offset ${offset}'
                  ' --store-dir ${store_dir} --refl-path ${refl_pth} --expt-path ${expt_pth}  '
                  '--model-storepath ${model_storepath} --full-iteration ${full_iter} --num-workers ${num}  '
-                 '--sampling-num ${sampling} --auto-sampling ${auto_sampling} --by-c ${by_c}'
+                 '--sampling-num ${sampling} --auto-sampling ${auto_sampling} --by-c ${by_c} --single-c ${single_c} '
+                 ' --sampling-method ${sampling_method} '
                  ' > ${logging_dir}/nohup_${dataset}_${counter}.out\n' )
         
         # f.write( 'increment=$[$end / $num]\n' )

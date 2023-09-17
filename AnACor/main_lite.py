@@ -105,31 +105,31 @@ def set_parser():
         "--expt-path",
         type=str,
         required=True,
-        help="full experiment path",
+        help="full experiment path um-1",
     )
     parser.add_argument(
         "--liac",
         type=float,
         required=True,
-        help="abs of liquor",
+        help="abs of liquor um-1",
     )
     parser.add_argument(
         "--loac",
         type=float,
         required=True,
-        help="abs of loop",
+        help="abs of loop um-1",
     )
     parser.add_argument(
         "--crac",
         type=float,
         required=True,
-        help="abs of crystal",
+        help="abs of crystal um-1",
     )
     parser.add_argument(
         "--buac",
         type=float,
         required=True,
-        help="abs of other component",
+        help="abs of other component um-1",
     )
     parser.add_argument(
         "--sampling-num",
@@ -159,19 +159,19 @@ def set_parser():
         "--pixel-size-x",
         type=float,
         default=0.3,
-        help="overall pixel size of tomography in x dimension in  mm",
+        help="overall pixel size of tomography in x dimension in  um",
     )
     parser.add_argument(
         "--pixel-size-y",
         type=float,
         default=0.3,
-        help="overall pixel size of tomography in y dimension in  mm",
+        help="overall pixel size of tomography in y dimension in  um",
     )
     parser.add_argument(
         "--pixel-size-z",
         type=float,
         default=0.3,
-        help="overall pixel size of tomography in z dimension in  mm",
+        help="overall pixel size of tomography in z dimension in  um",
     )
     parser.add_argument(
         "--by-c",
@@ -212,7 +212,13 @@ def set_parser():
     parser.add_argument(
         "--sampling-method" ,
         type = str,
-        default = False ,
+        default = 'even' ,
+        help = "whether to apply sampling evenly" ,
+    )
+    parser.add_argument(
+        "--sampling-ratio" ,
+        type = float,
+        default =None ,
         help = "whether to apply sampling evenly" ,
     )
     global args
@@ -393,14 +399,19 @@ def worker_function(t1, low, up, dataset, selected_data, label_list,
                             coefficients, label_list_c, shape,
                             args.full_iteration, args.store_paths)
             elif args.single_c:
-                                result = dials_lib.ray_tracing_sampling(
+                    if i == 0:
+                        print('C is used for ray tracing')
+
+                    result = dials_lib.ray_tracing_sampling(
                     coord_list, len(coord_list),
                     rotated_s1, xray, voxel_size,
                     coefficients, label_list_c, shape,
                     full_iteration, store_paths)
             
             else:
-                
+
+                    if i == 0:
+                        print('Python is used for ray tracing')
                     ray_direction = dials_2_numpy( rotated_s1 )
                     xray_direction = dials_2_numpy( xray )
 
@@ -522,9 +533,12 @@ def main():
     #                             rate_list=rate_list, auto=args.auto_sampling,method='random')
     # coord_list_slice = slice_sampling(label_list, dim=args.slicing, sampling_size=args.sampling_num,
     #                             rate_list=rate_list, auto=args.auto_sampling,method='slice')
-    coord_list = generate_sampling(label_list, dim=args.slicing, sampling_size=args.sampling_num,
-                                rate_list=rate_list, auto=args.auto_sampling,method=args.sampling_method)
-
+    coord_list = generate_sampling(label_list, dim=args.slicing, sampling_size=args.sampling_num,cr=3, auto=args.auto_sampling,method=args.sampling_method,sampling_ratio=args.sampling_ratio)
+    # coord_list_e = generate_sampling(label_list, dim=args.slicing, sampling_size=args.sampling_num,cr=3, auto=args.auto_sampling,method='even',sampling_ratio=args.sampling_ratio)
+    # coord_list_r = generate_sampling(label_list, dim=args.slicing, sampling_size=args.sampling_num,cr=3, auto=args.auto_sampling,method='random',sampling_ratio=args.sampling_ratio)
+    # coord_list_s = generate_sampling(label_list, dim=args.slicing, sampling_size=args.sampling_num,cr=3, auto=args.auto_sampling,method='slice',sampling_ratio=args.sampling_ratio)
+    # coord_list_er = generate_sampling(label_list, dim=args.slicing, sampling_size=args.sampling_num,cr=3, auto=args.auto_sampling,method='evenrandom',sampling_ratio=args.sampling_ratio)
+    # pdb.set_trace()
     print(" {} voxels are calculated".format(len(coord_list)))
   
     """tomography setup """

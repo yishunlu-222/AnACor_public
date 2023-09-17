@@ -105,31 +105,31 @@ def set_parser():
         "--expt-path",
         type=str,
         required=True,
-        help="full experiment path um-1",
+        help="full experiment path",
     )
     parser.add_argument(
         "--liac",
         type=float,
         required=True,
-        help="abs of liquor um-1",
+        help="abs of liquor",
     )
     parser.add_argument(
         "--loac",
         type=float,
         required=True,
-        help="abs of loop um-1",
+        help="abs of loop",
     )
     parser.add_argument(
         "--crac",
         type=float,
         required=True,
-        help="abs of crystal um-1",
+        help="abs of crystal",
     )
     parser.add_argument(
         "--buac",
         type=float,
         required=True,
-        help="abs of other component um-1",
+        help="abs of other component",
     )
     parser.add_argument(
         "--sampling-num",
@@ -159,19 +159,19 @@ def set_parser():
         "--pixel-size-x",
         type=float,
         default=0.3,
-        help="overall pixel size of tomography in x dimension in  um",
+        help="overall pixel size of tomography in x dimension in  mm",
     )
     parser.add_argument(
         "--pixel-size-y",
         type=float,
         default=0.3,
-        help="overall pixel size of tomography in y dimension in  um",
+        help="overall pixel size of tomography in y dimension in  mm",
     )
     parser.add_argument(
         "--pixel-size-z",
         type=float,
         default=0.3,
-        help="overall pixel size of tomography in z dimension in  um",
+        help="overall pixel size of tomography in z dimension in  mm",
     )
     parser.add_argument(
         "--by-c",
@@ -212,7 +212,7 @@ def set_parser():
     parser.add_argument(
         "--sampling-method" ,
         type = str,
-        default = 'even' ,
+        default ='even',
         help = "whether to apply sampling evenly" ,
     )
     global args
@@ -361,29 +361,29 @@ def worker_function(t1, low, up, dataset, selected_data, label_list,
         t2 = time.time()
         dials_lib.free(result_list)
     else:
-        for i, row in enumerate(selected_data):
+        for i, rotated_s1 in enumerate(selected_data):
 
-            intensity = float(row['intensity.sum.value'])
-            # all are in x, y , z in the origin dials file
-            scattering_vector = literal_eval(row['s1'])
-            miller_index = row['miller_index']
+            # intensity = float(row['intensity.sum.value'])
+            # # all are in x, y , z in the origin dials file
+            # scattering_vector = literal_eval(row['s1'])
+            # miller_index = row['miller_index']
 
-            rotation_frame_angle = literal_eval(row['xyzobs.mm.value'])[2]
-            rotation_frame_angle += offset / 180 * np.pi
-            rotation_matrix_frame_omega = kp_rotation(
-                omega_axis, rotation_frame_angle)
+            # rotation_frame_angle = literal_eval(row['xyzobs.mm.value'])[2]
+            # rotation_frame_angle += offset / 180 * np.pi
+            # rotation_matrix_frame_omega = kp_rotation(
+            #     omega_axis, rotation_frame_angle)
 
-            kp_rotation_matrix = np.dot(rotation_matrix_frame_omega, F)
-            total_rotation_matrix = np.transpose(kp_rotation_matrix)
-            # total_rotation_matrix is orthogonal matrix so transpose is faster than inverse
-            # total_rotation_matrix =np.linalg.inv(kp_rotation_matrix)  
-            xray = -np.array(axes_data[1]["direction"])
+            # kp_rotation_matrix = np.dot(rotation_matrix_frame_omega, F)
+            # total_rotation_matrix = np.transpose(kp_rotation_matrix)
+            # # total_rotation_matrix is orthogonal matrix so transpose is faster than inverse
+            # # total_rotation_matrix =np.linalg.inv(kp_rotation_matrix)  
+            # xray = -np.array(axes_data[1]["direction"])
 
-            xray = np.dot(total_rotation_matrix, xray)
-            rotated_s1 = np.dot(total_rotation_matrix, scattering_vector)
-
+            # xray = np.dot(total_rotation_matrix, xray)
+            # rotated_s1 = np.dot(total_rotation_matrix, scattering_vector)
+            xray=-rotated_s1
             theta, phi = dials_2_thetaphi(rotated_s1)
-            theta_1, phi_1 = dials_2_thetaphi(xray, L1=True)
+            theta_1, phi_1 = dials_2_thetaphi(-xray)
 
             # if by_c :
             if args.bisection:
@@ -395,7 +395,6 @@ def worker_function(t1, low, up, dataset, selected_data, label_list,
             elif args.single_c:
                     if i == 0:
                         print('C is used for ray tracing')
-
                     result = dials_lib.ray_tracing_sampling(
                     coord_list, len(coord_list),
                     rotated_s1, xray, voxel_size,
@@ -403,12 +402,11 @@ def worker_function(t1, low, up, dataset, selected_data, label_list,
                     full_iteration, store_paths)
             
             else:
-
-                    if i == 0:
-                        print('Python is used for ray tracing')
+                
                     ray_direction = dials_2_numpy( rotated_s1 )
                     xray_direction = dials_2_numpy( xray )
-
+                    if i == 0:
+                        print('Python is used for ray tracing')
                     absorp = np.empty( len( coord_list ) )
                     for k , coord in enumerate( coord_list ) :
                         # face_1 = which_face_2(coord, shape, theta_1, phi_1)
@@ -441,7 +439,7 @@ def worker_function(t1, low, up, dataset, selected_data, label_list,
                                                                                                               selected_data),
                                                                                                           theta * 180 / np.pi,
                                                                                                           phi * 180 / np.pi,
-                                                                                                          rotation_frame_angle * 180 / np.pi,
+                                                                                                          theta * 180 / np.pi,
                                                                                                           result))
             # pdb.set_trace()
 
@@ -449,13 +447,13 @@ def worker_function(t1, low, up, dataset, selected_data, label_list,
                                                    t1))
 
             corr.append(result)
-            # print( 'it spends {}'.format( t2 - t1 ) )
-            dict_corr.append({'index': low + i, 'miller_index': miller_index,
-                              'intensity': intensity, 'corr': result,
-                              'theta': theta * 180 / np.pi,
-                              'phi': phi * 180 / np.pi,
-                              'theta_1': theta_1 * 180 / np.pi,
-                              'phi_1': phi_1 * 180 / np.pi, })
+            # # print( 'it spends {}'.format( t2 - t1 ) )
+            # dict_corr.append({'index': low + i, 'miller_index': miller_index,
+            #                   'intensity': intensity, 'corr': result,
+            #                   'theta': theta * 180 / np.pi,
+            #                   'phi': phi * 180 / np.pi,
+            #                   'theta_1': theta_1 * 180 / np.pi,
+            #                   'phi_1': phi_1 * 180 / np.pi, })
             if i % 1000 == 1:
                 
 
@@ -527,7 +525,8 @@ def main():
     #                             rate_list=rate_list, auto=args.auto_sampling,method='random')
     # coord_list_slice = slice_sampling(label_list, dim=args.slicing, sampling_size=args.sampling_num,
     #                             rate_list=rate_list, auto=args.auto_sampling,method='slice')
-    coord_list = generate_sampling(label_list, dim=args.slicing, sampling_size=args.sampling_num,cr=3, auto=args.auto_sampling,method=args.sampling_method)
+    coord_list = generate_sampling(label_list, dim=args.slicing, sampling_size=args.sampling_num,
+                                rate_list=rate_list, auto=args.auto_sampling,method=args.sampling_method)
 
     print(" {} voxels are calculated".format(len(coord_list)))
   
@@ -562,6 +561,13 @@ def main():
         select_data = data[low:up]
 
     del data
+    theta_list =np.linspace(0, 360, 100, endpoint=True)
+    phi_list = np.linspace(0, 180, 50, endpoint=True)
+    select_data = []
+    for theta in theta_list:
+        for phi in phi_list:
+            select_data.append(thetaphi_2_dials(theta, phi))
+    select_data=np.array(select_data)
     coefficients = np.array([mu_li, mu_lo, mu_cr, mu_bu])
 
     num_workers = args.num_workers
