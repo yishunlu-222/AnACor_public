@@ -35,10 +35,10 @@ def sphere_tables ( table ,second=True ) :
     return np.array( correct )
 
 
-def extract_error ( data ) :
+def extract_error ( data,index=1 ) :
     errors = []
     for i in data :
-        errors.append( i[1] )
+        errors.append( i[index] )
 
     return np.array( errors )
 
@@ -59,19 +59,19 @@ sphere_tables_2 = [13.998 , 13.819 , 13.320 , 12.593 , 11.746 , 10.873 , 10.034 
 pth='D:/lys/studystudy/phd/0-Project_absorption_correction/Code_0_for_absorption_correction/ac/analytical_absorption_corrrection_verification/sphere'
 save_name='sphere'
 filenamep1='sphere_sample_1_mur_0.1_0.3.json'
-# filenamep1='sphere_sample_1_mur_0.1_0.03_0.1.json'
 filenamep5='sphere_sample_1_mur_0.5_0.3.json'
-# filenamep5='sphere_sample_1_mur_0.5_0.03_0.1.json'
 filename1='sphere_sample_1_mur_1_0.3_0.01.json'
-#filename1='sphere_sample_1_mur_1_0.3_0.025.json'
-filenamep1='sphere_sample_1_mur_0.1_0.1_0.01.json'
-# filenamep5='sphere_sample_1_mur_0.5_0.1_0.1.json'
+filenamep1_s='sphere_sample_1_mur_0.1_0.1_0.01.json'
+filenamep5_s='sphere_sample_100_mur_0.5_0.1_0.02.json'
+filename1_s='sphere_sample_100_mur_1.0_0.1_0.02.json'
 
-filenamep1_s='sphere_sample_2000_mur_0.1_0.3_0.01.json'
-filenamep5_s='sphere_sample_2000_mur_0.5_0.3_0.01.json'
-filename1_s='sphere_sample_2000_mur_1_0.3_0.01.json'
+
+# filenamep1='sphere_sample_2000_mur_0.1_0.3_0.01.json'
+# filenamep5='sphere_sample_2000_mur_0.5_0.3_0.01.json'
+# filename1='sphere_sample_2000_mur_1_0.3_0.01.json'
 # filenamep1_s='sphere_sample_2000_mur_0.1_0.1_0.01.json'
-filenamep5_s='sphere_sample_2000_mur_0.5_0.1_0.05.json'
+# filenamep5_s='sphere_sample_200000_mur_0.5_0.1_0.02.json'
+# filename1_s='sphere_sample_2000_mur_1.0_0.1_0.02.json'
 correct_p1=sphere_tables( sphere_tables_p1 )
 correct_p2=sphere_tables( sphere_tables_p2 )
 correct_p5=sphere_tables( sphere_tables_p5 )
@@ -97,8 +97,8 @@ errorsp1 = extract_error( datap1 )
 errorsp5 = extract_error( datap5 )
 errors1 = extract_error( data1 )
 errorsp1_s = extract_error( datap1_s )
-errorsp5_s = extract_error( datap5_s )
-errors1_s = extract_error( data1_s )
+errorsp5_s = extract_error( datap5_s,index=2 )
+errors1_s = extract_error( data1_s,index=2 )
 
 result_p1 = np.abs( correct_p1 - errorsp1 ) / (errorsp1) * 100 
 result_p5 = np.abs( correct_p5 - errorsp5 ) / (errorsp5) * 100
@@ -141,10 +141,10 @@ plt.xlabel( 'Diffraction angles' , fontsize = 80 )
 plt.ylabel( 'Absolute percentage errors %  ' , fontsize = 80 )
 # plt.legend(fontsize = 48,loc='upper right')
 # plt.ylim([0, 0.5])
-# plt.title( 'Absolute percentage errors' , fontsize = 48 )
+plt.title( 'Spherical shape' , fontsize = 80 )
 plt.tight_layout( )
-plt.savefig( '{}percentage errors1000.png'.format( save_name ) , dpi = 600 )
-plt.show( )
+plt.savefig( '{}percentage errors_nonsamnew.png'.format( save_name ) , dpi = 600 )
+# plt.show( )
 
 # with open( os.path.join(pth, filenamep5 )) as f3 :
 #     datap5 = json.load( f3 )

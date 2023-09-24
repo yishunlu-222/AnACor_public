@@ -69,20 +69,22 @@ filenamep5='cylinder_sample_1_mur_0.5_0.3.json'
 filename1='cylinder_sample_1_mur_1_0.3.json'
 filename2='cylinder_sample_1_mur_2_0.3.json'
 
-filenamep1='cylinder_sample_1_mur_0.1_0.1_l_1_mu_0.1.json'
-filenamep5='cylinder_sample_1_mur_0.5_0.1_l_1_mu_0.1.json'
-filename1='cylinder_sample_1_mur_1_0.1_l_1_mu_0.1.json'
+# filenamep1='cylinder_sample_1_mur_0.1_0.1_l_1_mu_0.1.json'
+# filenamep5='cylinder_sample_1_mur_0.5_0.1_l_1_mu_0.1.json'
+# filename1='cylinder_sample_1_mur_1_0.1_l_1_mu_0.1.json'
+filenamep1_s='cylinder_sample_1_mur_0.1_0.1_l_1_mu_0.01.json'
+filenamep5_s='cylinder_sample_1_mur_0.5_0.1_l_1_mu_0.01.json'
+filename1_s='cylinder_sample_10_mur_1_0.1_l_1_mu_0.01.json'
 
-
-filenamep1_s='cylinder_sample_2000_mur_0.1_0.3_l_50.json'
+filenamep1='cylinder_sample_2000_mur_0.1_0.3_l_50.json'
 filenamep2_s='cylinder_sample_2000_mur_0.2_0.3.json'
 filenamep3_s='cylinder_sample_2000_mur_0.3_0.3.json'
-filenamep5_s='cylinder_sample_2000_mur_0.5_0.3_l_50.json'
-filename1_s='cylinder_sample_2000_mur_1_0.3_l_50.json'
+filenamep5='cylinder_sample_2000_mur_0.5_0.3_l_50.json'
+filename1='cylinder_sample_2000_mur_1_0.3_l_50.json'
 filename2_s='cylinder_sample_2000_mur_2_0.3.json'
 filenamep1_s='cylinder_sample_2000_mur_0.1_0.1_l_50_mu_0.01.json'
-filenamep5_s='cylinder_sample_2000_mur_0.5_0.1_l_50_mu_0.1.json'
-filename1_S='cylinder_sample_2000_mur_1_0.1_l_50_mu_0.1.json'
+filenamep5_s='cylinder_sample_2000_mur_0.5_0.1_l_50_mu_0.01.json'
+filename1_s='cylinder_sample_2000_mur_1_0.1_l_50_mu_0.01.json'
 
 with open( os.path.join(pth,filenamep1) ) as f1 :
     datap1 = json.load( f1 )
@@ -151,10 +153,10 @@ plt.xlabel( 'Diffraction angles' , fontsize = 80 )
 plt.ylabel( 'Absolute percentage errors %  ' , fontsize = 80 )
 # plt.legend(fontsize = 48,loc='upper right')
 # plt.ylim([0, 0.5])
-# plt.title( 'Absolute percentage errors' , fontsize = 48 )
+plt.title( 'Cylindrical shape' , fontsize = 80 )
 plt.tight_layout( )
-plt.savefig( '{}percentage errors1000.png'.format( save_name ) , dpi = 600 )
-plt.show( )
+plt.savefig( '{}percentage errors_sam.png'.format( save_name ) , dpi = 600 )
+# plt.show( )
 
 
 

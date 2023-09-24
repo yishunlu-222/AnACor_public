@@ -57,9 +57,21 @@ filename3 = 'rect_sample_w_3_h_3_0.03.json'
 filename1='rect_sample_w_100_h_50_0.3.json'
 filename2='rect_sample_w_100_h_100_0.3.json'
 filename3='rect_sample_w_100_h_150_0.3.json'
-filename4='rect_sample_2000_w_100_h_50_l_100_0.3.json'
-filename5='rect_sample_2000_w_100_h_100_l_111_0.3.json'
-filename6='rect_sample_2000_w_100_h_150_l_100_0.3.json'
+
+# 
+filename4='rect_sample_1_w_100_h_50_l_1_0.1_mu_0.01.json'
+filename5='rect_sample_1_w_100_h_100_l_1_0.1_mu_0.01.json'
+filename6='rect_sample_1_w_100_h_150_l_1_0.1_mu_0.01.json'
+
+filename1='rect_sample_2000_w_100_h_50_l_100_0.3.json'
+filename2='rect_sample_2000_w_100_h_100_l_111_0.3.json'
+filename3='rect_sample_2000_w_100_h_150_l_100_0.3.json'
+
+filename4='rect_sample_2_w_10_h_5_l_11_0.1_mu_0.01.json'
+filename5='rect_sample_2_w_10_h_10_l_11_0.1_mu_0.01.json'
+filename6='rect_sample_2_w_10_h_15_l_11_0.1_mu_0.01.json'
+
+
 with open( os.path.join(pth,filename1) ) as f1 :
     data1 = json.load( f1 )
 with open(  os.path.join(pth,filename2) ) as f2 :
@@ -123,7 +135,7 @@ plt.xlabel( 'Diffraction angles' , fontsize = 80 )
 plt.ylabel( 'Absolute percentage errors %  ' , fontsize = 80 )
 # plt.legend(fontsize = 48,loc='upper right')
 # plt.ylim([0, 0.5])
-# plt.title( 'Absolute percentage errors' , fontsize = 48 )
+plt.title( 'Rectangular shape' , fontsize = 80 )
 plt.tight_layout( )
-plt.savefig( '{}percentage errors1000.png'.format( save_name ) , dpi = 600 )
-plt.show( )
+plt.savefig( '{}percentage errors1000_sam.png'.format( save_name ) , dpi = 600 )
+# plt.show( )

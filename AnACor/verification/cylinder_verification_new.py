@@ -15,10 +15,14 @@ parser.add_argument(
     type=float,
     default=1,
     help="coordinate setting",
-        "--sam",
+
+)
+parser.add_argument(
+    "--sam",
     type=int,
     default=0,
     help="coordinate setting",
+
 )
 
 cylinder_tables_p1=1/np.array([1.1843,	1.1843,	1.1842,	1.1840,	1.1838,	1.1835,	1.1832,	1.1828,	1.1823,	1.1818,	1.1813,	1.1808,	1.1802,	1.1798	,1.1793	,1.1790	,1.1787,	1.1785,	1.1785])
@@ -181,27 +185,28 @@ if __name__ == '__main__':
     sampling=1
     t1=time.time()
     mu=0.01 #um-1
-    mu=0.1
+    mu=0.01
     if args.sam==1:
       length=50
       sampling=2000
     else:
       length=1
       sampling=1
-    for mur in [0.1,0.5,1]:
+    for mur in [1]:
      # no unit 
         radius= mur/mu # mm
         voxel_size=[0.3,0.3,0.3] # um
         voxel_size=[0.03,0.03,0.03]
-#        if mur>0.3:
-#          sampling=2000
+        voxel_size=[0.1,0.1,0.1] 
 
         errors=[]
         for angle in angle_list:
+            if angle < 60:
+                continue
             er=sphere_ana_ac_test(mu,angle, radius,length,sampling)
             errors.append([ angle,er])
 
-            with open("cylinder_sample_{}_mur_{}_{}_l_{}_mu_{}.json".format(sampling,mur,voxel_size[0],length,mu), "w") as f1:  # Pickling
+            with open("cylinder_sample_{}_mur_{}_{}_l_{}_mu_{}_cached.json".format(sampling,mur,voxel_size[0],length,mu), "w") as f1:  # Pickling
                 json.dump(errors, f1, indent=2)
         t2=time.time()
         print('the time spent is {}'.format(t2 -t1))

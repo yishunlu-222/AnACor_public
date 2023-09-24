@@ -270,7 +270,7 @@ def kp_rotation(axis, theta):
     return matrix
 
 
-def worker_function(t1, low, up, dataset, selected_data, label_list,
+def worker_function(t1, low,  dataset, selected_data, label_list,
                     voxel_size, coefficients, F, coord_list,
                     omega_axis, axes_data, save_dir, by_c,
                     offset, full_iteration, store_paths, printing):
@@ -284,7 +284,7 @@ def worker_function(t1, low, up, dataset, selected_data, label_list,
         os.path.abspath(__file__)), './ray_tracing.so'))
     # dials_lib = ct.CDLL( './ray_tracing.so' )s
     # gcc -shared -o ray_tracing.so ray_tracing.c -fPIC
-
+    up=low+len(selected_data)
     dials_lib.ray_tracing_overall.restype = ct.POINTER(ct.c_double)
     dials_lib.ray_tracing_overall.argtypes = [  # crystal_coordinate_shape
         ct.c_int,  # low
@@ -607,7 +607,7 @@ def main():
             # Create a new process and pass it the data copy and result queue
             if i != num_workers-1:
                 process = mp.Process(target=worker_function,
-                                     args=(t1, i*each_core, (i+1)*each_core, dataset,
+                                     args=(t1, low+i*each_core, dataset,
                                            select_data[i*each_core:(i+1)
                                                        * each_core], data_copies[i],
                                            voxel_size, coefficients, F, coord_list,
@@ -616,7 +616,7 @@ def main():
                 # worker_function()
             else:
                 process = mp.Process(target=worker_function,
-                                     args=(t1, i*each_core, '-1', dataset,
+                                     args=(t1, low + i*each_core, dataset,
                                            select_data[i *
                                                        each_core:], data_copies[i],
                                            voxel_size, coefficients, F, coord_list,
@@ -633,7 +633,7 @@ def main():
         for process in processes:
             process.join()
     else:
-        worker_function(t1, 0, '-1', dataset, select_data, label_list,
+        worker_function(t1, 0,  dataset, select_data, label_list,
                              voxel_size, coefficients, F, coord_list,
                              omega_axis, axes_data, save_dir, args.by_c,
                              offset, full_iteration, store_paths, printing)
