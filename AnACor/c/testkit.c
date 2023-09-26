@@ -3,6 +3,10 @@
 #include <math.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int64_t count_len(int64_t *arr)
 {
     int64_t count = 0;
@@ -54,3 +58,6 @@ void printArrayD(double arr[], int64_t n)
     }
     printf("\n");
 }
+#ifdef __cplusplus
+}
+#endif

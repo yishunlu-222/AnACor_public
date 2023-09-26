@@ -149,12 +149,7 @@ def set_parser():
         default=0,
         help="whether to do full iteration(break when encounter an air point)",
     )
-    parser.add_argument(
-        "--pixel-size",
-        type=float,
-        default=0.3,
-        help="overall pixel size of tomography",
-    )
+
     parser.add_argument(
         "--pixel-size-x",
         type=float,
@@ -174,7 +169,13 @@ def set_parser():
         help="overall pixel size of tomography in z dimension in  um",
     )
     parser.add_argument(
-        "--by-c",
+        "--openmp",
+        type=str2bool,
+        default=False,
+        help="calculate by c instead of python",
+    )
+    parser.add_argument(
+        "--gpu",
         type=str2bool,
         default=False,
         help="calculate by c instead of python",
@@ -272,7 +273,7 @@ def kp_rotation(axis, theta):
 
 def worker_function(t1, low,  dataset, selected_data, label_list,
                     voxel_size, coefficients, F, coord_list,
-                    omega_axis, axes_data, save_dir, by_c,
+                    omega_axis, axes_data, save_dir, args,
                     offset, full_iteration, store_paths, printing):
     corr = []
     dict_corr = []
@@ -281,7 +282,7 @@ def worker_function(t1, low,  dataset, selected_data, label_list,
     xray = -np.array(axes_data[1]["direction"])
     shape = np.array(label_list.shape)
     dials_lib = ct.CDLL(os.path.join(os.path.dirname(
-        os.path.abspath(__file__)), './ray_tracing.so'))
+        os.path.abspath(__file__)), './c/ray_tracing.so'))
     # dials_lib = ct.CDLL( './ray_tracing.so' )s
     # gcc -shared -o ray_tracing.so ray_tracing.c -fPIC
     up=low+len(selected_data)
@@ -302,11 +303,12 @@ def worker_function(t1, low,  dataset, selected_data, label_list,
         ct.POINTER(ct.POINTER(ct.POINTER(ct.c_int8))),  # label_list
         np.ctypeslib.ndpointer(dtype=np.int64),  # shape
         ct.c_int,  # full_iteration
-        ct.c_int  # store_paths
+        ct.c_int,  # store_paths
+        ct.c_int  # num_workers
     ]
 
-    dials_lib.ray_tracing_sampling.restype = ct.c_double
-    dials_lib.ray_tracing_sampling.argtypes = [  # crystal_coordinate_shape
+    dials_lib.ray_tracing_single.restype = ct.c_double
+    dials_lib.ray_tracing_single.argtypes = [  # crystal_coordinate_shape
         np.ctypeslib.ndpointer(dtype=np.int64),  # coordinate_list
         ct.c_int,  # coordinate_list_length
         np.ctypeslib.ndpointer(dtype=np.float64),  # rotated_s1
@@ -331,12 +333,30 @@ def worker_function(t1, low,  dataset, selected_data, label_list,
         ct.c_int,                      # full_iteration
         ct.c_int                       # store_paths
     ]
-
+    dials_lib.ray_tracing_gpu_overall.restype = ct.POINTER(ct.c_float)
+    dials_lib.ray_tracing_gpu_overall.argtypes = [  # crystal_coordinate_shape
+            ct.c_int,  # low
+            ct.c_int,  # up
+            np.ctypeslib.ndpointer(dtype=np.int64),  # coordinate_list
+            ct.c_int64,  # coordinate_list_length
+            np.ctypeslib.ndpointer(dtype=np.float32),  # scattering_vector_list
+            np.ctypeslib.ndpointer(dtype=np.float32),  # omega_list
+            np.ctypeslib.ndpointer(dtype=np.float32),  # xray
+            np.ctypeslib.ndpointer(dtype=np.float32),  # omega_axis
+            np.ctypeslib.ndpointer(dtype=np.float32),  # kp rotation matrix: F
+            ct.c_int64,  # len_result
+            np.ctypeslib.ndpointer(dtype=np.float32),  # voxel_size
+            np.ctypeslib.ndpointer(dtype=np.float32),  # coefficients
+            ct.POINTER( ct.POINTER( ct.POINTER( ct.c_int8 ) ) ) ,  # label_list
+            ct.POINTER( ct.c_int8 ) ,  # label_list flattened
+            np.ctypeslib.ndpointer(dtype=np.int32),  # shape
+            ct.c_int,  # full_iteration
+            ct.c_int  # store_paths
+        ]
     label_list_c = python_2_c_3d(label_list)
-    if by_c:
 
 
-        # crystal_coordinate_shape = np.array(crystal_coordinate.shape)
+    if args.gpu or args.openmp:
         for i, row in enumerate(selected_data):
 
             intensity = float(row['intensity.sum.value'])
@@ -351,21 +371,40 @@ def worker_function(t1, low,  dataset, selected_data, label_list,
 
         arr_scattering = np.array(arr_scattering)
         arr_omega = np.array(arr_omega)
-        # print('low is {} in processor {} the type is {}'.format( low,os.getpid(),type(low) ))
-        # print('up is {} in processor {} the type is {}'.format( low+len(selected_data),os.getpid(),type(low+len(selected_data)) ))
 
-        result_list = dials_lib.ray_tracing_overall(low, low+len(selected_data),
-                                                    coord_list, len(
-                                                        coord_list),
-                                                    arr_scattering, arr_omega, xray, omega_axis,
-                                                    F, len(selected_data),
-                                                    voxel_size,
-                                                    coefficients, label_list_c, shape,
-                                                    full_iteration, store_paths)
+        if args.gpu:
+            t1 = time.time()
+            print("\033[92m GPU  is used for ray tracing \033[0m")
+            result_list = dials_lib.ray_tracing_gpu_overall(low, low+len(selected_data),
+                                                        coord_list.astype(np.int64), np.int64(len(
+                                                            coord_list)),
+                                                        arr_scattering.astype(np.float32), arr_omega.astype(np.float32), xray.astype(np.float32), omega_axis.astype(np.float32),
+                                                        F.astype(np.float32), np.int64(len(selected_data)),
+                                                        voxel_size.astype(np.float32),
+                                                        coefficients.astype(np.float32), label_list_c,label_list.ctypes.data_as(ct.POINTER(ct.c_int8)), shape.astype(np.int32),
+                                                        full_iteration, store_paths)
+
+            t2 = time.time()
+            print('GPU time is {}'.format(t2-t1))
+        elif args.openmp is True:
+            print("\033[92m Openmp/C with {} cores is used for ray tracing \033[0m".format(args.num_workers))
+            result_list = dials_lib.ray_tracing_overall(low, low+len(selected_data),
+                                                        coord_list, len(
+                                                            coord_list),
+                                                        arr_scattering, arr_omega, xray, omega_axis,
+                                                        F, len(selected_data),
+                                                        voxel_size,
+                                                        coefficients, label_list_c, shape,
+                                                        full_iteration, store_paths,args.num_workers)
+        else:
+            raise RuntimeError(
+                "\n Please use either GPU or Openmp/C options to calculate the absorption \n")
+        
         for i in range(len(selected_data)):
             corr.append(result_list[i])
         t2 = time.time()
         dials_lib.free(result_list)
+
     else:
         for i, row in enumerate(selected_data):
 
@@ -400,9 +439,9 @@ def worker_function(t1, low,  dataset, selected_data, label_list,
                             args.full_iteration, args.store_paths)
             elif args.single_c:
                     if i == 0:
-                        print('C is used for ray tracing')
 
-                    result = dials_lib.ray_tracing_sampling(
+                        print("\033[92m C with {} cores is used for ray tracing \033[0m".format(args.num_workers))
+                    result = dials_lib.ray_tracing_single(
                     coord_list, len(coord_list),
                     rotated_s1, xray, voxel_size,
                     coefficients, label_list_c, shape,
@@ -411,7 +450,8 @@ def worker_function(t1, low,  dataset, selected_data, label_list,
             else:
 
                     if i == 0:
-                        print('Python is used for ray tracing')
+    
+                         print("\033[92m Python with {} cores is used for ray tracing \033[0m".format(args.num_workers))
                     ray_direction = dials_2_numpy( rotated_s1 )
                     xray_direction = dials_2_numpy( xray )
 
@@ -527,12 +567,7 @@ def main():
     label_list = np.load(args.model_storepath).astype(np.int8)
     refl_filename = args.refl_path
     expt_filename = args.expt_path   # only contain axes
-    # coord_list_even = slice_sampling(label_list, dim=args.slicing, sampling_size=args.sampling_num,
-    #                             rate_list=rate_list, auto=args.auto_sampling,method='even')
-    # coord_list_random = slice_sampling(label_list, dim=args.slicing, sampling_size=args.sampling_num,
-    #                             rate_list=rate_list, auto=args.auto_sampling,method='random')
-    # coord_list_slice = slice_sampling(label_list, dim=args.slicing, sampling_size=args.sampling_num,
-    #                             rate_list=rate_list, auto=args.auto_sampling,method='slice')
+
     coord_list = generate_sampling(label_list, dim=args.slicing, sampling_size=args.sampling_num,cr=3, auto=args.auto_sampling,method=args.sampling_method,sampling_ratio=args.sampling_ratio)
     # coord_list_e = generate_sampling(label_list, dim=args.slicing, sampling_size=args.sampling_num,cr=3, auto=args.auto_sampling,method='even',sampling_ratio=args.sampling_ratio)
     # coord_list_r = generate_sampling(label_list, dim=args.slicing, sampling_size=args.sampling_num,cr=3, auto=args.auto_sampling,method='random',sampling_ratio=args.sampling_ratio)
@@ -574,9 +609,8 @@ def main():
     del data
     coefficients = np.array([mu_li, mu_lo, mu_cr, mu_bu])
 
-    num_workers = args.num_workers
-    len_data = len(select_data)
-    each_core = int(len_data//num_workers)
+    num_process = args.num_workers
+
 
     axes = axes_data[0]
  # should be chagned
@@ -596,22 +630,29 @@ def main():
 
     printing = True
     # Create a list of 48 data copies
-    data_copies = [label_list.copy() for _ in range(num_workers)]
+
 
     # Create a queue to store the results from each worker process
     # pdb.set_trace()
     # Create a list of worker processes
     processes = []
-    if num_workers > 1:
-        for i in range(num_workers):
+    if args.gpu is True:
+        num_process = 1
+    if args.openmp is True:
+        num_process = 1
+    if num_process > 1:
+        len_data = len(select_data)
+        each_core = int(len_data//num_process)
+        data_copies = [label_list.copy() for _ in range(num_process)]
+        for i in range(num_process):
             # Create a new process and pass it the data copy and result queue
-            if i != num_workers-1:
+            if i != num_process-1:
                 process = mp.Process(target=worker_function,
                                      args=(t1, low+i*each_core, dataset,
                                            select_data[i*each_core:(i+1)
                                                        * each_core], data_copies[i],
                                            voxel_size, coefficients, F, coord_list,
-                                           omega_axis, axes_data, args.save_dir, args.by_c,
+                                           omega_axis, axes_data, args.save_dir, args,
                                            offset, full_iteration, store_paths, printing))
                 # worker_function()
             else:
@@ -620,7 +661,7 @@ def main():
                                            select_data[i *
                                                        each_core:], data_copies[i],
                                            voxel_size, coefficients, F, coord_list,
-                                           omega_axis, axes_data, args.save_dir, args.by_c,
+                                           omega_axis, axes_data, args.save_dir,args,
                                            offset, full_iteration, store_paths, printing))
 
             processes.append(process)
@@ -635,7 +676,7 @@ def main():
     else:
         worker_function(t1, 0,  dataset, select_data, label_list,
                              voxel_size, coefficients, F, coord_list,
-                             omega_axis, axes_data, save_dir, args.by_c,
+                             omega_axis, axes_data, args.save_dir, args,
                              offset, full_iteration, store_paths, printing)
 
 

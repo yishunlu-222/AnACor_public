@@ -1,17 +1,3 @@
-CC=gcc
-CFLAGS=-Wall -Wextra -g -fopenmp -O3 -march=native
-LDFLAGS=-fopenmp
-pth=./c/
-gpu_pth=./gpu/
-all: program
-
-program:
-	$(CC) -shared -o ray_tracing.so ${pth}*.c -fPIC -std=c99 $(CFLAGS) $(LDFLAGS)
-
-clean:
-	rm -f program *.o ray_tracing.so
-
-
 INC := -I${CUDA_HOME}/include
 LIB := -L${CUDA_HOME}/lib64 -lcudart -lcufft -lcuda
 
@@ -52,3 +38,5 @@ ray_tracing.o: ray_tracing.c
 
 clean:	
 	rm -f *.o *.~ $(ANALYZE)
+
+

@@ -9,6 +9,12 @@
 #include "bisection.h"
 #define M_PI 3.14159265358979323846
 #define test_mode 0
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct
 {
     double ratio_x, ratio_y, ratio_z;
@@ -251,13 +257,13 @@ double difference_length(int64_t *start, int64_t *end, double *voxel_size)
 
 double *cal_path_bisection(Path_iterative_bisection Path, double *voxel_size)
 {
-    double *result = malloc(4 * sizeof(double));
+    double *result =(double*) malloc(4 * sizeof(double));
     double voxel_length_z = voxel_size[0];
     double voxel_length_y = voxel_size[1];
     double voxel_length_x = voxel_size[2];
     int64_t *ray = Path.path;
     int8_t *clses = Path.classes;
-    int8_t *bl = Path.boundary_list;
+    int64_t *bl = Path.boundary_list;
     int64_t l = Path.length;
 
     int64_t cr_inner[3] = {ray[0], ray[1], ray[2]};
@@ -302,10 +308,10 @@ Path_iterative_bisection iterative_bisection(double theta, double phi,
     int64_t z = coord[0], y = coord[1], x = coord[2];
     int64_t z_max = shape[0], y_max = shape[1], x_max = shape[2];
     int64_t diagonal = x_max * sqrt(3);
-    int64_t *path_2 = malloc(diagonal * 3 * sizeof(int64_t));
+    int64_t *path_2 =(int64_t *) malloc(diagonal * 3 * sizeof(int64_t));
     int64_t path_2_size = 0;
-    int8_t *classes = malloc(diagonal * sizeof(int8_t));
-    int8_t *boundary_list = malloc(diagonal * sizeof(int8_t));
+    int8_t *classes = (int8_t *)malloc(diagonal * sizeof(int8_t));
+    int64_t *boundary_list = (int64_t *)malloc(diagonal * sizeof(int64_t));
     classes[path_2_size] = 3;
     boundary_list[path_2_size] = 0;
     coord_append(path_2, path_2_size, z, y, x);
@@ -459,16 +465,19 @@ Path_iterative_bisection iterative_bisection(double theta, double phi,
     {
         printArray(path_2, (path_2_size + 1) * 3);
         printArrayshort(classes, path_2_size + 1);
-        printArrayshort(boundary_list, path_2_size + 1);
+        printArray(boundary_list, path_2_size + 1);
     }
     path_2_size++;
 
-    result.path = realloc(path_2, path_2_size * 3 * sizeof(int64_t));
-    result.classes = realloc(classes, path_2_size * sizeof(int8_t));
-    result.boundary_list = realloc(boundary_list, path_2_size * sizeof(int8_t));
+    result.path =(int64_t *) realloc(path_2, path_2_size * 3 * sizeof(int64_t));
+    result.classes =(int8_t *) realloc(classes, path_2_size * sizeof(int8_t));
+    result.boundary_list = (int64_t *)realloc(boundary_list, path_2_size * sizeof(int64_t));
     result.length = path_2_size;
     // free(path_2);
     // free(classes);
     // free(boundary_list);
     return result;
 }
+#ifdef __cplusplus
+}
+#endif

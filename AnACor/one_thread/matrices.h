@@ -1,9 +1,7 @@
 #include <stdio.h>
-#ifdef __cplusplus
-extern "C" {
-#endif
 
-void transpose(double* input, int rows, int cols, double* output) {
+
+void transpose(float* input, int rows, int cols, float* output) {
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
             output[j * rows + i] = input[i * cols + j];
@@ -11,7 +9,7 @@ void transpose(double* input, int rows, int cols, double* output) {
     }
 }
 
-void dot_product(const double* A, const double* B, double* C, int m, int n, int p) {
+void dot_product(const float* A, const float* B, float* C, int m, int n, int p) {
     //     In the provided example, the dimensions m, n, and p of the matrices are as follows:
 
     // Matrix A: m x n = 2 x 3 (2 rows, 3 columns)
@@ -19,7 +17,7 @@ void dot_product(const double* A, const double* B, double* C, int m, int n, int 
     // Matrix C: m x p = 2 x 2 (2 rows, 2 columns)
     for (int i = 0; i < m; i++) {
         for (int j = 0; j < p; j++) {
-            double sum = 0.0;
+            float sum = 0.0;
             for (int k = 0; k < n; k++) {
                 sum += A[i * n + k] * B[k * p + j];
             }
@@ -28,7 +26,7 @@ void dot_product(const double* A, const double* B, double* C, int m, int n, int 
     }
 }
 
-void print_matrix(const double* matrix, int rows, int cols) {
+void print_matrix(const float* matrix, int rows, int cols) {
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
             printf("%g ", matrix[i * cols + j]);
@@ -46,12 +44,12 @@ void print_matrixI(const int64_t* matrix, int rows, int cols) {
     }
 }
 
-void kp_rotation(const double* axis, double theta, double* result) {
-    double x = axis[0];
-    double y = axis[1];
-    double z = axis[2];
-    double c = cos(theta);
-    double s = sin(theta);
+void kp_rotation(const float* axis, float theta, float* result) {
+    float x = axis[0];
+    float y = axis[1];
+    float z = axis[2];
+    float c = cos(theta);
+    float s = sin(theta);
 
     result[0] = c + (x * x) * (1 - c);
     result[1] = x * y * (1 - c) - z * s;
@@ -66,6 +64,3 @@ void kp_rotation(const double* axis, double theta, double* result) {
     result[8] = c + (z * z) * (1 - c);
 
 }
-#ifdef __cplusplus
-}
-#endif
