@@ -17,10 +17,10 @@
 #define M_PI 3.14159265358979323846
 #define test_mod 0
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+// #ifdef __cplusplus
+// extern "C"
+// {
+// #endif
 double ib_test(
     int64_t *coord_list,
     int64_t len_coord_list,
@@ -285,6 +285,8 @@ double ray_tracing_single(
     return absorption_mean;
 }
 
+
+
 double *ray_tracing_overall(int64_t low, int64_t up,
                             int64_t *coord_list,
                             int64_t len_coord_list,
@@ -345,40 +347,145 @@ double *ray_tracing_overall(int64_t low, int64_t up,
 }
 
 
+double ray_tracing_single_am(
+    int64_t *coord_list,
+    int64_t len_coord_list,
+    const double *rotated_s1, 
+    double *voxel_size, double *coefficients,
+    int8_t ***label_list, int64_t *shape, int full_iteration)
+{
 
 
 
+    double rotated_s1_angle[3], rotated_s1_trans[3];
 
-float *ray_tracing_gpu_overall(size_t low, size_t up,
-                                    int *coord_list,
-                                    size_t len_coord_list,
-                                    const float *scattering_vector_list, const float *omega_list,
-                                    const float *raw_xray,
-                                    const float *omega_axis, const float *kp_rotation_matrix,
-                                    size_t len_result,
-                                    float *voxel_size, float *coefficients, int8_t ***label_list,
-                                    int8_t *label_list_1d, int *shape, int full_iteration,
-                                    int store_paths)
+    memcpy(rotated_s1_angle, rotated_s1, 3 * sizeof(rotated_s1));
+    memcpy(rotated_s1_trans, rotated_s1, 3 * sizeof(rotated_s1));
+
+
+    ThetaPhi result_2 = dials_2_thetaphi_22(rotated_s1_angle, 0);
+
+
+    double theta = result_2.theta;
+    double phi = result_2.phi;
+
+
+    Path2_c path_2, path_1;
+    double  *numbers_2;
+    double absorption;
+    double absorption_sum = 0, absorption_mean = 0;
+
+    double xray_direction[3], scattered_direction[3];
+
+    dials_2_numpy(rotated_s1_trans, scattered_direction);
+    double numbers_1[4] = {0, 0, 0, 0};
+
+    for (int64_t i = 0; i < len_coord_list; i++)
     {
 
-        // float *result_list = malloc( len_result* sizeof(float));
-        // size_t len_result_float = (int32_t) len_result* sizeof(float);
-        // int32_t len_result_float = (int32_t) len_result;
-        printf("low is %d \n", low);
-        printf("up is %d \n", up);
-        float factor = 1;
-        // len_result = (int)(len_result*factor);
-        printf("len_result is %d \n", len_result);
-        float *h_result_list = (float *)malloc(len_result * len_coord_list * 2 * sizeof(float));
-        float *h_python_result_list = (float *)malloc(len_result * sizeof(float));
-        int *h_face = (int *)malloc(len_coord_list * 2 * sizeof(int));
-        float *h_angles = (float *)malloc(4 * sizeof(float));
+        int64_t coord[3] = {coord_list[i * 3],
+                            coord_list[i * 3 + 1],
+                            coord_list[i * 3 + 2]};
 
-        ray_tracing_gpu_overall_kernel(low, up, coord_list, len_coord_list, scattering_vector_list, omega_list, raw_xray, omega_axis, kp_rotation_matrix, len_result, voxel_size, coefficients, label_list_1d, shape, full_iteration, store_paths, h_result_list, h_face, h_angles, h_python_result_list);
-        
-        free(h_result_list);
-        return h_python_result_list;
+
+        int64_t face_2 = cube_face(coord, scattered_direction, shape, 0);
+
+
+        path_2 = cal_coord(theta, phi, coord, face_2, shape, label_list, full_iteration);
+
+  
+        numbers_2 = cal_path2_plus(path_2, voxel_size);
+ 
+        absorption = cal_rate(numbers_1, numbers_2, coefficients, 1);
+
+        absorption_sum += absorption;
+
+        free(path_2.ray);
+        free(path_2.classes);
+        free(path_2.posi);
+        free(numbers_2);
+
     }
-#ifdef __cplusplus
+    absorption_mean = absorption_sum / len_coord_list;
+
+    return absorption_mean;
 }
-#endif
+
+
+double *ray_tracing_overall_am(int64_t low, int64_t up,
+                            int64_t *coord_list,
+                            int64_t len_coord_list,
+                            const double *scattering_vector_list,
+                            int64_t len_result,
+                            double *voxel_size, double *coefficients,
+                            int8_t ***label_list, int64_t *shape, int full_iteration,
+                           int num_workers)
+{
+    omp_set_num_threads(num_workers);
+
+    printf("low is %d \n", low);
+    printf("up is %d \n", up);
+    double *result_list = (double *)malloc(len_result * sizeof(double));
+    printf("result_list is %p \n", result_list);
+
+
+    #pragma omp parallel for default(none) shared(label_list,coord_list,scattering_vector_list,len_result,voxel_size,coefficients,shape,full_iteration,low,up,len_coord_list,result_list)
+    for (int64_t i = 0; i < len_result; i++)
+    {
+        double result;
+
+        double rotated_s1[3] = {scattering_vector_list[i * 3],
+                                       scattering_vector_list[i * 3 + 1],
+                                       scattering_vector_list[i * 3 + 2]};
+
+
+        result = ray_tracing_single_am(
+            coord_list, len_coord_list,
+            (double *)rotated_s1, 
+            voxel_size, coefficients,
+            label_list, shape, full_iteration);
+
+        result_list[i] = result;
+        printf("[%d/%d] map_absorption: %.4f\n",
+               low + i, up, result);
+
+
+    }
+
+    return result_list;
+}
+
+
+// float *ray_tracing_gpu_overall(size_t low, size_t up,
+//                                     int *coord_list,
+//                                     size_t len_coord_list,
+//                                     const float *scattering_vector_list, const float *omega_list,
+//                                     const float *raw_xray,
+//                                     const float *omega_axis, const float *kp_rotation_matrix,
+//                                     size_t len_result,
+//                                     float *voxel_size, float *coefficients, int8_t ***label_list,
+//                                     int8_t *label_list_1d, int *shape, int full_iteration,
+//                                     int store_paths,int gpumethod)
+//     {
+
+//         // float *result_list = malloc( len_result* sizeof(float));
+//         // size_t len_result_float = (int32_t) len_result* sizeof(float);
+//         // int32_t len_result_float = (int32_t) len_result;
+//         printf("low is %d \n", low);
+//         printf("up is %d \n", up);
+//         float factor = 1;
+//         // len_result = (int)(len_result*factor);
+//         printf("len_result is %d \n", len_result);
+//         float *h_result_list = (float *)malloc(len_result * len_coord_list * 2 * sizeof(float));
+//         float *h_python_result_list = (float *)malloc(len_result * sizeof(float));
+//         int *h_face = (int *)malloc(len_coord_list * 2 * sizeof(int));
+//         float *h_angles = (float *)malloc(4 * sizeof(float));
+
+//         ray_tracing_gpu_overall_kernel(low, up, coord_list, len_coord_list, scattering_vector_list, omega_list, raw_xray, omega_axis, kp_rotation_matrix, len_result, voxel_size, coefficients, label_list_1d, shape, full_iteration, store_paths, h_result_list, h_face, h_angles, h_python_result_list,gpumethod);
+        
+//         free(h_result_list);
+//         return h_python_result_list;
+//     }
+// #ifdef __cplusplus
+// }
+// #endif

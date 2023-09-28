@@ -11,9 +11,6 @@
 #define test_mode 0
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 typedef struct
 {
@@ -478,6 +475,3 @@ Path_iterative_bisection iterative_bisection(double theta, double phi,
     // free(boundary_list);
     return result;
 }
-#ifdef __cplusplus
-}
-#endif

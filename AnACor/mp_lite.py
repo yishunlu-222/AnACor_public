@@ -261,15 +261,15 @@ def main ( ) :
             pass
     else:
         args.full_iter=0
-
+    args.sampling_method ='even'
+    args.single_c = True
     with open( os.path.join( save_dir , "mpprocess_script.sh" ) , "w" ) as f :
 
         f.write( "#!/bin/sh\n" )
         f.write( "{}\n".format( args.dials_dependancy ) )
         # f.write("module load python/3.9 \n")
         f.write( "num={}\n".format( args.num_cores ) )
-        f.write( "sampling={}\n".format( args.sampling ) )
-        f.writ( "sampling_method={}\n".format( args.sampling_method ) )
+        f.write( "sampling_method={}\n".format( args.sampling_method ) )
         f.write( "auto_sampling={}\n".format( args.auto_sampling) )
         f.write( "dataset={}\n".format( args.dataset ) )
         f.write( "offset={}\n".format( args.offset ) )
@@ -293,7 +293,7 @@ def main ( ) :
             f.write( "expt_pth={}\n".format( args.expt_path ) )
         f.write( "store_dir={}\n".format(args.store_dir  ) )
         f.write( "logging_dir={}\n".format( os.path.join( save_dir , 'Logging' ) ) )
-        f.write( 'nohup python -u  ${py_file}  --dataset ${dataset} --sampling ${sampling} '
+        f.write( 'nohup python -u  ${py_file}  --dataset ${dataset}'
                  '--loac ${loac} --liac ${liac} --crac ${crac}  --buac ${buac} --offset ${offset}'
                  ' --store-dir ${store_dir} --refl-path ${refl_pth} --expt-path ${expt_pth}  '
                  '--model-storepath ${model_storepath} --full-iteration ${full_iter} --num-workers ${num}  '

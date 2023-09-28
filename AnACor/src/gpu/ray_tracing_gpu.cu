@@ -1537,7 +1537,7 @@ __global__ void rt_gpu_absorption_shuffle(int8_t *d_label_list, int *d_coord_lis
 	// }
 }
 
-void ray_tracing_gpu_single(int rotated_s1_size, int rotated_xray_size, size_t h_len_result, int h_x_max, int h_y_max, int h_z_max, size_t h_diagonal, size_t h_len_coord_list, float *coefficients, float *voxel_size, size_t result_size, size_t python_result_size, size_t scattering_vector_list_size, size_t omega_list_size, size_t raw_xray_size, size_t omega_axis_size, size_t kp_rotation_matrix_size, size_t coord_list_size, size_t cube_size, size_t face_size, size_t angle_size, size_t angle_size_overall, size_t increments_size, size_t increments_size_overall, size_t ray_classes_size, size_t absorption_size, float *h_result_list, const float *scattering_vector_list, const float *omega_list, const float *raw_xray, const float *omega_axis, const float *kp_rotation_matrix, int *coord_list, int8_t *label_list_1d, float *h_python_result_list)
+void ray_tracing_gpu_single(int rotated_s1_size, int rotated_xray_size, size_t h_len_result, int h_x_max, int h_y_max, int h_z_max, size_t h_diagonal, size_t h_len_coord_list, float *coefficients, float *voxel_size, size_t result_size, size_t python_result_size, size_t scattering_vector_list_size, size_t omega_list_size, size_t raw_xray_size, size_t omega_axis_size, size_t kp_rotation_matrix_size, size_t coord_list_size, size_t cube_size, size_t face_size, size_t angle_size, size_t angle_size_overall, size_t increments_size, size_t increments_size_overall, size_t ray_classes_size, size_t absorption_size, float *h_result_list, const float *scattering_vector_list, const float *omega_list, const float *raw_xray, const float *omega_axis, const float *kp_rotation_matrix, int *coord_list, int8_t *label_list_1d, float *h_python_result_list,int gpumethod)
 {
 	//----------> Memory allocation
 	//---------> Allocating memory on the device
@@ -1985,21 +1985,23 @@ void ray_tracing_gpu_single(int rotated_s1_size, int rotated_xray_size, size_t h
 			// }
 
 			{
+				if (gpumethod==1){
 
-				// int nBlocks = h_len_coord_list * 2; // one block for one crystal voxel
-				// int nThreads = 32;					// 256:49s ,128:49s 32:52s,512:fail,320:55s
+				
+				int nBlocks = h_len_coord_list * 2; // one block for one crystal voxel
+				int nThreads = 32;					// 256:49s ,128:49s 32:52s,512:fail,320:55s
 
-				// dim3 gridSize_face(nBlocks, 1, 1);
-				// dim3 blockSize_face(nThreads, 1, 1);
+				dim3 gridSize_face(nBlocks, 1, 1);
+				dim3 blockSize_face(nThreads, 1, 1);
 
-				// // rt_gpu_absorption<<<gridSize_face, blockSize_face>>>(
+				rt_gpu_absorption<<<gridSize_face, blockSize_face>>>(
 
-				// // 	d_label_list,
-				// // 	d_coord_list,
-				// // 	d_face,
-				// // 	d_angles_overall,
-				// // 	d_increments_overall, d_result_list, i); //5000 i=213426, sampling 6000 181991
-
+					d_label_list,
+					d_coord_list,
+					d_face,
+					d_angles_overall,
+					d_increments_overall, d_result_list, i); //5000 i=213426, sampling 6000 181991
+				}
 				// rt_gpu_absorption_shuffle_v2<<<gridSize_face, blockSize_face>>>(
 
 				// 	d_label_list,
@@ -2007,6 +2009,7 @@ void ray_tracing_gpu_single(int rotated_s1_size, int rotated_xray_size, size_t h
 				// 	d_face,
 				// 	d_angles_overall,
 				// 	d_increments_overall, d_result_list, i);
+				else if(gpumethod==0){
 
 				int nThreads = 32;
 				int nBlocks = (h_len_coord_list * 2 + nThreads - 1) / nThreads; // one block for one crystal voxel
@@ -2021,6 +2024,12 @@ void ray_tracing_gpu_single(int rotated_s1_size, int rotated_xray_size, size_t h
 					d_face,
 					d_angles_overall,
 					d_increments_overall, d_result_list, i);
+				}
+
+				else{
+					printf("%d is wrong declared gpumethod\n",gpumethod);
+					break;
+				}
 			}
 		}
 
@@ -2096,7 +2105,7 @@ int ray_tracing_gpu_overall_kernel(size_t low, size_t up,
 								   size_t h_len_result,
 								   float *voxel_size, float *coefficients,
 								   int8_t *label_list_1d, int *shape, int full_iteration,
-								   int store_paths, float *h_result_list, int *h_face, float *h_angles, float *h_python_overall_result_list)
+								   int store_paths, float *h_result_list, int *h_face, float *h_angles, float *h_python_overall_result_list,int gpumethod)
 {
 	//---------> Initial nVidia stuff
 	int devCount;
@@ -2177,7 +2186,7 @@ int ray_tracing_gpu_overall_kernel(size_t low, size_t up,
 	// float *h_python_result_list = (float *)malloc(python_result_size);
 	for (int chunk = 0; chunk < n_chunks; chunk++)
 	{
-		ray_tracing_gpu_single(rotated_s1_size, rotated_xray_size, h_len_result, h_x_max, h_y_max, h_z_max, h_diagonal, h_len_coord_list, coefficients, voxel_size, result_size, python_result_size, scattering_vector_list_size, omega_list_size, raw_xray_size, omega_axis_size, kp_rotation_matrix_size, coord_list_size, cube_size, face_size, angle_size, angle_size_overall, increments_size, increments_size_overall, ray_classes_size, absorption_size, h_result_list, scattering_vector_list, omega_list, raw_xray, omega_axis, kp_rotation_matrix, coord_list, label_list_1d, h_python_overall_result_list);
+		ray_tracing_gpu_single(rotated_s1_size, rotated_xray_size, h_len_result, h_x_max, h_y_max, h_z_max, h_diagonal, h_len_coord_list, coefficients, voxel_size, result_size, python_result_size, scattering_vector_list_size, omega_list_size, raw_xray_size, omega_axis_size, kp_rotation_matrix_size, coord_list_size, cube_size, face_size, angle_size, angle_size_overall, increments_size, increments_size_overall, ray_classes_size, absorption_size, h_result_list, scattering_vector_list, omega_list, raw_xray, omega_axis, kp_rotation_matrix, coord_list, label_list_1d, h_python_overall_result_list,gpumethod);
 	}
 	// h_python_overall_result_list = h_python_result_list;
 	return (0);

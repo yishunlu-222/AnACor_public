@@ -2,9 +2,7 @@
 #ifndef BISECTION_H
 #define BISECTION_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 typedef struct
 {
     int64_t *path;
@@ -20,8 +18,6 @@ Path_iterative_bisection iterative_bisection(double theta, double phi,
 double *cal_path_bisection(Path_iterative_bisection Path, double *voxel_size);
 
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif

@@ -140,7 +140,7 @@ class AbsorptionCoefficient( object ) :
         self.mask1 = self.mask_generation( self.img1 , thresh = thresh )
         """ image processing: extract the overall boundary of the raw image and the projection of the 3D model
         """
-
+       
         # mask1 = fill_the_labels( mask1 )
         self.mask2 , self.yxshift = self.skimage_translation_matching( self.mask1 ,
                                                                        self.mask2 )  # move mask2 to get mask1

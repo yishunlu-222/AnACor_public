@@ -12,16 +12,16 @@
 
 
 //gpu kernel
-int ray_tracing_gpu_overall_kernel(size_t low, size_t up,
-								   int *coord_list,
-								   size_t h_len_coord_list,
-								   const float *scattering_vector_list, const float *omega_list,
-								   const float *raw_xray,
-								   const float *omega_axis, const float *kp_rotation_matrix,
-								   size_t h_len_result,
-								   float *voxel_size, float *coefficients,
-								   int8_t *label_list_1d, int *shape, int full_iteration,
-								   int store_paths, float *h_result_list, int *h_face, float *h_angles, float *h_python_overall_result_list);
+// int ray_tracing_gpu_overall_kernel(size_t low, size_t up,
+// 								   int *coord_list,
+// 								   size_t h_len_coord_list,
+// 								   const float *scattering_vector_list, const float *omega_list,
+// 								   const float *raw_xray,
+// 								   const float *omega_axis, const float *kp_rotation_matrix,
+// 								   size_t h_len_result,
+// 								   float *voxel_size, float *coefficients,
+// 								   int8_t *label_list_1d, int *shape, int full_iteration,
+// 								   int store_paths, float *h_result_list, int *h_face, float *h_angles, float *h_python_overall_result_list,int gpumethod);
 
 
 

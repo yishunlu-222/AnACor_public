@@ -98,14 +98,32 @@ def set_parser():
     parser.add_argument(
         "--refl-path",
         type=str,
-        required=True,
+        default="None",
         help="full reflection path",
     )
     parser.add_argument(
         "--expt-path",
         type=str,
-        required=True,
+        default="None",
         help="full experiment path um-1",
+    )
+    parser.add_argument(
+        "--absorption-map",
+        type=str2bool,
+        default=False,
+        help="producing absorption map",
+    )
+    parser.add_argument(
+        "--map-theta",
+        type=int,
+        default=360,
+        help="producing absorption map theta number",
+    )
+    parser.add_argument(
+        "--map-phi",
+        type=int,
+        default=180,
+        help="producing absorption map phi number",
     )
     parser.add_argument(
         "--liac",
@@ -222,6 +240,12 @@ def set_parser():
         default =None ,
         help = "whether to apply sampling evenly" ,
     )
+    parser.add_argument(
+        "--gpumethod" ,
+        type = int,
+        default =1 ,
+        help = "whether to apply sampling evenly" ,
+    )
     global args
     args = parser.parse_args()
     return args
@@ -281,13 +305,13 @@ def worker_function(t1, low,  dataset, selected_data, label_list,
     arr_omega = []
     xray = -np.array(axes_data[1]["direction"])
     shape = np.array(label_list.shape)
-    dials_lib = ct.CDLL(os.path.join(os.path.dirname(
-        os.path.abspath(__file__)), './c/ray_tracing.so'))
-    # dials_lib = ct.CDLL( './ray_tracing.so' )s
-    # gcc -shared -o ray_tracing.so ray_tracing.c -fPIC
+    anacor_lib_cpu = ct.CDLL(os.path.join(os.path.dirname(
+            os.path.abspath(__file__)), './src/ray_tracing_cpu.so'))
+        # anacor_lib_cpu = ct.CDLL( './ray_tracing.so' )s
+        # gcc -shared -o ray_tracing.so ray_tracing.c -fPIC
     up=low+len(selected_data)
-    dials_lib.ray_tracing_overall.restype = ct.POINTER(ct.c_double)
-    dials_lib.ray_tracing_overall.argtypes = [  # crystal_coordinate_shape
+    anacor_lib_cpu.ray_tracing_overall.restype = ct.POINTER(ct.c_double)
+    anacor_lib_cpu.ray_tracing_overall.argtypes = [  # crystal_coordinate_shape
         ct.c_int,  # low
         ct.c_int,  # up
         np.ctypeslib.ndpointer(dtype=np.int64),  # coordinate_list
@@ -307,8 +331,8 @@ def worker_function(t1, low,  dataset, selected_data, label_list,
         ct.c_int  # num_workers
     ]
 
-    dials_lib.ray_tracing_single.restype = ct.c_double
-    dials_lib.ray_tracing_single.argtypes = [  # crystal_coordinate_shape
+    anacor_lib_cpu.ray_tracing_single.restype = ct.c_double
+    anacor_lib_cpu.ray_tracing_single.argtypes = [  # crystal_coordinate_shape
         np.ctypeslib.ndpointer(dtype=np.int64),  # coordinate_list
         ct.c_int,  # coordinate_list_length
         np.ctypeslib.ndpointer(dtype=np.float64),  # rotated_s1
@@ -320,8 +344,8 @@ def worker_function(t1, low,  dataset, selected_data, label_list,
         ct.c_int,  # full_iteration
         ct.c_int  # store_paths
     ]
-    dials_lib.ib_test.restype = ct.c_double
-    dials_lib.ib_test.argtypes = [# crystal_coordinate_shape
+    anacor_lib_cpu.ib_test.restype = ct.c_double
+    anacor_lib_cpu.ib_test.argtypes = [# crystal_coordinate_shape
         np.ctypeslib.ndpointer(dtype=np.int64),      # coordinate_list
         ct.c_int,                    # coordinate_list_length
         np.ctypeslib.ndpointer(dtype=np.float64),   # rotated_s1
@@ -333,27 +357,32 @@ def worker_function(t1, low,  dataset, selected_data, label_list,
         ct.c_int,                      # full_iteration
         ct.c_int                       # store_paths
     ]
-    dials_lib.ray_tracing_gpu_overall.restype = ct.POINTER(ct.c_float)
-    dials_lib.ray_tracing_gpu_overall.argtypes = [  # crystal_coordinate_shape
-            ct.c_int,  # low
-            ct.c_int,  # up
-            np.ctypeslib.ndpointer(dtype=np.int64),  # coordinate_list
-            ct.c_int64,  # coordinate_list_length
-            np.ctypeslib.ndpointer(dtype=np.float32),  # scattering_vector_list
-            np.ctypeslib.ndpointer(dtype=np.float32),  # omega_list
-            np.ctypeslib.ndpointer(dtype=np.float32),  # xray
-            np.ctypeslib.ndpointer(dtype=np.float32),  # omega_axis
-            np.ctypeslib.ndpointer(dtype=np.float32),  # kp rotation matrix: F
-            ct.c_int64,  # len_result
-            np.ctypeslib.ndpointer(dtype=np.float32),  # voxel_size
-            np.ctypeslib.ndpointer(dtype=np.float32),  # coefficients
-            ct.POINTER( ct.POINTER( ct.POINTER( ct.c_int8 ) ) ) ,  # label_list
-            ct.POINTER( ct.c_int8 ) ,  # label_list flattened
-            np.ctypeslib.ndpointer(dtype=np.int32),  # shape
-            ct.c_int,  # full_iteration
-            ct.c_int  # store_paths
-        ]
     label_list_c = python_2_c_3d(label_list)
+    if args.gpu:
+        anacor_lib_gpu = ct.CDLL(os.path.join(os.path.dirname(
+        os.path.abspath(__file__)), './src/ray_tracing_gpu.so'))
+        anacor_lib_gpu.ray_tracing_gpu_overall.restype = ct.POINTER(ct.c_float)
+        anacor_lib_gpu.ray_tracing_gpu_overall.argtypes = [  # crystal_coordinate_shape
+                ct.c_int,  # low
+                ct.c_int,  # up
+                np.ctypeslib.ndpointer(dtype=np.int64),  # coordinate_list
+                ct.c_int64,  # coordinate_list_length
+                np.ctypeslib.ndpointer(dtype=np.float32),  # scattering_vector_list
+                np.ctypeslib.ndpointer(dtype=np.float32),  # omega_list
+                np.ctypeslib.ndpointer(dtype=np.float32),  # xray
+                np.ctypeslib.ndpointer(dtype=np.float32),  # omega_axis
+                np.ctypeslib.ndpointer(dtype=np.float32),  # kp rotation matrix: F
+                ct.c_int64,  # len_result
+                np.ctypeslib.ndpointer(dtype=np.float32),  # voxel_size
+                np.ctypeslib.ndpointer(dtype=np.float32),  # coefficients
+                ct.POINTER( ct.POINTER( ct.POINTER( ct.c_int8 ) ) ) ,  # label_list
+                ct.POINTER( ct.c_int8 ) ,  # label_list flattened
+                np.ctypeslib.ndpointer(dtype=np.int32),  # shape
+                ct.c_int,  # full_iteration
+                ct.c_int,  # store_paths
+                ct.c_int  # gpumethod
+            ]
+        
 
 
     if args.gpu or args.openmp:
@@ -375,20 +404,21 @@ def worker_function(t1, low,  dataset, selected_data, label_list,
         if args.gpu:
             t1 = time.time()
             print("\033[92m GPU  is used for ray tracing \033[0m")
-            result_list = dials_lib.ray_tracing_gpu_overall(low, low+len(selected_data),
+            
+            result_list = anacor_lib_gpu.ray_tracing_gpu_overall(low, low+len(selected_data),
                                                         coord_list.astype(np.int64), np.int64(len(
                                                             coord_list)),
                                                         arr_scattering.astype(np.float32), arr_omega.astype(np.float32), xray.astype(np.float32), omega_axis.astype(np.float32),
                                                         F.astype(np.float32), np.int64(len(selected_data)),
                                                         voxel_size.astype(np.float32),
                                                         coefficients.astype(np.float32), label_list_c,label_list.ctypes.data_as(ct.POINTER(ct.c_int8)), shape.astype(np.int32),
-                                                        full_iteration, store_paths)
+                                                        full_iteration, store_paths,args.gpumethod)
 
             t2 = time.time()
             print('GPU time is {}'.format(t2-t1))
         elif args.openmp is True:
             print("\033[92m Openmp/C with {} cores is used for ray tracing \033[0m".format(args.num_workers))
-            result_list = dials_lib.ray_tracing_overall(low, low+len(selected_data),
+            result_list = anacor_lib_cpu.ray_tracing_overall(low, low+len(selected_data),
                                                         coord_list, len(
                                                             coord_list),
                                                         arr_scattering, arr_omega, xray, omega_axis,
@@ -403,7 +433,7 @@ def worker_function(t1, low,  dataset, selected_data, label_list,
         for i in range(len(selected_data)):
             corr.append(result_list[i])
         t2 = time.time()
-        dials_lib.free(result_list)
+        anacor_lib_cpu.free(result_list)
 
     else:
         for i, row in enumerate(selected_data):
@@ -432,7 +462,7 @@ def worker_function(t1, low,  dataset, selected_data, label_list,
 
             # if by_c :
             if args.bisection:
-                result = dials_lib.ib_test(
+                result = anacor_lib_cpu.ib_test(
                                 coord_list,len(coord_list) ,
                                 rotated_s1, xray, voxel_size,
                             coefficients, label_list_c, shape,
@@ -441,7 +471,7 @@ def worker_function(t1, low,  dataset, selected_data, label_list,
                     if i == 0:
 
                         print("\033[92m C with {} cores is used for ray tracing \033[0m".format(args.num_workers))
-                    result = dials_lib.ray_tracing_single(
+                    result = anacor_lib_cpu.ray_tracing_single(
                     coord_list, len(coord_list),
                     rotated_s1, xray, voxel_size,
                     coefficients, label_list_c, shape,
@@ -523,6 +553,258 @@ def worker_function(t1, low,  dataset, selected_data, label_list,
 
 
 
+
+def worker_function_am(t1, low,  dataset, selected_data, label_list,
+                    voxel_size, coefficients, F, coord_list,
+                    omega_axis, axes_data, save_dir, args,
+                    offset, full_iteration, store_paths, printing):
+    corr = []
+    dict_corr = []
+    arr_scattering = []
+    arr_omega = []
+    xray = -np.array(axes_data[1]["direction"])
+    shape = np.array(label_list.shape)
+    
+    anacor_lib_cpu = ct.CDLL(os.path.join(os.path.dirname(os.path.abspath(__file__)), './src/ray_tracing_cpu.so'))
+        # anacor_lib_cpu = ct.CDLL( './ray_tracing.so' )s
+        # gcc -shared -o ray_tracing.so ray_tracing.c -fPIC
+    up=low+len(selected_data)
+    anacor_lib_cpu.ray_tracing_overall.restype = ct.POINTER(ct.c_double)
+    anacor_lib_cpu.ray_tracing_overall.argtypes = [  # crystal_coordinate_shape
+        ct.c_int,  # low
+        ct.c_int,  # up
+        np.ctypeslib.ndpointer(dtype=np.int64),  # coordinate_list
+        ct.c_int,  # coordinate_list_length
+        np.ctypeslib.ndpointer(dtype=np.float64),  # scattering_vector_list
+        ct.c_int,  # len_result
+        np.ctypeslib.ndpointer(dtype=np.float64),  # voxel_size
+        np.ctypeslib.ndpointer(dtype=np.float64),  # coefficients
+        ct.POINTER(ct.POINTER(ct.POINTER(ct.c_int8))),  # label_list
+        np.ctypeslib.ndpointer(dtype=np.int64),  # shape
+        ct.c_int,  # full_iteration
+        ct.c_int,  # store_paths
+        ct.c_int  # num_workers
+    ]
+
+    anacor_lib_cpu.ray_tracing_single.restype = ct.c_double
+    anacor_lib_cpu.ray_tracing_single.argtypes = [  # crystal_coordinate_shape
+        np.ctypeslib.ndpointer(dtype=np.int64),  # coordinate_list
+        ct.c_int,  # coordinate_list_length
+        np.ctypeslib.ndpointer(dtype=np.float64),  # rotated_s1
+        np.ctypeslib.ndpointer(dtype=np.float64),  # xray
+        np.ctypeslib.ndpointer(dtype=np.float64),  # voxel_size
+        np.ctypeslib.ndpointer(dtype=np.float64),  # coefficients
+        ct.POINTER(ct.POINTER(ct.POINTER(ct.c_int8))),  # label_list
+        np.ctypeslib.ndpointer(dtype=np.int64),  # shape
+        ct.c_int,  # full_iteration
+        ct.c_int  # store_paths
+    ]
+    anacor_lib_cpu.ib_test.restype = ct.c_double
+    anacor_lib_cpu.ib_test.argtypes = [# crystal_coordinate_shape
+        np.ctypeslib.ndpointer(dtype=np.int64),      # coordinate_list
+        ct.c_int,                    # coordinate_list_length
+        np.ctypeslib.ndpointer(dtype=np.float64),   # rotated_s1
+        np.ctypeslib.ndpointer(dtype=np.float64),   # xray
+        np.ctypeslib.ndpointer(dtype=np.float64),   # voxel_size
+        np.ctypeslib.ndpointer(dtype=np.float64),   # coefficients
+        ct.POINTER(ct.POINTER(ct.POINTER(ct.c_int8))),     # label_list
+        np.ctypeslib.ndpointer(dtype=np.int64),      # shape
+        ct.c_int,                      # full_iteration
+        ct.c_int                       # store_paths
+    ]
+    label_list_c = python_2_c_3d(label_list)
+    if args.gpu:
+        anacor_lib_gpu = ct.CDLL(os.path.join(os.path.dirname(
+        os.path.abspath(__file__)), './src/ray_tracing_gpu.so'))
+        anacor_lib_gpu.ray_tracing_gpu_overall.restype = ct.POINTER(ct.c_float)
+        anacor_lib_gpu.ray_tracing_gpu_overall.argtypes = [  # crystal_coordinate_shape
+                ct.c_int,  # low
+                ct.c_int,  # up
+                np.ctypeslib.ndpointer(dtype=np.int64),  # coordinate_list
+                ct.c_int64,  # coordinate_list_length
+                np.ctypeslib.ndpointer(dtype=np.float32),  # scattering_vector_list
+                np.ctypeslib.ndpointer(dtype=np.float32),  # omega_list
+                np.ctypeslib.ndpointer(dtype=np.float32),  # xray
+                np.ctypeslib.ndpointer(dtype=np.float32),  # omega_axis
+                np.ctypeslib.ndpointer(dtype=np.float32),  # kp rotation matrix: F
+                ct.c_int64,  # len_result
+                np.ctypeslib.ndpointer(dtype=np.float32),  # voxel_size
+                np.ctypeslib.ndpointer(dtype=np.float32),  # coefficients
+                ct.POINTER( ct.POINTER( ct.POINTER( ct.c_int8 ) ) ) ,  # label_list
+                ct.POINTER( ct.c_int8 ) ,  # label_list flattened
+                np.ctypeslib.ndpointer(dtype=np.int32),  # shape
+                ct.c_int,  # full_iteration
+                ct.c_int,  # store_paths
+                ct.c_int  # gpumethod
+            ]
+        
+
+
+
+    if args.gpu or args.openmp:
+        for i, row in enumerate(selected_data):
+            theta,phi=row
+            # scattering_vector = thetaphi_2_dials(theta, phi)
+            arr_scattering.append(thetaphi_2_dials(theta, phi))
+
+        arr_scattering = np.array(arr_scattering)
+
+        
+        pdb.set_trace()
+        if args.gpu:
+            t1 = time.time()
+            print("\033[92m GPU  is used for ray tracing \033[0m")
+            
+            result_list = anacor_lib_gpu.ray_tracing_gpu_overall(low, low+len(selected_data),
+                                                        coord_list.astype(np.int64), np.int64(len(
+                                                            coord_list)),
+                                                        arr_scattering.astype(np.float32), arr_omega.astype(np.float32), xray.astype(np.float32), omega_axis.astype(np.float32),
+                                                        F.astype(np.float32), np.int64(len(selected_data)),
+                                                        voxel_size.astype(np.float32),
+                                                        coefficients.astype(np.float32), label_list_c,label_list.ctypes.data_as(ct.POINTER(ct.c_int8)), shape.astype(np.int32),
+                                                        full_iteration, store_paths,args.gpumethod)
+
+            t2 = time.time()
+            print('GPU time is {}'.format(t2-t1))
+        elif args.openmp is True:
+            print("\033[92m Openmp/C with {} cores is used for ray tracing \033[0m".format(args.num_workers))
+            result_list = anacor_lib_cpu.ray_tracing_overall(low, low+len(selected_data),
+                                                        coord_list, len(
+                                                            coord_list),
+                                                        arr_scattering.astype(np.float64),len(selected_data),
+                                                        voxel_size,
+                                                        coefficients, label_list_c, shape,
+                                                        full_iteration, store_paths,args.num_workers)
+        else:
+            raise RuntimeError(
+                "\n Please use either GPU or Openmp/C options to calculate the absorption \n")
+        
+        for i in range(len(selected_data)):
+            corr.append(result_list[i])
+        t2 = time.time()
+        anacor_lib_cpu.free(result_list)
+
+    else:
+        for i, row in enumerate(selected_data):
+
+            intensity = float(row['intensity.sum.value'])
+            # all are in x, y , z in the origin dials file
+            scattering_vector = literal_eval(row['s1'])
+            miller_index = row['miller_index']
+
+            rotation_frame_angle = literal_eval(row['xyzobs.mm.value'])[2]
+            rotation_frame_angle += offset / 180 * np.pi
+            rotation_matrix_frame_omega = kp_rotation(
+                omega_axis, rotation_frame_angle)
+
+            kp_rotation_matrix = np.dot(rotation_matrix_frame_omega, F)
+            total_rotation_matrix = np.transpose(kp_rotation_matrix)
+            # total_rotation_matrix is orthogonal matrix so transpose is faster than inverse
+            # total_rotation_matrix =np.linalg.inv(kp_rotation_matrix)  
+            xray = -np.array(axes_data[1]["direction"])
+
+            xray = np.dot(total_rotation_matrix, xray)
+            rotated_s1 = np.dot(total_rotation_matrix, scattering_vector)
+
+            theta, phi = dials_2_thetaphi(rotated_s1)
+            theta_1, phi_1 = dials_2_thetaphi(xray, L1=True)
+            scattering_vector = thetaphi_2_dials()
+            # if by_c :
+            if args.bisection:
+                result = anacor_lib_cpu.ib_test(
+                                coord_list,len(coord_list) ,
+                                rotated_s1, xray, voxel_size,
+                            coefficients, label_list_c, shape,
+                            args.full_iteration, args.store_paths)
+            elif args.single_c:
+                    if i == 0:
+
+                        print("\033[92m C with {} cores is used for ray tracing \033[0m".format(args.num_workers))
+                    result = anacor_lib_cpu.ray_tracing_single(
+                    coord_list, len(coord_list),
+                    rotated_s1, xray, voxel_size,
+                    coefficients, label_list_c, shape,
+                    full_iteration, store_paths)
+            
+            else:
+
+                    if i == 0:
+    
+                         print("\033[92m Python with {} cores is used for ray tracing \033[0m".format(args.num_workers))
+                    ray_direction = dials_2_numpy( rotated_s1 )
+                    xray_direction = dials_2_numpy( xray )
+
+                    absorp = np.empty( len( coord_list ) )
+                    for k , coord in enumerate( coord_list ) :
+                        # face_1 = which_face_2(coord, shape, theta_1, phi_1)
+                        # face_2 = which_face_2(coord, shape, theta, phi)
+                        face_1 = cube_face( coord , xray_direction , shape , L1 = True )
+                        face_2 = cube_face( coord , ray_direction , shape )
+                        path_1 = cal_coord( theta_1 , phi_1 , coord , face_1 , shape , label_list )  # 37
+                        path_2 = cal_coord( theta , phi , coord , face_2 , shape , label_list )  # 16
+
+                        numbers_1 = cal_path_plus( path_1 , voxel_size )  # 3.5s
+                        numbers_2 = cal_path_plus( path_2 , voxel_size )  # 3.5s
+                        if store_paths == 1 :
+                            if k == 0 :
+                                path_length_arr_single = np.expand_dims( np.array( (numbers_1 + numbers_2) ) , axis = 0 )
+                            else :
+
+                                path_length_arr_single = np.concatenate(
+                                    (
+                                    path_length_arr_single , np.expand_dims( np.array( (numbers_1 + numbers_2) ) , axis = 0 )) ,
+                                    axis = 0 )
+                        absorption = cal_rate( (numbers_1 + numbers_2) , coefficients )
+
+                        absorp[k] = absorption
+                    result = absorp.mean( )
+
+            t2 = time.time()
+            if printing:
+                print('[{}/{}] theta: {:.4f}, phi: {:.4f} , rotation: {:.4f},  absorption: {:.4f}'.format(low + i,
+                                                                                                          low + len(
+                                                                                                              selected_data),
+                                                                                                          theta * 180 / np.pi,
+                                                                                                          phi * 180 / np.pi,
+                                                                                                          rotation_frame_angle * 180 / np.pi,
+                                                                                                          result))
+            # pdb.set_trace()
+
+            print('process {} it spends {}'.format(os.getpid(), t2 -
+                                                   t1))
+
+            corr.append(result)
+            # print( 'it spends {}'.format( t2 - t1 ) )
+            dict_corr.append({'index': low + i, 'miller_index': miller_index,
+                              'intensity': intensity, 'corr': result,
+                              'theta': theta * 180 / np.pi,
+                              'phi': phi * 180 / np.pi,
+                              'theta_1': theta_1 * 180 / np.pi,
+                              'phi_1': phi_1 * 180 / np.pi, })
+            if i % 1000 == 1:
+                
+
+                with open(os.path.join(save_dir, "{}_refl_{}.json".format(dataset, up)), "w") as fz:  # Pickling
+                    json.dump(corr, fz, indent=2)
+                with open(os.path.join(save_dir, "{}_dict_refl_{}.json".format(dataset, up)),
+                          "w") as f1:  # Pickling
+                    json.dump(dict_corr, f1, indent=2)
+
+
+    with open(os.path.join(save_dir, "{}_refl_{}.json".format(dataset, up)), "w") as fz:  # Pickling
+        json.dump(corr, fz, indent=2)
+
+    with open(os.path.join(save_dir, "{}_dict_refl_{}.json".format(dataset, up)), "w") as f1:  # Pickling
+        json.dump(dict_corr, f1, indent=2)
+    with open(os.path.join(save_dir, "{}_time_{}.json".format(dataset, up)), "w") as f1:  # Pickling
+        json.dump(t2 - t1, f1, indent=2)
+    print('{} ({} ) process is Finish!!!!'.format(os.getpid(), up))
+
+
+
+
+
+
 def main():
     args = set_parser()
     print("\n==========\n")
@@ -588,7 +870,16 @@ def main():
     offset = args.offset
     full_iteration = args.full_iteration
     store_paths = args.store_paths
+    if args.absorption_map is True:
 
+        theta = np.linspace(-180, 180, args.map_theta,endpoint=False)
+        phi = np.linspace(-90, 90, args.map_phi,endpoint=False)
+
+        theta_grid, phi_grid = np.meshgrid(theta, phi)
+        data = np.stack((theta_grid.ravel(), phi_grid.ravel()), axis=-1)
+        map_data = data /180 * np.pi
+
+    
     with open(expt_filename) as f2:
         axes_data = json.load(f2)
     with open(refl_filename) as f1:
@@ -631,7 +922,6 @@ def main():
     printing = True
     # Create a list of 48 data copies
 
-
     # Create a queue to store the results from each worker process
     # pdb.set_trace()
     # Create a list of worker processes
@@ -640,6 +930,8 @@ def main():
         num_process = 1
     if args.openmp is True:
         num_process = 1
+
+    
     if num_process > 1:
         len_data = len(select_data)
         each_core = int(len_data//num_process)
@@ -647,17 +939,35 @@ def main():
         for i in range(num_process):
             # Create a new process and pass it the data copy and result queue
             if i != num_process-1:
-                process = mp.Process(target=worker_function,
-                                     args=(t1, low+i*each_core, dataset,
-                                           select_data[i*each_core:(i+1)
-                                                       * each_core], data_copies[i],
-                                           voxel_size, coefficients, F, coord_list,
-                                           omega_axis, axes_data, args.save_dir, args,
-                                           offset, full_iteration, store_paths, printing))
+                if args.absorption_map is True:
+                    process = mp.Process(target=worker_function_am,
+                                        args=(t1, low+i*each_core, dataset,
+                                            select_data[i*each_core:(i+1)
+                                                        * each_core], data_copies[i],
+                                            voxel_size, coefficients, F, coord_list,
+                                            omega_axis, axes_data, args.save_dir, args,
+                                            offset, full_iteration, store_paths, printing))
+
+                else:
+                    process = mp.Process(target=worker_function,
+                                        args=(t1, low+i*each_core, dataset,
+                                            select_data[i*each_core:(i+1)
+                                                        * each_core], data_copies[i],
+                                            voxel_size, coefficients, F, coord_list,
+                                            omega_axis, axes_data, args.save_dir, args,
+                                            offset, full_iteration, store_paths, printing))
                 # worker_function()
             else:
-                process = mp.Process(target=worker_function,
-                                     args=(t1, low + i*each_core, dataset,
+                if args.absorption_map is True:
+                    process=mp.Process(target=worker_function_am,
+                                        args=(t1, low+i*each_core, dataset,
+                                            select_data[i*each_core:], data_copies[i],
+                                            voxel_size, coefficients, F, coord_list,
+                                            omega_axis, axes_data, args.save_dir, args,
+                                            offset, full_iteration, store_paths, printing))
+                else:
+                    process = mp.Process(target=worker_function,
+                                     args=(t1, low+i*each_core, dataset,
                                            select_data[i *
                                                        each_core:], data_copies[i],
                                            voxel_size, coefficients, F, coord_list,
@@ -674,10 +984,16 @@ def main():
         for process in processes:
             process.join()
     else:
-        worker_function(t1, 0,  dataset, select_data, label_list,
+        if args.absorption_map is True:
+            worker_function_am(t1, 0,  dataset, map_data, label_list,
                              voxel_size, coefficients, F, coord_list,
                              omega_axis, axes_data, args.save_dir, args,
                              offset, full_iteration, store_paths, printing)
+        else:
+            worker_function(t1, 0,  dataset, select_data, label_list,
+                                voxel_size, coefficients, F, coord_list,
+                                omega_axis, axes_data, args.save_dir, args,
+                                offset, full_iteration, store_paths, printing)
 
 
 if __name__ == '__main__':
