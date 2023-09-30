@@ -89,97 +89,7 @@ def set_parser ( ) :
     # Add an argument for each key in the YAML file
     for key , value in config.items( ) :
         parser.add_argument( '--{}'.format( key ) , default = value )
-    # parser.add_argument(
-    #     "--num-cores" ,
-    #     type = int ,
-    #     default = 20 ,
-    #     help = "the number of cores to be distributed" ,
-    # )
-    # parser.add_argument(
-    #     "--store-dir" ,
-    #     type = str ,
-    #     default = "./" ,
-    #     help = "the store directory " ,
-    # )
-    # parser.add_argument(
-    #     "--dataset" ,
-    #     type = str , required = True ,
-    #     help = "dataset number default is 13304" ,
-    # )
-    # parser.add_argument(
-    #     "--offset" ,
-    #     type = float ,
-    #     default = 0 ,
-    #     help = "the orientation offset" ,
-    # )
-    # parser.add_argument(
-    #     "--sampling" ,
-    #     type = int ,
-    #     default = 5000 ,
-    #     help = "sampling for picking crystal point to calculate" ,
-    # )
-    #
-    # parser.add_argument(
-    #     "--store-lengths" ,
-    #     type = str2bool ,
-    #     default = False ,
-    #     help = "whether store the path lengths to calculate with different absorption coefficients" ,
-    # )
-    # parser.add_argument(
-    #     "--crac" ,
-    #     type = float , required = True ,
-    #     help = "the absorption coefficient of the crystal and it is needed" ,
-    # )
-    # parser.add_argument(
-    #     "--loac" ,
-    #     type = float , required = True ,
-    #     help = "the absorption coefficient of the loop and it is needed" ,
-    # )
-    # parser.add_argument(
-    #     "--liac" ,
-    #     type = float , required = True ,
-    #     help = "the absorption coefficient of the liquor and it is needed" ,
-    # )
-    # parser.add_argument(
-    #     "--buac" ,
-    #     type = float , default = 0 ,
-    #     help = "the absorption coefficient of the bubble and it is not necessarily needed" ,
-    # )
-    # parser.add_argument(
-    #     "--refl-filename" ,
-    #     type = str ,
-    #     default = '' ,
-    #     help = "the filenames of the reflection table" ,
-    # )
-    # parser.add_argument(
-    #     "--expt-filename" ,
-    #     type = str ,
-    #     default = '' ,
-    #     help = "the filenames of the experimental table" ,
-    # )
-    # parser.add_argument(
-    #     "--dials-dependancy" ,
-    #     type = str ,
-    #     default = '' ,
-    #     help = "the python version that is to be executed" ,
-    # )
-    # # parser.add_argument( "--dependancies" , nargs = '*' , type = str ,
-    # #                      help = "List of dependancies to execute, they can be entered at the same time"
-    # #                             "e.g. 'module load dials' 'module load global/cluster' " )
-    # parser.add_argument( "--hpc-dependancies" , nargs = '*' , type = str ,
-    #                      help = "List of hpc_dependancies to execute, they can be entered at the same time"
-    #                             "e.g. 'module load dials' 'module load global/cluster' " )
-    # parser.add_argument(
-    #     "--dials-dependancy",
-    #     type=str,
-    #     required = True,
-    #     help="the path to execute dials package"
-    #          "e.g. module load dials"
-    #          "e.g. source /home/yishun/dials_develop_version/dials",
-    # )
-    # parser.add_argument( "--time" , nargs = '*' , type = int ,
-    #                      help = "List of time for the cluster job"
-    #                             "e.g. 01 10 10 is 1hour 10minute 10seconds" )
+
     global args
     args = parser.parse_args( )
 
@@ -252,17 +162,52 @@ def main ( ) :
 
     ### define the default values of some optional arguments  ###
 
-    if hasattr(args, 'by_c'):
+    if hasattr(args, 'openmp'):
             pass
     else:
-        args.by_c=True
+        args.by_c=False
 
     if hasattr(args, 'full_iter'):
             pass
     else:
         args.full_iter=0
-    args.sampling_method ='even'
-    args.single_c = True
+
+    if hasattr(args, 'single_c'):
+            pass
+    else:
+        args.single_c=True
+    
+    if hasattr(args, 'sampling_method'):
+            pass
+    else:
+        args.sampling_method='even'
+
+    if hasattr(args, 'sampling_ratio'):
+            pass
+    else:
+        args.sampling_ratio=0.05
+
+    if hasattr(args, 'gpu'):
+            pass
+    else:
+        args.gpu=False
+
+    if hasattr(args, 'openmp'):
+            pass
+    else:
+        args.openmp=False
+
+    if hasattr(args, 'absorption_map'):
+            pass
+    else:
+        args.absorption_map=False
+
+    if hasattr(args, 'sampling_num'):
+            pass
+    else:
+        args.sampling_num=10000
+#     cluster bash file
+
     with open( os.path.join( save_dir , "mpprocess_script.sh" ) , "w" ) as f :
 
         f.write( "#!/bin/sh\n" )
@@ -281,10 +226,12 @@ def main ( ) :
         f.write( "py_file={}\n".format( py_pth ) )
         f.write( "model_storepath={}\n".format( model_storepath ) )
         f.write( "full_iter={} \n".format( args.full_iter ) )
-        f.write( "by_c={} \n".format( args.by_c ) )
+        f.write( "openmp={} \n".format( args.openmp ) )
         f.write("single_c={} \n".format( args.single_c ))
-
-
+        f.write("gpu={} \n".format( args.gpu ))
+        f.write("sampling_ratio={} \n".format( args.sampling_ratio ))
+        f.write("sampling_num={} \n".format( args.sampling_num ))
+        f.write("absorption_map={} \n".format( args.absorption_map ))
         try :
             f.write( "refl_pth={}\n".format( refl_path ) )
             f.write( "expt_pth={}\n".format( expt_path ) )
@@ -293,44 +240,15 @@ def main ( ) :
             f.write( "expt_pth={}\n".format( args.expt_path ) )
         f.write( "store_dir={}\n".format(args.store_dir  ) )
         f.write( "logging_dir={}\n".format( os.path.join( save_dir , 'Logging' ) ) )
-        f.write( 'nohup python -u  ${py_file}  --dataset ${dataset}'
-                 '--loac ${loac} --liac ${liac} --crac ${crac}  --buac ${buac} --offset ${offset}'
+        f.write( 'nohup python -u  ${py_file}  --dataset ${dataset} '
+                 '--loac ${loac} --liac ${liac} --crac ${crac}  --buac ${buac} --offset ${offset} '
                  ' --store-dir ${store_dir} --refl-path ${refl_pth} --expt-path ${expt_pth}  '
                  '--model-storepath ${model_storepath} --full-iteration ${full_iter} --num-workers ${num}  '
-                 '--sampling-num ${sampling} --auto-sampling ${auto_sampling} --by-c ${by_c} --single-c ${single_c} '
-                 ' --sampling-method ${sampling_method} '
+                 '--sampling-num ${sampling_num} --auto-sampling ${auto_sampling} --openmp ${openmp} --single-c ${single_c} '
+                 ' --sampling-method ${sampling_method} --gpu ${gpu} --sampling-ratio ${sampling_ratio} '
+                    ' --absorption-map ${absorption_map} '
                  ' > ${logging_dir}/nohup_${dataset}_${counter}.out\n' )
-        
-        # f.write( 'increment=$[$end / $num]\n' )
-        # f.write( 'counter=0\n' )
-        # f.write( 'for i in $(seq 0 $increment $end);\n' )
-        # f.write( 'do\n' )
-        # f.write( '  counter=$[$counter+1]\n' )
-        # f.write( '  if [[ $counter -eq $[$num-1] ]]; then\n' )
-        # f.write( '    x=` echo "$i + $increment*0.6" | bc`  \n' )
-        # f.write( '    nohup python -u  ${py_file}   --low $i --up ${x%.*}  --dataset ${dataset} --sampling ${sampling} '
-        #          '--loac ${loac} --liac ${liac} --crac ${crac}  --buac ${buac} --offset ${offset}'
-        #          ' --store-dir ${store_dir} --refl-filename ${refl_pth} --expt-filename ${expt_pth}  '
-        #          '--model-storepath ${model_storepath}'
-        #          ' > ${logging_dir}/nohup_${expri}_${dataset}_${counter}.out&\n' )
-        # f.write( '    final=$i\n' )
-        # f.write( '    break\n' )
-        # f.write( '  fi\n' )
-        # f.write(
-        #     '  nohup python -u  ${py_file}    --low $i --up $[$i+$increment] --dataset ${dataset}  --sampling ${sampling} '
-        #     ' --loac ${loac} --liac ${liac} --crac ${crac} --buac ${buac}  --offset ${offset} '
-        #     '--store-dir ${store_dir} --refl-filename ${refl_pth} --expt-filename ${expt_pth}  '
-        #     '--model-storepath ${model_storepath}'
-        #     '> ${logging_dir}/nohup_${expri}_${dataset}_${counter}.out&\n' )
-        # f.write( '  if [[ $counter -eq 1 ]]; then\n' )
-        # f.write( '    sleep 20\n' )
-        # f.write( '  fi\n' )
-        # f.write( 'done\n' )
-        # f.write( 'nohup python -u ${py_file}    --low ${x%.*} --up -1  --dataset ${dataset} --sampling ${sampling} '
-        #          '--loac ${loac} --liac ${liac} --crac ${crac} --buac ${buac}   --offset ${offset} '
-        #          '--store-dir ${store_dir}  --refl-filename ${refl_pth}  --expt-filename ${expt_pth}  '
-        #          '--model-storepath ${model_storepath}'
-        #          '> ${logging_dir}/nohup_${expri}_${dataset}_$[$counter+1].out\n' )
+
 
         if args.post_process is True:
             dataset = args.dataset

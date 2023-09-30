@@ -65,6 +65,7 @@ class AbsorptionCoefficient( object ) :
         self.h_flip = h_flip
         self.auto_orientation = auto_orientation
         self.auto_viewing = auto_viewing
+        self.img_loading(self.angle , flat_fielded = flat_fielded )
         # current the first image is where the gonionmeter is 0
         if self.auto_orientation or self.auto_viewing is True :
             self.cal_orientation_auto( )
@@ -72,7 +73,7 @@ class AbsorptionCoefficient( object ) :
         # if  self.auto_viewing is True:
         #     self.cal_viewing_auto()
 
-        self.differet_orientation( self.angle , flat_fielded = flat_fielded )
+        self.differet_orientation(self.angle )
         self.pixel_size = pixel_size
         self.upper_lim_li = 0.1
         self.lower_lim_li = 0
@@ -105,10 +106,10 @@ class AbsorptionCoefficient( object ) :
                 os.makedirs( self.save_dir )
             except :
                 os.mkdir( self.save_dir )
-        new = self.img_list.mean( axis = 1 )
+        # new = self.modelproj.copy( )
         # img2 and mask2 are the images from 3D model
         self.img2 = 255 - \
-                    cv2.normalize( new , None , 0 , 255 , cv2.NORM_MINMAX ).astype( 'uint8' )
+                    cv2.normalize( self.modelproj.copy( ) , None , 0 , 255 , cv2.NORM_MINMAX ).astype( 'uint8' )
         self.mask2 = self.mask_generation( self.img2 , thresh = 255 )
 
         # img is the raw tomo image to extract intensities
@@ -140,7 +141,7 @@ class AbsorptionCoefficient( object ) :
         self.mask1 = self.mask_generation( self.img1 , thresh = thresh )
         """ image processing: extract the overall boundary of the raw image and the projection of the 3D model
         """
-       
+        
         # mask1 = fill_the_labels( mask1 )
         self.mask2 , self.yxshift = self.skimage_translation_matching( self.mask1 ,
                                                                        self.mask2 )  # move mask2 to get mask1
@@ -285,6 +286,8 @@ class AbsorptionCoefficient( object ) :
         return roi_cls
 
     def imagemask_overlapping ( self , img1 , mask , title = 'Null' ) :
+
+        img1, mask=self.same_shape(img1,mask)
         try :
             label = np.unique( mask )[1]
         except :
@@ -483,9 +486,9 @@ class AbsorptionCoefficient( object ) :
         imgfile_list = os.listdir( self.tomo_img_path )
         sorted_imgfile_list = sorted( imgfile_list , key = extract_number )
         self.img_list = np.load( self.ModelFilename )
-        new1 = self.img_list.mean( axis = 1 )
+  
         img_label = 255 - \
-                    cv2.normalize( new1 , None , 0 , 255 , cv2.NORM_MINMAX ).astype( 'uint8' )
+                    cv2.normalize( self.modelproj , None , 0 , 255 , cv2.NORM_MINMAX ).astype( 'uint8' )
         mask_label = self.mask_generation( img_label , thresh = 255 )
 
         def calculate_difference ( start , end , sorted_imgfile_list , step , mask_label , plot = False ) :
@@ -608,8 +611,8 @@ class AbsorptionCoefficient( object ) :
                 result = self.rotate_image( slice , angle_inv )
                 img_list[i] = result
         return img_list
-         
-    def differet_orientation ( self , angle , flat_fielded = None ) :
+    
+    def img_loading(self, angle,flat_fielded = None ):
 
         angle_inv = -(angle + self.offset)
         self.img_list = np.load( self.ModelFilename )
@@ -639,44 +642,134 @@ class AbsorptionCoefficient( object ) :
                     filename = f
                     break
             file = os.path.join( self.tomo_img_path , filename )
-   
         self.logger.info(
             "the examined flat-fielded corrected image is {}".format( os.path.basename( file ) ) )
         print(
             "the examined flat-fielded corrected image is {}".format( os.path.basename( file ) ) )
-        new1 = self.img_list.mean( axis = 1 )
+        self.modelproj = self.img_list.mean( axis = 1 )
         self.img = cv2.imread( file , 2 )
-        
+
         if self.v_flip :
             # 1 : flip over horizontal ; 0 : flip over vertical
             self.img = cv2.flip( self.img , 0 )
         if self.h_flip :
             # 1 : flip over horizontal ; 0 : flip over vertical
             self.img = cv2.flip( self.img , 1 )
-        if self.img.shape[0] != new1.shape[0] :
-            if self.img.shape[0] > new1.shape[0]:
-                self.img , new1 = self.cropping( self.img , new1 , crop = self.crop )
-            else:
-                self.img , new1 = self.padding( self.img , new1 , pad = self.pad )
+
+        self.img, self.modelproj = self.same_shape(self.img,self.modelproj)
+        # shape1 = self.img.shape
+        # shape2 = self.modelproj.shape 
+        # if shape1 != shape2:
+        #     # Calculate the padding needed for height and width
+        #     pad_height = abs(shape1[0] - shape2[0])
+        #     pad_width = abs(shape1[1] - shape2[1])
+
+        #     # Determine which image is smaller
+        #     if shape1 < shape2:
+        #         # Pad image1
+        #         self.img= cv2.copyMakeBorder(self.img, 0, pad_height, 0, pad_width, cv2.BORDER_CONSTANT, value=[0, 0, 0])
+        #     else:
+        #         # Pad image2
+        #         self.modelproj = cv2.copyMakeBorder(self.modelproj, 0, pad_height, 0, pad_width, cv2.BORDER_CONSTANT, value=[0, 0, 0])
         
-        """ special case for partial illumination """
-        new1 = self.img_list.mean( axis = 1 )
-        self.img = cv2.imread( file , 2 )
-        self.img[self.img > 2] = 2
-        self.img[self.img < 0] = 0
-        self.img , new1 = self.padding( self.img , new1 , pad = self.pad )
+        # """ special case for partial illumination """
+        # self.modelproj = self.img_list.mean( axis = 1 )
+        # self.img = cv2.imread( file , 2 )
+        # self.img[self.img > 2] = 2
+        # self.img[self.img < 0] = 0
+        # self.img , self.modelproj = self.padding( self.img , self.modelproj , pad = self.pad )
         # pdb.set_trace()
         """ special case for partial illumination"""
 
         print("the shape of the image is {}".format(self.img.shape))
-        print("the shape of the model is {}".format(new1.shape))
+        print("the shape of the model is {}".format(self.modelproj.shape))
+
+    @staticmethod
+    def same_shape(img1,img2):
+        shape1 = img1.shape
+        shape2 = img2.shape 
+        if shape1 != shape2:
+            # Calculate the padding needed for height and width
+            pad_height = abs(shape1[0] - shape2[0])
+            pad_width = abs(shape1[1] - shape2[1])
+
+            # Determine which image is smaller
+            if shape1 < shape2:
+                # Pad image1
+                img1= cv2.copyMakeBorder(img1, 0, pad_height, 0, pad_width, cv2.BORDER_CONSTANT, value=[0, 0, 0])
+            else:
+                # Pad image2
+                img2 = cv2.copyMakeBorder(img2, 0, pad_height, 0, pad_width, cv2.BORDER_CONSTANT, value=[0, 0, 0])
+        return img1,img2
+    def differet_orientation ( self , angle  ) :
+
+        # angle_inv = -(angle + self.offset)
+        # self.img_list = np.load( self.ModelFilename )
+        # # if self.ModelRotate< 0:
+        # #     self.ModelRotate = 360+self.ModelRotate
+        # # counter = self.ModelRotate //90
+
+        # # self.img_list = np.rot90(self.img_list,k=counter,axes=(1,2))  # rotate clockwisely along 0 axis, if axes(2,1), anti-clockwise
+
+        # if angle_inv != 0 :
+        #     self.img_list = self.rotate_3D(self.img_list,angle_inv)
+
+        # if flat_fielded is not None and flat_fielded.isspace( ) is not True \
+        #         and flat_fielded != '' :
+        #     file = os.path.join( self.tomo_img_path , flat_fielded )
+        # else :
+        #     afterfix = len( os.listdir( self.tomo_img_path ) ) / 180
+
+        #     fileindex = int( angle * afterfix )
+        #     if fileindex == 0 :
+        #         pass
+        #     else:
+        #         fileindex -= 1
+        #     print("the fileindex is {}".format(fileindex))
+        #     for f in os.listdir( self.tomo_img_path ) :
+        #         index = int( re.findall( r'\d+' , f )[-1] )
+        #         if index == fileindex :
+        #             filename = f
+        #             break
+        #     file = os.path.join( self.tomo_img_path , filename )
+   
+        # self.logger.info(
+        #     "the examined flat-fielded corrected image is {}".format( os.path.basename( file ) ) )
+        # print(
+        #     "the examined flat-fielded corrected image is {}".format( os.path.basename( file ) ) )
+        # new1 = self.img_list.mean( axis = 1 )
+        # self.img = cv2.imread( file , 2 )
+        
+        # if self.v_flip :
+        #     # 1 : flip over horizontal ; 0 : flip over vertical
+        #     self.img = cv2.flip( self.img , 0 )
+        # if self.h_flip :
+        #     # 1 : flip over horizontal ; 0 : flip over vertical
+        #     self.img = cv2.flip( self.img , 1 )
+        # if self.img.shape[0] != new1.shape[0] :
+        #     if self.img.shape[0] > new1.shape[0]:
+        #         self.img , new1 = self.cropping( self.img , new1 , crop = self.crop )
+        #     else:
+        #         self.img , new1 = self.padding( self.img , new1 , pad = self.pad )
+        
+        # """ special case for partial illumination """
+        # new1 = self.img_list.mean( axis = 1 )
+        # self.img = cv2.imread( file , 2 )
+        # self.img[self.img > 2] = 2
+        # self.img[self.img < 0] = 0
+        # self.img , new1 = self.padding( self.img , new1 , pad = self.pad )
+        # # pdb.set_trace()
+        # """ special case for partial illumination"""
+
+        # print("the shape of the image is {}".format(self.img.shape))
+        # print("the shape of the model is {}".format(new1.shape))
        
         candidate_img = cv2.normalize( self.img , None , 0 , 255 , cv2.NORM_MINMAX ).astype(
             'uint8' )
         thresh = self.thresholding_method( )( candidate_img )
         candidate_mask = self.mask_generation( candidate_img , thresh = thresh )
         img_label = 255 - \
-                    cv2.normalize( new1 , None , 0 , 255 , cv2.NORM_MINMAX ).astype( 'uint8' )
+                    cv2.normalize( self.modelproj , None , 0 , 255 , cv2.NORM_MINMAX ).astype( 'uint8' )
         mask_label = self.mask_generation( img_label , thresh = 255 )
         shifted_mask , xyshift = self.skimage_translation_matching(
             candidate_mask , mask_label )

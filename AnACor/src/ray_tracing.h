@@ -62,7 +62,7 @@ typedef struct
 
 
 ThetaPhi dials_2_thetaphi_22(double rotated_s1[3], int64_t L1);
-void dials_2_numpy(double vector[3], double result[3]);
+void dials_2_myframe(double vector[3], double result[3]);
 int64_t cube_face(int64_t ray_origin[3], double ray_direction[3], int64_t cube_size[3], int L1);
 int64_t which_face(int64_t coord[3], int64_t shape[3], double theta, double phi);
 void appending(int64_t increment, int64_t *path_2,

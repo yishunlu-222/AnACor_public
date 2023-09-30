@@ -6,7 +6,26 @@ import json
 import time
 import multiprocessing
 import warnings
+import argparse
 warnings.simplefilter(action='ignore', category=Warning)
+
+
+parser = argparse.ArgumentParser(description="multiprocessing for batches")
+parser.add_argument(
+    "--mur",
+    type=float,
+    default=1,
+    help="coordinate setting",
+
+)
+parser.add_argument(
+    "--sam",
+    type=int,
+    default=0,
+    help="coordinate setting",
+
+)
+
 
 def worker_function(args):
     index, crystal_coordinate, shape, theta_1, phi_1, theta, phi, label_list, voxel_size, coefficients = args
@@ -24,7 +43,7 @@ def worker_function(args):
     absorption = cal_rate((numbers_1 + numbers_2), coefficients)
     return absorption
 
-def rect_ana_ac_test(mu,angle, width,height,sampling):
+def rect_ana_ac_test(mu,angle, width,height,length,sampling):
     t1=time.time()
     coefficients = [0,0,mu,0]
     t_theta = angle / 180 * np.pi
@@ -42,7 +61,7 @@ def rect_ana_ac_test(mu,angle, width,height,sampling):
     #
     # mesh[: , int( height * resolution * 0.1 ) : int( height * resolution * 0.9 ) ,
     # int( width * resolution * 0.1 ) : int( width * resolution * 0.9 )] = 10.3875031836219992
-    label_list = np.ones( (1 , int( height/ voxel_size[0]) , int( width/voxel_size[0]  )) ).astype(np.int8)   #0.3875031836219992
+    label_list = np.ones( (length , int( height/ voxel_size[0]) , int( width/voxel_size[0]  )) ).astype(np.int8)   #0.3875031836219992
     shape=label_list.shape
     zz , yy , xx = np.where( label_list == 1 )
     crystal_coordinate = np.stack( (zz , yy , xx) , axis = 1 )
@@ -126,19 +145,25 @@ if __name__ == '__main__':
 
     mu=0.01 #um-1
 
-    sampling=1
-    for mur in [(150,150),(300,150),(150,300)]:
+    if args.sam==1:
+      length=101
+      sampling=54000  #54000 2000
+    else:
+      length=1  
+      sampling=1
+    for mur in [(100,50),(100,100),(100,150)]:
         width=mur[0]
         height=mur[1]
         # radius= mur/mu # mm
         voxel_size=[0.3,0.3,0.3] # um
+        voxel_size=[0.1,0.1,0.1]     
         #resolution=int(min( width , height ) / voxel_size[0])
         errors=[]
         for angle in angle_list:
           er=rect_ana_ac_test(mu,angle, width,height,sampling) *100
           errors.append([ angle,er])
 
-          with open("rect_sample_w_{}_h_{}_{}.json".format(width,height,voxel_size[0]), "w") as f1:  # Pickling
+          with open("rect_sample_w_{}_h_{}_l_{}_{}.json".format(width,height,length,voxel_size[0]), "w") as f1:  # Pickling
               json.dump(errors, f1, indent=2)
         
 

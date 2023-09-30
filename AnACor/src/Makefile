@@ -44,11 +44,11 @@ NVCCFLAGS = -O3 -arch=sm_61 --ptxas-options=-v -Xcompiler -Wextra -Xcompiler -fP
 NVCCFLAGS_D = -O0  -arch=sm_61 --ptxas-options=-v -Xcompiler -Wextra -Xcompiler -fPIC  -G -g
 #NVCCFLAGS = -O3 -arch=sm_70 --ptxas-options=-v -Xcompiler -Wextra -Xcompiler -fPIC -lineinfo  #V100
 GCC_OPTS =-O3 -fPIC -Wall -Wextra  $(LDFLAGS)  $(INC)
-GCC_OPTS_D =-O0 -fPIC -Wall -Wextra $(INC)  $(LDFLAGS)
+GCC_OPTS_D =-O0 -fPIC -Wall -Wextra $(INC)  $(LDFLAGS)  -g
 ANALYZE = FFT.exe
 
 all: clean sharedlibrary_cpu
-debug: clean de
+debug: clean sharedlibrary_cpu_d sharedlibrary_gpu_d
 cpu: clean sharedlibrary_cpu
 gpu: clean sharedlibrary_gpu
 
@@ -80,6 +80,34 @@ ray_tracing_c.o: ray_tracing_gpu.c
 ray_tracing_gpu.o:  $(gpu_pth)ray_tracing_gpu.cu
 	$(NVCC) -c  $(gpu_pth)ray_tracing_gpu.cu $(NVCCFLAGS) -o ray_tracing_gpu.o
 
+
+
+sharedlibrary_cpu_d: ray_tracing_d.o ray_tracing_basic_d.o bisection_d.o testkit_d.o 
+	$(GCC) -shared -o ray_tracing_cpu.so  -fPIC -std=c99 $(GCC_OPTS_D) $(LDFLAGS) ray_tracing_d.o ray_tracing_basic_d.o bisection_d.o testkit_d.o 
+
+ray_tracing_d.o: $(pth)ray_tracing.c
+	$(GCC) -c $(pth)ray_tracing.c $(GCC_OPTS_D) -o ray_tracing_d.o
+
+ray_tracing_basic_d.o: $(pth)ray_tracing_basic.c
+	$(GCC) -c $(pth)ray_tracing_basic.c $(GCC_OPTS_D) -o ray_tracing_basic_d.o
+
+bisection_d.o: $(pth)bisection.c
+	$(GCC) -c $(pth)bisection.c $(GCC_OPTS_D) -o bisection_d.o
+
+testkit_d.o: $(pth)testkit.c
+	$(GCC) -c $(pth)testkit.c $(GCC_OPTS_D) -o testkit_d.o
+
+
+
+
+sharedlibrary_gpu_d: ray_tracing_c_d.o  ray_tracing_gpu_d.o
+	$(NVCC) $(NVCCFLAGS_D) -shared -o ray_tracing_gpu.so  ray_tracing_c_d.o  ray_tracing_gpu_d.o
+
+ray_tracing_c_d.o: ray_tracing_gpu.c 
+		g++  -c ray_tracing_gpu.c $(GCC_OPTS_D) -o  ray_tracing_c_d.o  
+
+ray_tracing_gpu_d.o:  $(gpu_pth)ray_tracing_gpu.cu
+	$(NVCC) -c  $(gpu_pth)ray_tracing_gpu.cu $(NVCCFLAGS_D) -o ray_tracing_gpu_d.o
 
 # bisection_d.o: $(pth)bisection.c
 # 	$(GCC) -c $(pth)bisection.c $(GCC_OPTS_D) -o bisection_d.o

@@ -50,9 +50,9 @@ ThetaPhi dials_2_thetaphi_22(double rotated_s1[3], int64_t L1)
     return result;
 }
 
-void dials_2_numpy(double vector[3], double result[3])
+void dials_2_myframe(double vector[3], double result[3])
 {
-    double numpy_2_dials_1[3][3] = {
+    double myframe_2_dials_1[3][3] = {
         {1, 0, 0},
         {0, 0, 1},
         {0, 1, 0}};
@@ -62,7 +62,7 @@ void dials_2_numpy(double vector[3], double result[3])
         result[i] = 0.0;
         for (int j = 0; j < 3; j++)
         {
-            result[i] += numpy_2_dials_1[i][j] * vector[j];
+            result[i] += myframe_2_dials_1[i][j] * vector[j];
         }
     }
 }

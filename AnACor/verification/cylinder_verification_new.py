@@ -26,6 +26,9 @@ parser.add_argument(
 )
 
 cylinder_tables_p1=1/np.array([1.1843,	1.1843,	1.1842,	1.1840,	1.1838,	1.1835,	1.1832,	1.1828,	1.1823,	1.1818,	1.1813,	1.1808,	1.1802,	1.1798	,1.1793	,1.1790	,1.1787,	1.1785,	1.1785])
+correct_p1=np.array([0.84438065, 0.84445195, 0.84473729, 0.84516565, 0.84580902, 0.84652501, 0.84731401, 0.84796065, 0.8483923, 0.84853627])
+correct_p5=np.array([0.43485824, 0.43618599, 0.44012147, 0.44646843, 0.45462811, 0.46373586, 0.47276853, 0.4805613, 0.48593226, 0.48787627])
+correct_1 =np.array([0.19643664, 0.19926273, 0.2074861, 0.22007527, 0.23551023, 0.25211779, 0.26819718, 0.28199199, 0.29158769, 0.29510712])
 global args
 args = parser.parse_args()
 
@@ -188,7 +191,7 @@ if __name__ == '__main__':
     mu=0.01
     if args.sam==1:
       length=50
-      sampling=2000
+      sampling=54000
     else:
       length=1
       sampling=1
@@ -198,14 +201,23 @@ if __name__ == '__main__':
         voxel_size=[0.3,0.3,0.3] # um
         voxel_size=[0.03,0.03,0.03]
         voxel_size=[0.1,0.1,0.1] 
-
+        if mur==0.1:
+            reference=correct_p1
+        elif mur==0.5:
+            reference=correct_p5
+            
+        elif mur==1:
+            reference=correct_1
+        else:
+            reference=np.zeros(len(correct_p1))
         errors=[]
+        with open("cylinder_sample_{}_mur_{}_{}_l_{}_mu_{}_cached.json".format(sampling,mur,voxel_size[0],length,mu), "w") as f1:  # Pickling
+                json.dump(errors, f1, indent=2)
         for angle in angle_list:
-            if angle < 60:
-                continue
-            er=sphere_ana_ac_test(mu,angle, radius,length,sampling)
-            errors.append([ angle,er])
 
+            absorp=sphere_ana_ac_test(mu,angle, radius,length,sampling)
+            er=np.abs(reference[i] -absorp)/absorp
+            errors.append([ angle,er, absorp])
             with open("cylinder_sample_{}_mur_{}_{}_l_{}_mu_{}_cached.json".format(sampling,mur,voxel_size[0],length,mu), "w") as f1:  # Pickling
                 json.dump(errors, f1, indent=2)
         t2=time.time()

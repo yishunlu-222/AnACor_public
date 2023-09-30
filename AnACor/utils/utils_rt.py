@@ -172,11 +172,50 @@ def partial_illumination_selection(xray_region, total_rotation_matrix, coord, po
     else:
         return False
 
-def thetaphi_2_dials(theta,phi):
+# def myframe_2_thetaphi(vector, L1=False):
+#     if L1 is True:
+#         # L1 is the incident beam and L2 is the diffracted so they are opposite
+#         vector = -vector
+#     z,y,x=vector
+#     # y=-y # the y axis is opposite to the lab frame
+#     # x=-x 
+#     if z == 0 and x == 0:
+#         theta = np.pi / 2
+#         if y > 0:
+#             theta *= -1
+
+#         return theta,0
+
+#     # Compute theta
+#     r = np.sqrt(x**2 + y**2 + z**2)
+#     theta = np.arcsin(np.abs(y / r)  # This gives theta in the range of 0 to pi
+
+#     # Adjusting the range of theta to be from -pi to pi
+#     if y > 0:
+#         theta *= -1 
+
+#     # Compute phi
+#     phi = np.arctan2(z,-x)  # the x axis is opposite to the lab frame
+#     if phi > np.pi / 2:
+#         phi -= np.pi
+#     elif phi < -np.pi / 2:
+#         phi += np.pi
+
+#     return theta, phi
+
+def mse_diff(theta, phi, map_theta, map_phi,i):
+    if (theta - map_theta) > 1e-5:
+        print('i:{} theta is {}, map_theta is {}'.format(i,theta, map_theta))
+    elif (phi - map_phi) > 1e-5:
+        print('i: {} phi is {}, map_phi is {}'.format(i,phi, map_phi))
+    else:
+        print("i {} has no difference".format(i))
+
+def thetaphi_2_myframe(theta,phi):
     z =np.cos(theta)*np.sin(phi)
-    x =np.cos(theta)*np.cos(phi)
-    y =np.sin(theta)
-    return numpy_2_dials( np.array([z,y,x]))
+    x =-np.cos(theta)*np.cos(phi)
+    y =-np.sin(theta)
+    return np.array([z,y,x])
 
 def dials_2_thetaphi(rotated_s1,L1=False):
     if L1 is True:
@@ -309,22 +348,32 @@ def which_face(coord,shape,theta,phi):
     # pdb.set_trace()
     return  face
 
-def dials_2_numpy(vector):
+def dials_2_myframe(vector):
     # (x',y',z') in standard vector but in numpy (z,y,x)
     # rotate the coordinate system about x'(z in numpy) for 180
     # vector =vector.astype(np.float32)
     # numpy_2_dials_1 = np.array([[np.cos(np.pi), np.sin(np.pi), 0],
     #                             [-np.sin(np.pi), np.cos(np.pi), 0],
     #                             [0, 0, 1]],dtype=np.float32)
-    numpy_2_dials_1 = np.array([[1, 0, 0],
+
+
+    # (x',y',z') in standard vector but in numpy (z,y,x)
+    # take the reflection about y'(y in numpy)
+    numpy_2_dials_0 = np.array([[1, 0, 0],
                                 [0, 0, 1],
                                 [0, 1, 0]])
-
-    back2 = numpy_2_dials_1.dot(vector)
+    # omega = np.pi
+    # numpy_2_dials_1 =np.array([[1, 0, 0],
+    #                             [0, np.cos(omega), np.sin(omega)],
+    #                             [0, -np.sin(omega), np.cos(omega)]])
+    # numpy_2_dials_1 = np.array([[1, 0, 0],
+    #                             [0, -1, 0],
+    #                             [0, 0, -1]])
+    back2 = numpy_2_dials_0.dot(vector)
 
     return  back2
 
-def numpy_2_dials(vector):
+def myframe_2_dials(vector):
     # (x',y',z') in standard vector but in numpy (z,y,x)
     # rotate the coordinate system about x'(z in numpy) for 180
     # vector =vector.astype(np.float32)
@@ -334,8 +383,15 @@ def numpy_2_dials(vector):
     numpy_2_dials_1 = np.array([[1, 0, 0],
                                 [0, 0, 1],
                                 [0, 1, 0]]).T
-
+    # omega = -np.pi
+    # numpy_2_dials_1 =np.array([[1, 0, 0],
+    #                             [0, np.cos(omega), np.sin(omega)],
+    #                             [0, -np.sin(omega), np.cos(omega)]])
+    # numpy_2_dials_2 = np.array([[0, 0, 1],
+    #                             [0, 1, 0],
+    #                             [1, 0, 0]]) #swap x and z
     back2 = numpy_2_dials_1.dot(vector)
+
 
     return  back2
 

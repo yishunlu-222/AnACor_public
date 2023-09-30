@@ -996,11 +996,11 @@ def cal_coord(theta ,phi,coord,face,shape,label_list,full_iteration=False):
     else:
         raise RuntimeError("unexpected ray out face")
 
-    if len(path_2) == 1:
-        r_x_pos = np.abs( 0.5 /(np.cos(theta) * np.cos(phi)))
-        r_y_pos= np.abs( 0.5 /(np.sin(theta)))
-        r_z_pos = np.abs( 0.5 /(np.cos(theta) * np.sin(phi)))
-        path_2[0]=(r_z_pos,r_y_pos,r_x_pos)
+    # if len(path_2) == 1:
+    #     r_x_pos = np.abs( 0.5 /(np.cos(theta) * np.cos(phi)))
+    #     r_y_pos= np.abs( 0.5 /(np.sin(theta)))
+    #     r_z_pos = np.abs( 0.5 /(np.cos(theta) * np.sin(phi)))
+    #     path_2[0]=(r_z_pos,r_y_pos,r_x_pos)
 
     return path_2,classes_posi,classes
 
@@ -1021,13 +1021,13 @@ def cal_path_plus(path_2,voxel_size):
 
 
         # total_length = ( path_ray[-1][1] - path_ray[0][1] )/ (np.sin(np.abs(omega)))
-    if len(path_2[0])==1:
-        total_length=np.min(np.array(path_2[0]))
-        # tot
+    # if len(path_2[0])==1:
+    #     total_length=np.min(np.array(path_2[0]))
+    #     # tot
                              
-    else:
+    # else:
 
-        total_length=np.sqrt(((path_ray[-1][1]  - path_ray[0][1] ) * voxel_length_y ) ** 2 +
+    total_length=np.sqrt(((path_ray[-1][1]  - path_ray[0][1] ) * voxel_length_y ) ** 2 +
                          ((path_ray[-1][0]  - path_ray[0][0] ) * voxel_length_z ) ** 2 +
                          ( (path_ray[-1][2]  - path_ray[0][2] ) * voxel_length_x )** 2)
     for j, trans_index in enumerate(posi):
