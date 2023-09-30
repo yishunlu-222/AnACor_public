@@ -25,7 +25,8 @@ parser.add_argument(
     help="coordinate setting",
 
 )
-
+global args
+args = parser.parse_args()
 
 def worker_function(args):
     index, crystal_coordinate, shape, theta_1, phi_1, theta, phi, label_list, voxel_size, coefficients = args
@@ -146,7 +147,7 @@ if __name__ == '__main__':
     mu=0.01 #um-1
 
     if args.sam==1:
-      length=101
+      length=50
       sampling=54000  #54000 2000
     else:
       length=1  
@@ -160,15 +161,15 @@ if __name__ == '__main__':
         #resolution=int(min( width , height ) / voxel_size[0])
         errors=[]
         for angle in angle_list:
-          er=rect_ana_ac_test(mu,angle, width,height,sampling) *100
+          er=rect_ana_ac_test(mu,angle, width,height,length,sampling) *100
           errors.append([ angle,er])
 
-          with open("rect_sample_w_{}_h_{}_l_{}_{}.json".format(width,height,length,voxel_size[0]), "w") as f1:  # Pickling
+          with open("rect_sample_{}_w_{}_h_{}_l_{}_{}.json".format(sampling,width,height,length,voxel_size[0]), "w") as f1:  # Pickling
               json.dump(errors, f1, indent=2)
         
 
     # mu=1
-    # width = 1
+    # width = 1 
     # height = 1
     # resolution = 500
     # errors=[]

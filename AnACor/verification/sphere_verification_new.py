@@ -120,7 +120,7 @@ def sphere_ana_ac_test(mu,angle, radius,voxel_size,sampling):
     print("len of coordinate_list is {}".format(len(coordinate_list)))
     absorp = np.empty(len(coordinate_list))
     coord_list=[crystal_coordinate[i] for i in  coordinate_list]
-    # coord_list = generate_sampling(label_list, cr=3, dim='z', sampling_size=sampling, auto=False,method='even',sampling_ratio=None)
+
     del zz, yy, xx
         
 
@@ -198,7 +198,7 @@ if __name__ == '__main__':
   
     t1=time.time()
     sampling=2000
-    mu=0.01 #um-1
+    mu=0.02 #um-1
     if args.sam==1:
       sampling=54000 # 2000
     else:
@@ -227,7 +227,7 @@ if __name__ == '__main__':
                 json.dump(errors, f1, indent=2)
         for i,angle in enumerate(angle_list):
             absorp=sphere_ana_ac_test(mu,angle, radius,voxel_size,sampling)
-            er=np.abs(reference[i] -absorp)/absorp
+            er=np.abs(reference[i] -absorp)/absorp *100
             errors.append([ angle,er, absorp])
 
             with open("sphere_sample_{}_mur_{}_{}_{}.json".format(sampling,mur,voxel_size[0],mu), "w") as f1:  # Pickling

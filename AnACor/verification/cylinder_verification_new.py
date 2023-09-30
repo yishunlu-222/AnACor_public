@@ -188,7 +188,7 @@ if __name__ == '__main__':
     sampling=1
     t1=time.time()
     mu=0.01 #um-1
-    mu=0.01
+    mu=0.02
     if args.sam==1:
       length=50
       sampling=54000
@@ -211,14 +211,14 @@ if __name__ == '__main__':
         else:
             reference=np.zeros(len(correct_p1))
         errors=[]
-        with open("cylinder_sample_{}_mur_{}_{}_l_{}_mu_{}_cached.json".format(sampling,mur,voxel_size[0],length,mu), "w") as f1:  # Pickling
+        with open("cylinder_sample_{}_mur_{}_{}_l_{}_mu_{}.json".format(sampling,mur,voxel_size[0],length,mu), "w") as f1:  # Pickling
                 json.dump(errors, f1, indent=2)
         for angle in angle_list:
 
             absorp=sphere_ana_ac_test(mu,angle, radius,length,sampling)
             er=np.abs(reference[i] -absorp)/absorp
             errors.append([ angle,er, absorp])
-            with open("cylinder_sample_{}_mur_{}_{}_l_{}_mu_{}_cached.json".format(sampling,mur,voxel_size[0],length,mu), "w") as f1:  # Pickling
+            with open("cylinder_sample_{}_mur_{}_{}_l_{}_mu_{}.json".format(sampling,mur,voxel_size[0],length,mu), "w") as f1:  # Pickling
                 json.dump(errors, f1, indent=2)
         t2=time.time()
         print('the time spent is {}'.format(t2 -t1))
