@@ -48,7 +48,7 @@ save_name = 'rectangular'
 filename1 = './rectangular sample 1 w1_h1.json'
 filename2 = './rectangular sample 1 w1_h2.json'
 filename3 = './rectangular sample 1 w2_h1.json'
-pth='D:/lys/studystudy/phd/0-Project_absorption_correction/Code_0_for_absorption_correction/ac/analytical_absorption_corrrection_verification/rect'
+pth='D:/lys/studystudy/phd/0-Project_absorption_correction/Code_0_for_absorption_correction/ac/analytical_absorption_corrrection_verification/rect/paper'
 save_name='rect'
 filename1 = 'rect_sample_w_1_h_3_0.03.json'
 filename2 = 'rect_sample_w_3_h_1_0.03.json'
@@ -71,7 +71,9 @@ filename4='rect_sample_2_w_10_h_5_l_11_0.1_mu_0.01.json'
 filename5='rect_sample_2_w_10_h_10_l_11_0.1_mu_0.01.json'
 filename6='rect_sample_2_w_10_h_15_l_11_0.1_mu_0.01.json'
 
-
+filename4='rect_sample_54000_w_100_h_50_l_50_0.1.json'
+filename5='rect_sample_54000_w_100_h_100_l_50_0.1.json'
+filename6='rect_sample_54000_w_100_h_150_l_50_0.1.json'
 with open( os.path.join(pth,filename1) ) as f1 :
     data1 = json.load( f1 )
 with open(  os.path.join(pth,filename2) ) as f2 :

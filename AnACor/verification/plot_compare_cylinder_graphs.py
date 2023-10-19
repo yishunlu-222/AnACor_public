@@ -17,12 +17,13 @@ def cylinder_tables ( table ,second=True ) :
     return np.array( correct )
 
 
-def extract_error ( data ) :
+def extract_error ( data,index=1 ) :
     errors = []
     for i in data :
-        errors.append( i[1] )
+        errors.append( i[index] )
 
     return np.array( errors )
+
 
 
 #https://it.iucr.org/Cb/ch6o3v0001/
@@ -57,7 +58,7 @@ print( correct_p5 )
 print( correct_1 )
 print( correct_2 )
 
-pth='D:/lys/studystudy/phd/0-Project_absorption_correction/Code_0_for_absorption_correction/ac/analytical_absorption_corrrection_verification/cylinder'
+pth='D:/lys/studystudy/phd/0-Project_absorption_correction/Code_0_for_absorption_correction/ac/analytical_absorption_corrrection_verification/cylinder/paper'
 save_name='cylinder'
 
 
@@ -76,15 +77,23 @@ filenamep1_s='cylinder_sample_1_mur_0.1_0.1_l_1_mu_0.01.json'
 filenamep5_s='cylinder_sample_1_mur_0.5_0.1_l_1_mu_0.01.json'
 filename1_s='cylinder_sample_10_mur_1_0.1_l_1_mu_0.01.json'
 
+
 filenamep1='cylinder_sample_2000_mur_0.1_0.3_l_50.json'
 filenamep2_s='cylinder_sample_2000_mur_0.2_0.3.json'
 filenamep3_s='cylinder_sample_2000_mur_0.3_0.3.json'
 filenamep5='cylinder_sample_2000_mur_0.5_0.3_l_50.json'
 filename1='cylinder_sample_2000_mur_1_0.3_l_50.json'
 filename2_s='cylinder_sample_2000_mur_2_0.3.json'
+
 filenamep1_s='cylinder_sample_2000_mur_0.1_0.1_l_50_mu_0.01.json'
 filenamep5_s='cylinder_sample_2000_mur_0.5_0.1_l_50_mu_0.01.json'
 filename1_s='cylinder_sample_2000_mur_1_0.1_l_50_mu_0.01.json'
+
+
+
+filenamep1_s='cylinder_sample_54000_mur_0.1_0.1_l_50_mu_0.01.json'
+filenamep5_s='cylinder_sample_54000_mur_0.5_0.1_l_50_mu_0.01.json'
+filename1_s='cylinder_sample_54000_mur_1.0_0.1_l_50_mu_0.01.json'
 
 with open( os.path.join(pth,filenamep1) ) as f1 :
     datap1 = json.load( f1 )
@@ -101,9 +110,9 @@ with open( os.path.join(pth, filename1_s )) as f4 :
 # array([0.26445344, 0.27490508, 0.26727876, 0.27113762, 0.27444762,
 #        0.26720538, 0.32270223, 0.3190568 , 0.27831181, 0.26929138])
 
-errorsp1 = 1 / cylinder_tables( extract_error( datap1 ),second=False)
+errorsp1 = 1 / cylinder_tables( extract_error( datap1   ),second=False)
 errorsp5 = 1 / cylinder_tables(extract_error( datap5 ),second=False)
-error_1 = 1 / cylinder_tables(extract_error( data1 ),second=False)
+error_1 = 1 / cylinder_tables(extract_error( data1  ),second=False)
 
 
 result_p1 = np.abs( correct_p1 - errorsp1 ) / (errorsp1) * 100 
@@ -111,9 +120,9 @@ result_p5 = np.abs( correct_p5 - errorsp5 ) / (errorsp5) * 100
 result_1 = np.abs( correct_1 - error_1 ) / (error_1) * 100
 
 
-errorsp1_s = 1 / cylinder_tables( extract_error( datap1_s ),second=False)
-errorsp5_s = 1 / cylinder_tables(extract_error( datap5_s ),second=False)
-error_1_s = 1 / cylinder_tables(extract_error( data1_s ),second=False)
+errorsp1_s = 1 / cylinder_tables( extract_error( datap1_s,index=2 ),second=False)
+errorsp5_s = 1 / cylinder_tables(extract_error( datap5_s,index=2 ),second=False)
+error_1_s = 1 / cylinder_tables(extract_error( data1_s,index=2 ),second=False)
 
 result_p1_s = np.abs( correct_p1 - errorsp1_s ) / (errorsp1_s) * 100
 result_p5_s = np.abs( correct_p5 - errorsp5_s ) / (errorsp5_s) * 100

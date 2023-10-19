@@ -56,7 +56,7 @@ sphere_tables_1 = [4.1237 , 4.1131 , 4.0815 , 4.0304 , 3.9625 , 3.8816 , 3.7917 
                    3.3280 , 3.2499 , 3.1807 , 3.1216 , 3.0738 , 3.0383 , 3.0163 , 3.0090]
 sphere_tables_2 = [13.998 , 13.819 , 13.320 , 12.593 , 11.746 , 10.873 , 10.034 , 9.262 , 8.570 , 7.961 , 7.431 ,
                    6.975 , 6.587 , 6.261 , 5.9942 , 5.7842 , 5.6307 , 5.5365 , 5.5041]
-pth='D:/lys/studystudy/phd/0-Project_absorption_correction/Code_0_for_absorption_correction/ac/analytical_absorption_corrrection_verification/sphere'
+pth='D:/lys/studystudy/phd/0-Project_absorption_correction/Code_0_for_absorption_correction/ac/analytical_absorption_corrrection_verification/sphere/paper'
 save_name='sphere'
 filenamep1='sphere_sample_1_mur_0.1_0.3.json'
 filenamep5='sphere_sample_1_mur_0.5_0.3.json'
@@ -66,12 +66,16 @@ filenamep5_s='sphere_sample_100_mur_0.5_0.1_0.02.json'
 filename1_s='sphere_sample_100_mur_1.0_0.1_0.02.json'
 
 
-# filenamep1='sphere_sample_2000_mur_0.1_0.3_0.01.json'
-# filenamep5='sphere_sample_2000_mur_0.5_0.3_0.01.json'
-# filename1='sphere_sample_2000_mur_1_0.3_0.01.json'
+
+filenamep1='sphere_sample_2000_mur_0.1_0.3_0.01.json'
+filenamep5='sphere_sample_2000_mur_0.5_0.3_0.01.json'
+filename1='sphere_sample_2000_mur_1_0.3_0.01.json'
 # filenamep1_s='sphere_sample_2000_mur_0.1_0.1_0.01.json'
 # filenamep5_s='sphere_sample_200000_mur_0.5_0.1_0.02.json'
 # filename1_s='sphere_sample_2000_mur_1.0_0.1_0.02.json'
+filenamep1_s='sphere_sample_54000_mur_0.1_0.1_0.01.json'
+filenamep5_s='sphere_sample_54000_mur_0.5_0.1_0.01.json'
+filename1_s='sphere_sample_54000_mur_1.0_0.1_0.01.json'
 correct_p1=sphere_tables( sphere_tables_p1 )
 correct_p2=sphere_tables( sphere_tables_p2 )
 correct_p5=sphere_tables( sphere_tables_p5 )
@@ -96,7 +100,7 @@ with open( os.path.join(pth,filename1_s) ) as f3 :
 errorsp1 = extract_error( datap1 )
 errorsp5 = extract_error( datap5 )
 errors1 = extract_error( data1 )
-errorsp1_s = extract_error( datap1_s )
+errorsp1_s = extract_error( datap1_s,index=2  )
 errorsp5_s = extract_error( datap5_s,index=2 )
 errors1_s = extract_error( data1_s,index=2 )
 

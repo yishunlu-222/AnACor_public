@@ -198,7 +198,7 @@ if __name__ == '__main__':
   
     t1=time.time()
     sampling=2000
-    mu=0.02 #um-1
+    mu=0.01 #um-1
     if args.sam==1:
       sampling=54000 # 2000
     else:

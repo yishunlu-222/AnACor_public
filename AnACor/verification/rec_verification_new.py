@@ -28,6 +28,50 @@ parser.add_argument(
 global args
 args = parser.parse_args()
 
+def plot_example2():
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+
+    # Create a 3D plot
+    fig = plt.figure(figsize=(19, 16))
+    ax = fig.add_subplot(111, projection='3d')
+
+    # Vertices of the cube
+    vertices = np.array([[-1, -1, -1],
+                        [1, -1, -1],
+                        [1, 1, -1],
+                        [-1, 1, -1],
+                        [-1, -1, 1],
+                        [1, -1, 1],
+                        [1, 1, 1],
+                        [-1, 1, 1]])
+
+    # Indices of vertices to create the faces of the cube
+    faces = [[0, 1, 2, 3], [4, 5, 6, 7], 
+            [0, 3, 7, 4], [1, 2, 6, 5], 
+            [0, 1, 5, 4], [2, 3, 7, 6]]
+
+    colors = plt.cm.rainbow(np.linspace(0, 1, len(faces)))
+
+    # Correcting the error by iterating over the faces and adding them one by one
+    for i, face in enumerate(faces):
+        ax.add_collection3d(Poly3DCollection([vertices[face]], facecolors=[colors[i]], alpha=0.5))
+    label_fontsize =100
+    # Set the limits of the axes
+    ax.set_xlim(-1, 1)
+    ax.set_ylim(-1, 1)
+    ax.set_zlim(-1, 1)
+    ax.set_ylabel('\n Width \n X', fontsize=label_fontsize)
+    ax.set_zlabel('\n Height \n Y', fontsize=label_fontsize)
+    ax.set_xlabel('\n Length \nZ', fontsize=label_fontsize)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_zticks([])
+    plt.tight_layout()
+    plt.savefig('rect_visualization.png', dpi=600)
+    pdb.set_trace()
+
 def worker_function(args):
     index, crystal_coordinate, shape, theta_1, phi_1, theta, phi, label_list, voxel_size, coefficients = args
     coord = crystal_coordinate[index]

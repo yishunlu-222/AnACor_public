@@ -32,6 +32,75 @@ correct_1 =np.array([0.19643664, 0.19926273, 0.2074861, 0.22007527, 0.23551023, 
 global args
 args = parser.parse_args()
 
+def Plot_Cylinder ( radius , pixel_size , sphere_value=3,length=100 ) :
+    # https://stackoverflow.com/questions/64212348/creating-a-sphere-at-center-of-array-without-a-for-loop-with-meshgrid-creates-sh
+    length= int((length/pixel_size) )
+    num_pix =  int((radius/pixel_size) *3 )
+    Radius_sq_pixels = int((radius/pixel_size) ** 2)
+
+    center_pixel = int( num_pix / 2 - 1 )
+    new_array = np.zeros( (num_pix , num_pix , num_pix) )
+
+    m , n , r = new_array.shape
+    x = np.arange( 0 , m , 1 )
+    y = np.arange( 0 , n , 1 )
+    #z = np.arange( 0 , r , 1 )
+    z = np.arange(center_pixel - int(np.floor(length/2)), center_pixel + int(np.ceil(length/2)), 1)
+    print("len of length is ",len(z))
+    xx , yy , zz = np.meshgrid( x , y , z , indexing = 'ij' , sparse = True )
+    xx , yy = np.meshgrid( x , y ,indexing = 'ij' , sparse = True )
+
+    X = (xx - center_pixel)
+    Y = (yy - center_pixel)
+    Z = (zz - center_pixel)
+
+    mask = ((X ** 2) + (Y ** 2) ) < Radius_sq_pixels  # create sphere mask
+    new_array = sphere_value * np.stack([mask for _ in range(len(z))], axis=0)
+    new_array = new_array.astype( np.uint16 )  # change datatype
+    
+    import matplotlib.pyplot as plt
+    from skimage import measure
+    
+    fig = plt.figure(figsize = (19,12))
+    ax = fig.add_subplot( 1 , 1 , 1 , projection = '3d' )
+    
+    verts , faces , normals , values = measure.marching_cubes( new_array , 0.5 )
+    
+    ax.plot_trisurf(
+       verts[: , 0] , verts[: , 1] , faces , verts[: , 2] , cmap = 'Spectral' ,
+       antialiased = False , linewidth = 0.0 )
+    label_fontsize = 80
+    
+    # Create the top and bottom caps of the cylinder
+    u = np.linspace(0, 2 * np.pi, 100)
+    v = np.linspace(0, np.pi, 100)
+    x1 = center_pixel + radius * np.outer(np.cos(u), np.sin(v)) / pixel_size
+    y1 =  center_pixel +radius * np.outer(np.sin(u), np.sin(v)) / pixel_size
+
+    # z1 = np.full_like(x, center_pixel - int(np.floor(length / 2)))
+    # z2 = np.full_like(x, center_pixel + int(np.ceil(length / 2)))
+    # z1 = np.full_like(x1,  - int(np.floor(length / 2)) )
+    # z2 = np.full_like(x1, length+int(np.ceil(length / 2)))
+    z1 = np.full_like(x1,  -int(length*0.02 ))
+    z2 = np.full_like(x1,int( length+length*0.02))
+    ax.plot_surface(z1, x1, y1, color='k', alpha=0.6)
+    ax.plot_surface(z2, x1, y1, color='k', alpha=0.6)
+
+
+    ax.set_ylabel('X ', fontsize=label_fontsize)
+    ax.set_zlabel('Y ', fontsize=label_fontsize)
+    ax.set_xlabel('\n Length \n Z', fontsize=label_fontsize)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_zticks([])
+
+    plt.savefig( 'cylinder visualization.png', dpi = 600 )
+
+
+    
+    pdb.set_trace( )
+    return new_array
+
 def Cylinder ( radius , pixel_size , sphere_value,length ) :
     # https://stackoverflow.com/questions/64212348/creating-a-sphere-at-center-of-array-without-a-for-loop-with-meshgrid-creates-sh
     length= int((length/pixel_size) )
@@ -188,14 +257,14 @@ if __name__ == '__main__':
     sampling=1
     t1=time.time()
     mu=0.01 #um-1
-    mu=0.02
+    mu=0.01
     if args.sam==1:
       length=50
       sampling=54000
     else:
       length=1
       sampling=1
-    for mur in [1]:
+    for mur in [args.mur]:
      # no unit 
         radius= mur/mu # mm
         voxel_size=[0.3,0.3,0.3] # um
@@ -213,7 +282,7 @@ if __name__ == '__main__':
         errors=[]
         with open("cylinder_sample_{}_mur_{}_{}_l_{}_mu_{}.json".format(sampling,mur,voxel_size[0],length,mu), "w") as f1:  # Pickling
                 json.dump(errors, f1, indent=2)
-        for angle in angle_list:
+        for i,angle in enumerate(angle_list):
 
             absorp=sphere_ana_ac_test(mu,angle, radius,length,sampling)
             er=np.abs(reference[i] -absorp)/absorp
