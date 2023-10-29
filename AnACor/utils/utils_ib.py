@@ -2,7 +2,7 @@ import numpy as np
 import pdb
 # import matplotlib.pyplot as plt
 from numba import jit
-
+from utils.utils_rt import cal_coord
 
 def top_increment_ratio(theta,phi):
     assert theta > 0
@@ -102,16 +102,35 @@ def difference_length(start,end,voxel_size):
         return length
 
 
-def cal_path2_bisection(path_2,voxel_size):
-
-    # pdb.set_trace()
+def cal_path2_bisection(path_2,voxel_size,face ):
     path_ray = path_2[0]
     classes = path_2[1]
+    if face == 'TOPZX' or face == 'BOTZX':
+        # y direction 
+        unit_length=1
+    elif face == 'BACKZY' or face == 'FRONTZY':
+        # x direction
+        unit_length=2
+    elif face == 'LEYX' or face == 'RIYX':
+        # z direction
+        unit_length=0
+
+
+
+    # 
+
     # z_voxel_size, y_voxel_size, x_voxel_size = voxel_size
     total_LineLength = difference_length( np.array(path_ray[1]), np.array(path_ray[0]),voxel_size )
     # Pythagorean theorem
     cr_l_2 =  difference_length( np.array(path_ray[2]) ,np.array(path_ray[0]),voxel_size )
 
+    # crystal_boundary_unit = np.abs( np.array(path_ray[1][int(unit_length)])- np.array(path_ray[0][int(unit_length)]))
+
+    # if crystal_boundary_unit < 1e-5:
+    #     crystal_boundary_length=0.5*voxel_size[int(unit_length)]
+    # else:
+    #     crystal_boundary_length=0.5*total_LineLength/crystal_boundary_unit
+    # cr_l_2+=crystal_boundary_length
     lo_l_2 = 0
     air_l_2 = 0
     bu_l_2 = 0
@@ -153,7 +172,7 @@ def bisection(counter, CrystalLongest, CrystalShortest, resolution, label_list, 
     y_max -= 1
     z_max -= 1
 
-    while crystalDifference > resolution:
+    while crystalDifference > resolution/2:
         counter += 1
         CrystalMiddle = (CrystalLongest + CrystalShortest) / 2
 
@@ -318,7 +337,7 @@ def increments(face, theta, phi, z_max, y_max, x_max,z,y,x):
     return increment_ratios, AirLongest
 
 # @jit(nopython=True)
-def iterative_bisection(theta, phi, coord, face, label_list):
+def iterative_bisection(theta, phi, coord, face, label_list,num_classes=3):
     """
     :param theta:
     :param phi:
@@ -351,7 +370,10 @@ def iterative_bisection(theta, phi, coord, face, label_list):
                                                                    increment_ratios, coord,boundary='inner', cls=0)
     classes.append('air_outermost')
     path_2.append(air_outermost_potential_coord)
-    
+    try:
+        air_outermost_potential_coord = cal_coord(theta ,phi,air_outermost_potential_coord,face,label_list.shape,label_list,full_iteration=False)[0][-1]
+    except:
+        pass
     # finding the boundary between outer boudary of the crystal
     CrystalLongest = AirMiddle_outer
     CrystalShortest = 0
@@ -383,25 +405,26 @@ def iterative_bisection(theta, phi, coord, face, label_list):
             path_2.append(potential_coord_2)
 
     # starting from the crystal to calculate the classes along the path to find the BUBBLE
-    BubbleLongest = AirMiddle_outer
-    BubbleShortest = CrystalMiddle
-    potential_coord, BubbleMiddle,counter = bisection(counter, BubbleLongest, BubbleShortest, resolution, label_list,
-                                                  increment_ratios, coord, boundary='inner', cls=4)
-    if np.abs(np.array(potential_coord)-np.array(air_outermost_potential_coord)).mean() < 1:
-        pass
-    else:
-
+    if num_classes == 4:
         BubbleLongest = AirMiddle_outer
-        BubbleShortest = BubbleMiddle
-        potential_coord_2, BubbleMiddle,counter = bisection(counter, BubbleLongest, BubbleShortest, resolution, label_list,
-                                                      increment_ratios, coord, boundary='outer', cls=4)
-        if np.abs(np.array(potential_coord_2)-np.array(potential_coord)).mean() < 2:
+        BubbleShortest = CrystalMiddle
+        potential_coord, BubbleMiddle,counter = bisection(counter, BubbleLongest, BubbleShortest, resolution, label_list,
+                                                    increment_ratios, coord, boundary='inner', cls=4)
+        if np.abs(np.array(potential_coord)-np.array(air_outermost_potential_coord)).mean() < 1:
             pass
         else:
-            classes.append('bu_inner')
-            path_2.append(potential_coord)
-            classes.append('bu_outer')
-            path_2.append(potential_coord_2)
+
+            BubbleLongest = AirMiddle_outer
+            BubbleShortest = BubbleMiddle
+            potential_coord_2, BubbleMiddle,counter = bisection(counter, BubbleLongest, BubbleShortest, resolution, label_list,
+                                                        increment_ratios, coord, boundary='outer', cls=4)
+            if np.abs(np.array(potential_coord_2)-np.array(potential_coord)).mean() < 2:
+                pass
+            else:
+                classes.append('bu_inner')
+                path_2.append(potential_coord)
+                classes.append('bu_outer')
+                path_2.append(potential_coord_2)
 
     # # starting from the crystal to calculate the classes along the path to find the other possible air
     # Air2Longest = AirMiddle_outer

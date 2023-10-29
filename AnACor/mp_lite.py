@@ -136,6 +136,7 @@ def main ( ) :
                     expt_path = os.path.join( save_dir , file )
                 if 'refl' in file and 'False' in file:
                     refl_path = os.path.join( save_dir , file )
+    pdb.set_trace()
     try :
         with open( expt_path ) as f2 :
             axes_data = json.load( f2 )

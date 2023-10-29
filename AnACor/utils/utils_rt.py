@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from numba import jit
 from skimage.draw import line
 # import math
+import ctypes as ct
 np.set_printoptions(suppress=True)
 
 
@@ -380,9 +381,9 @@ def myframe_2_dials(vector):
     # numpy_2_dials_1 = np.array([[np.cos(np.pi), np.sin(np.pi), 0],
     #                             [-np.sin(np.pi), np.cos(np.pi), 0],
     #                             [0, 0, 1]],dtype=np.float32)
-    numpy_2_dials_1 = np.array([[1, 0, 0],
+    numpy_2_dials_1 = np.linalg.inv(np.array([[1, 0, 0],
                                 [0, 0, 1],
-                                [0, 1, 0]]).T
+                                [0, 1, 0]]))
     # omega = -np.pi
     # numpy_2_dials_1 =np.array([[1, 0, 0],
     #                             [0, np.cos(omega), np.sin(omega)],
@@ -1068,11 +1069,11 @@ def cal_coord(theta ,phi,coord,face,shape,label_list,full_iteration=False):
     else:
         raise RuntimeError("unexpected ray out face")
 
-    if len(path_2) == 1:
-        r_x_pos = np.abs( 0.5 /(np.cos(theta) * np.cos(phi)))
-        r_y_pos= np.abs( 0.5 /(np.sin(theta)))
-        r_z_pos = np.abs( 0.5 /(np.cos(theta) * np.sin(phi)))
-        path_2[0]=(r_z_pos,r_y_pos,r_x_pos)
+    # if len(path_2) == 1:
+    #     r_x_pos = np.abs( 0.5 /(np.cos(theta) * np.cos(phi)))
+    #     r_y_pos= np.abs( 0.5 /(np.sin(theta)))
+    #     r_z_pos = np.abs( 0.5 /(np.cos(theta) * np.sin(phi)))
+    #     path_2[0]=(r_z_pos,r_y_pos,r_x_pos)
 
     return path_2,classes_posi,classes
 
@@ -1093,12 +1094,12 @@ def cal_path_plus(path_2,voxel_size):
 
 
         # total_length = ( path_ray[-1][1] - path_ray[0][1] )/ (np.sin(np.abs(omega)))
-    if len(path_2[0])==1:
-        total_length=np.min(np.array(path_2[0]))
-                             
-    else:
+    # if len(path_2[0])==1:
+    #     total_length=np.min(np.array(path_2[0]))
+    #     pdb.set_trace()
+    # else:
 
-        total_length=np.sqrt(((path_ray[-1][1]  - path_ray[0][1] ) * voxel_length_y ) ** 2 +
+    total_length=np.sqrt(((path_ray[-1][1]  - path_ray[0][1] ) * voxel_length_y ) ** 2 +
                          ((path_ray[-1][0]  - path_ray[0][0] ) * voxel_length_z ) ** 2 +
                          ( (path_ray[-1][2]  - path_ray[0][2] ) * voxel_length_x )** 2)
     for j, trans_index in enumerate(posi):
@@ -1214,6 +1215,9 @@ def cal_path_plus(path_2,voxel_size):
     #         else:
     #             pass
     # can add the other class path
+    # if len(path_2[0])==1:
+    #     total_length=np.min(np.array(path_2[0]))
+    #     pdb.set_trace()
     return li_l_2, lo_l_2, cr_l_2,bu_l_2
 
 
@@ -1227,17 +1231,17 @@ def cal_rate(numbers,coefficients,exp=True ):
         li_l_2, lo_l_2, cr_l_2, bu_l_2 = numbers
         li_l_1, lo_l_1, cr_l_1, bu_l_1= 0,0,0,0
     if exp:
-        abs = np.exp(-((mu_li * (li_l_1  + li_l_2) +
+        absorp = np.exp(-((mu_li * (li_l_1  + li_l_2) +
                      mu_lo * (lo_l_1  + lo_l_2) +
                      mu_cr * (cr_l_1 + cr_l_2) +
                          mu_bu * (bu_l_1+ bu_l_2) )
                     ))
     else:
-        abs = ((mu_li * (li_l_1  + li_l_2) +
+        absorp = ((mu_li * (li_l_1  + li_l_2) +
                      mu_lo * (lo_l_1  + lo_l_2) +
                      mu_cr * (cr_l_1 + cr_l_2) +
                          mu_bu * (bu_l_1+ bu_l_2) ))
-    return  abs
+    return  absorp
 
 def cal_rate_single(numbers,coefficients,exp=True ):
     mu_li, mu_lo, mu_cr,mu_bu = coefficients
@@ -1289,6 +1293,7 @@ def cube_face ( ray_origin , ray_direction , cube_size , L1 = False ) :
       the vector to the intersection point.
       t = (plane_distance - np.dot(vector_origin, plane_normal)) /
          np.dot(vector, plane_normal)
+        then the  minimum non-negative t is the normal of the face and that's what we want
     Args:
         ray_origin (tuple): the origin of the ray, as a tuple of (x, y, z) coordinates
         ray_direction (tuple): the direction of the ray, as a unit vector tuple of (x, y, z) coordinates
@@ -1569,3 +1574,28 @@ def cal_path2(path_2,coord,label_list,rate_list,omega):
 
     # can add the other class path
     return li_l_2,lo_l_2,cr_l_2
+
+def python_2_c_3d(label_list):
+            # this is a one 1d conversion
+            # z, y, x = label_list.shape
+            # label_list_ctype = (ct.c_int8 * z * y * x)()
+            # for i in range(z):
+            #     for j in range(y):
+            #         for k in range(x):
+            #             label_list_ctype[i][j][k] = ct.c_int8(label_list[i][j][k])
+            labelPtr = ct.POINTER(ct.c_int8)
+            labelPtrPtr = ct.POINTER(labelPtr)
+            labelPtrPtrPtr = ct.POINTER(labelPtrPtr)
+            labelPtrCube = labelPtrPtr * label_list.shape[0]
+            labelPtrMatrix = labelPtr * label_list.shape[1]
+            matrix_tuple = ()
+            for matrix in label_list:
+                array_tuple = ()
+                for row in matrix:
+                    array_tuple = array_tuple + (row.ctypes.data_as(labelPtr),)
+                matrix_ptr = ct.cast(labelPtrMatrix(
+                    *(array_tuple)), labelPtrPtr)
+                matrix_tuple = matrix_tuple + (matrix_ptr,)
+            label_list_ptr = ct.cast(labelPtrCube(
+                *(matrix_tuple)), labelPtrPtrPtr)
+            return label_list_ptr

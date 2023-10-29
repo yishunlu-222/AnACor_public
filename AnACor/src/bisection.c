@@ -399,16 +399,10 @@ Path_iterative_bisection iterative_bisection(double theta, double phi,
         }
         // then, finding the inner boundaries (flag=0) and outer boundaries (flag=1) of the bubble if there is one (num_cls ==4)
 
-        if (num_cls == 3)
-        { // this is the most frequent case
-            result.path = path_2;
-            result.classes = classes;
-            result.length = path_2_size;
-            result.boundary_list = boundary_list;
-            return result;
-        }
+        
 
-        else
+
+        if (num_cls > 3)
         {
             double BubbleLongest = Air_outermost_result.MiddlePoint;
             double BubbleShortest = Crystal_outer_result.MiddlePoint;

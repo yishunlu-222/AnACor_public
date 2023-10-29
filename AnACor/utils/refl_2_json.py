@@ -83,7 +83,7 @@ print("len(reflections)")
 print(len(reflections))
 
 #select=reflections.get_flags(reflections.flags.scaled)
-
+target=['intensity.sum.value','s1','miller_index','xyzobs.mm.value']
 for i in range(len(reflections)):
     dictt={}
 #    if  int(bin(reflections[i]['flags'])[-1]) ==0:
@@ -97,7 +97,9 @@ for i in range(len(reflections)):
 #            if key == 's1':
 #                if reflections[i][str(key)] == (0,0,0):
 #                    pdb.set_trace()
-            dictt[str(key)]= str(reflections[i][str(key)])
+            if any(item in key for item in target):
+                dictt[str(key)]= str(reflections[i][str(key)])
+                
         except:
             print(i)
             pass
