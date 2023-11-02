@@ -21,7 +21,7 @@ int ray_tracing_gpu_overall_kernel(size_t low, size_t up,
 								   size_t h_len_result,
 								   float *voxel_size, float *coefficients,
 								   int8_t *label_list_1d, int *shape, int full_iteration,
-								   int store_paths, float *h_result_list, int *h_face, float *h_angles, float *h_python_overall_result_list,int gpumethod);
+								   int store_paths, int *h_face, float *h_angles, float *h_python_overall_result_list,int gpumethod);
 
 #ifdef __cplusplus
 extern "C"
@@ -50,14 +50,14 @@ float *ray_tracing_gpu_overall(size_t low, size_t up,
         float factor = 1;
         // len_result = (int)(len_result*factor);
         printf("len_result is %d \n", len_result);
-        float *h_result_list = (float *)malloc(len_result * len_coord_list * 2 * sizeof(float));
+        // float *h_result_list = (float *)malloc(len_result * len_coord_list * 2 * sizeof(float));
         float *h_python_result_list = (float *)malloc(len_result * sizeof(float));
         int *h_face = (int *)malloc(len_coord_list * 2 * sizeof(int));
         float *h_angles = (float *)malloc(4 * sizeof(float));
 
-        ray_tracing_gpu_overall_kernel(low, up, coord_list, len_coord_list, scattering_vector_list, omega_list, raw_xray, omega_axis, kp_rotation_matrix, len_result, voxel_size, coefficients, label_list_1d, shape, full_iteration, store_paths, h_result_list, h_face, h_angles, h_python_result_list,gpumethod);
+        ray_tracing_gpu_overall_kernel(low, up, coord_list, len_coord_list, scattering_vector_list, omega_list, raw_xray, omega_axis, kp_rotation_matrix, len_result, voxel_size, coefficients, label_list_1d, shape, full_iteration, store_paths, h_face, h_angles, h_python_result_list,gpumethod);
         
-        free(h_result_list);
+        // free(h_result_list);
         return h_python_result_list;
     }
 #ifdef __cplusplus

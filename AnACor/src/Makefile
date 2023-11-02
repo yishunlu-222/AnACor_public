@@ -1,33 +1,4 @@
-# CC=g++
-# CFLAGS=-Wall -Wextra -g -fopenmp -O3 -march=native
-# GCC_OPTS =-O3 -fPIC -Wall -Wextra -march=native $(INC)  $(LDFLAGS)
-# GCC_OPTS_D =-O0 -fPIC -Wall -Wextra -march=native $(INC)  $(LDFLAGS)
-# LDFLAGS=-fopenmp
-# pth=./c/
-# gpu_pth=./gpu/
 
-# NVCC = ${CUDA_HOME}/bin/nvcc
-
-# NVCCFLAGS = -O3 -arch=sm_61 --ptxas-options=-v -Xcompiler -Wextra -Xcompiler -fPIC -lineinfo
-# NVCCFLAGS_D = -O0  -arch=sm_61 --ptxas-options=-v -Xcompiler -Wextra -Xcompiler -fPIC  -G -g
-# #NVCCFLAGS = -O3 -arch=sm_70 --ptxas-options=-v -Xcompiler -Wextra -Xcompiler -fPIC -lineinfo  #V100
-
-
-
-# all: sharedlibrary
-
-# sharedlibrary: ray_tracing.o 
-# 	$(NVCC) $(NVCCFLAGS) $(INC) $(LIB) -shared -o ray_tracing.so ray_tracing.o 
-
-
-# ray_tracing.o: $(pth)ray_tracing.c
-# 	$(GCC) -c $(pth)ray_tracing.c $(GCC_OPTS) $(LDFLAGS) -o ray_tracing.o
-
-# # program:
-# # 	$(CC) -shared -o ray_tracing.so ${pth}*.c -fPIC -std=c99 $(GCC_OPTS) $(LDFLAGS)
-
-# clean:
-# 	rm -f program *.o ray_tracing.so
 
 
 
@@ -40,14 +11,33 @@ LDFLAGS=-fopenmp
 GCC = gcc
 NVCC = ${CUDA_HOME}/bin/nvcc
 
-NVCCFLAGS = -O3 -arch=sm_61 --ptxas-options=-v -Xcompiler -Wextra -Xcompiler -fPIC -lineinfo
-NVCCFLAGS_D = -O0  -arch=sm_61 --ptxas-options=-v -Xcompiler -Wextra -Xcompiler -fPIC  -G -g
+
+
+
+# Determine the architecture flag based on the GPU model
+ifeq ($(ARCH),h100)
+  SM_ARCH = sm_90
+else ifeq ($(ARCH),a100)
+  SM_ARCH = sm_80
+else ifeq ($(ARCH),v100)
+  SM_ARCH = sm_70
+else ifeq ($(ARCH),titanx)
+  SM_ARCH = sm_61
+else
+  # Default architecture
+  SM_ARCH = sm_61
+endif
+
+NVCCFLAGS = -O3 -arch=$(SM_ARCH) --ptxas-options=-v -Xcompiler -Wextra -Xcompiler -fPIC -lineinfo
+NVCCFLAGS_D = -O0 -arch=$(SM_ARCH) --ptxas-options=-v -Xcompiler -Wextra -Xcompiler -fPIC -G -g
+
+
 #NVCCFLAGS = -O3 -arch=sm_70 --ptxas-options=-v -Xcompiler -Wextra -Xcompiler -fPIC -lineinfo  #V100
 GCC_OPTS =-O3 -fPIC -Wall -Wextra  $(LDFLAGS)  $(INC)
 GCC_OPTS_D =-O0 -fPIC -Wall -Wextra $(INC)  $(LDFLAGS)  -g
 ANALYZE = FFT.exe
 
-all: clean sharedlibrary_cpu sharedlibrary_interpolation sharedlibrary_gpu 
+all: clean sharedlibrary_cpu sharedlibrary_gpu sharedlibrary_interpolation
 debug: clean sharedlibrary_cpu_d sharedlibrary_gpu_d sharedlibrary_interpolation_d
 cpu: clean sharedlibrary_cpu
 gpu: clean sharedlibrary_gpu
@@ -72,16 +62,6 @@ testkit.o: $(pth)testkit.c
 
 
 
-sharedlibrary_gpu: ray_tracing_c.o  ray_tracing_gpu.o
-	$(NVCC) $(NVCCFLAGS) -shared -o ray_tracing_gpu.so  ray_tracing_c.o  ray_tracing_gpu.o
-
-ray_tracing_c.o: ray_tracing_gpu.c 
-		g++  -c ray_tracing_gpu.c $(GCC_OPTS) -o  ray_tracing_c.o  
-
-ray_tracing_gpu.o:  $(gpu_pth)ray_tracing_gpu.cu
-	$(NVCC) -c  $(gpu_pth)ray_tracing_gpu.cu $(NVCCFLAGS) -o ray_tracing_gpu.o
-
-
 
 sharedlibrary_cpu_d: ray_tracing_d.o ray_tracing_basic_d.o bisection_d.o testkit_d.o 
 	$(GCC) -shared -o ray_tracing_cpu.so  -fPIC -std=c99 $(GCC_OPTS_D) $(LDFLAGS) ray_tracing_d.o ray_tracing_basic_d.o bisection_d.o testkit_d.o 
@@ -101,14 +81,31 @@ testkit_d.o: $(pth)testkit.c
 
 
 
-sharedlibrary_gpu_d: ray_tracing_c_d.o  ray_tracing_gpu_d.o
-	$(NVCC) $(NVCCFLAGS_D) -shared -o ray_tracing_gpu.so  ray_tracing_c_d.o  ray_tracing_gpu_d.o
+sharedlibrary_gpu: ray_tracing_c.o  ray_tracing_gpu.o 
+	$(NVCC) $(NVCCFLAGS) -shared -o ray_tracing_gpu.so  ray_tracing_c.o  ray_tracing_gpu.o  
+
+ray_tracing_c.o: ray_tracing_gpu.c 
+		g++  -c ray_tracing_gpu.c $(GCC_OPTS) -o  ray_tracing_c.o  
+
+ray_tracing_gpu.o:  $(gpu_pth)ray_tracing_gpu.cu
+	$(NVCC) -c  $(gpu_pth)ray_tracing_gpu.cu $(NVCCFLAGS) -o ray_tracing_gpu.o
+
+# ray_tracing_kernels.o: $(gpu_pth)ray_tracing_kernels.cu
+# 	$(NVCC) -c  $(gpu_pth)ray_tracing_kernels.cu $(NVCCFLAGS) -o ray_tracing_kernels.o
+
+
+sharedlibrary_gpu_d: ray_tracing_c_d.o  ray_tracing_gpu_d.o 
+	$(NVCC) $(NVCCFLAGS_D) -shared -o ray_tracing_gpu.so  ray_tracing_c_d.o  ray_tracing_gpu_d.o 
 
 ray_tracing_c_d.o: ray_tracing_gpu.c 
 		g++  -c ray_tracing_gpu.c $(GCC_OPTS_D) -o  ray_tracing_c_d.o  
 
 ray_tracing_gpu_d.o:  $(gpu_pth)ray_tracing_gpu.cu
 	$(NVCC) -c  $(gpu_pth)ray_tracing_gpu.cu $(NVCCFLAGS_D) -o ray_tracing_gpu_d.o
+
+# ray_tracing_kernels_d.o: $(gpu_pth)ray_tracing_kernels.cu
+# 	$(NVCC) -c  $(gpu_pth)ray_tracing_kernels.cu $(NVCCFLAGS_D) -o ray_tracing_kernels_d.o
+
 
 sharedlibrary_interpolation: gridding_interpolation.c
 	$(GCC) -shared -o gridding_interpolation.so  -fPIC -std=c99 $(GCC_OPTS) $(LDFLAGS) -lgsl -lgslcblas gridding_interpolation.c
