@@ -12,7 +12,7 @@ from utils.utils_os import python_2_c_3d, kp_rotation
 import gc
 import sys
 import multiprocessing as mp
-from multiprocessing import Pool
+from multiprocessing import Pool, sharedctypes
 import ctypes as ct
 from scipy.interpolate import RegularGridInterpolator
 try:
@@ -25,7 +25,7 @@ except:
 
 def worker_function_create_gridding(t1, low,  dataset, gridding_data, label_list,
                                     voxel_size, coefficients, coord_list,
-                                    gridding_dir, args, full_iteration, store_paths, printing, num_cls, gridding_method=2):
+                                    gridding_dir, args, full_iteration, store_paths, printing, afterfix, num_cls,gridding_method=2):
 
     len_data = len(gridding_data)
     arr_thetaphi = []
@@ -113,14 +113,14 @@ def worker_function_create_gridding(t1, low,  dataset, gridding_data, label_list
                                                                                    theta * 180 / np.pi,
                                                                                    phi * 180 / np.pi))
         # pdb.set_trace()
-    with open(os.path.join(gridding_dir, "{}_gridding_{}_{}.json".format(dataset,args.sampling_ratio,up)), "w") as fz:  # Pickling
+    with open(f"{gridding_dir}/{dataset}_{afterfix}_{up}.json", "w") as fz:  # Pickling
         json.dump(absorption_map, fz, indent=2)
 
 
 def mp_create_gridding(t1, low, label_list, dataset,
                     voxel_size, coefficients, coord_list,
                     gridding_dir, args,
-                    offset, full_iteration, store_paths, printing, num_cls, gridding_method, num_processes):
+                    offset, full_iteration, store_paths, printing, afterfix,num_cls, gridding_method, num_processes):
 
     theta_list = np.linspace(-180, 180, args.gridding_theta, endpoint=False)
     phi_list = np.linspace(-90, 90, args.gridding_phi, endpoint=False)
@@ -145,7 +145,7 @@ def mp_create_gridding(t1, low, label_list, dataset,
                                      args=(t1, low+i*each_core, dataset,
                                            gridding_data[i*each_core:(i+1)
                                                          * each_core], data_copies[i],
-                                           voxel_size, coefficients, coord_list, gridding_dir, args, full_iteration, store_paths, printing, num_cls, gridding_method))
+                                           voxel_size, coefficients, coord_list, gridding_dir, args, full_iteration, store_paths, printing, afterfix, num_cls, gridding_method))
 
             else:
 
@@ -154,7 +154,7 @@ def mp_create_gridding(t1, low, label_list, dataset,
                                            gridding_data[i *
                                                          each_core:],  data_copies[i],
                                            voxel_size, coefficients,  coord_list, gridding_dir, args,
-                                           full_iteration, store_paths, printing, num_cls, gridding_method))
+                                           full_iteration, store_paths, printing, afterfix, num_cls, gridding_method))
 
             processes.append(process)
         # pdb.set_trace()
@@ -171,8 +171,10 @@ def mp_create_gridding(t1, low, label_list, dataset,
                                         gridding_data,  label_list,
                                         voxel_size, coefficients,  coord_list,
                                         gridding_dir, args,
-                                        full_iteration, store_paths, printing, num_cls, args.gridding_method)
+                                        full_iteration, store_paths, printing,  afterfix,num_cls, args.gridding_method)
 
+    with open(os.path.join(gridding_dir, "{}_time_create_{}.json".format(dataset,args.sampling_ratio)), "w") as fz:
+        json.dump(time.time()-t1, fz, indent=2)
 
 
 
@@ -187,19 +189,19 @@ def mp_interpolation_gridding(t1, low,  abs_gridding, selected_data, label_list,
                           voxel_size, coefficients, F, coord_list,
                           omega_axis, axes_data, gridding_dir, args,
                           offset, full_iteration, store_paths, printing, num_cls,num_processes,interpolation_method='linear'):
-    
-    abs_gridding = np.array(abs_gridding)
+ 
+    abs_gridding = np.array(abs_gridding) #.astype(np.float32)
 
     abs_gridding = abs_gridding.reshape(
         (args.gridding_phi,args.gridding_theta,  len(coord_list)))
-    # abs_gridding = np.transpose(abs_gridding, (2, 0, 1))
+    # 
     # theta_list = np.linspace(-180 , 180 ,
     #                          args.gridding_theta, endpoint=False) / 180 * np.pi
     # phi_list = np.linspace(-90 , 90 ,
     #                        args.gridding_phi , endpoint=False) / 180 * np.pi
     # pdb.set_trace()
-    theta_extra_padding_num = int((abs_gridding.shape[1]//6) / 2)
-    phi_extra_padding_num = int(abs_gridding.shape[0]//6 / 2)
+    theta_extra_padding_num = int(np.round((abs_gridding.shape[1]//6) / 2))
+    phi_extra_padding_num = int(np.round(abs_gridding.shape[0]//6 / 2))
     # add to top  and bottom
     bot_rows = abs_gridding[:, -theta_extra_padding_num:, :]
     top_rows = abs_gridding[:, :theta_extra_padding_num, :]
@@ -209,17 +211,30 @@ def mp_interpolation_gridding(t1, low,  abs_gridding, selected_data, label_list,
     left_cols = abs_gridding[:phi_extra_padding_num, :, :]
     abs_gridding = np.concatenate((right_cols, abs_gridding, left_cols), axis=0)
 
+    abs_gridding = np.transpose(abs_gridding, (2, 0, 1))
+    # abs_gridding = np.transpose(abs_gridding, (1, 0, 2))
+    len_theta = int(args.gridding_theta +theta_extra_padding_num*2)
+    len_phi = int(args.gridding_phi + phi_extra_padding_num*2)
     # add 1/6  is for the padding to avoid the interpolation error on boundary
-    theta_list = np.linspace(-180 * 7/6, 180 * 7/6,
-                             int(args.gridding_theta * 7/6), endpoint=False) / 180 * np.pi
-    phi_list = np.linspace(-90 * 7/6, 90 * 7/6,
-                           int(args.gridding_phi * 7/6), endpoint=False) / 180 * np.pi
-    interpolation_functions=[]
-    for k in range(len(coord_list)):
-        interpolation_functions.append(create_interpolation_gridding( phi_list, theta_list,abs_gridding[:, :, k],interpolation_method))
-    interpolation_functions=np.array(interpolation_functions)
-    del abs_gridding    
-    
+    theta_list = np.linspace(-np.round(180 * 7/6), np.round(180 * 7/6),
+                             len_theta, endpoint=False) / 180 * np.pi 
+    phi_list = np.linspace(-np.round(90 * 7/6), np.round(90 * 7/6),
+                           len_phi, endpoint=False) / 180 * np.pi
+    # theta_list =theta_list.astype(np.float32)
+    # phi_list =phi_list.astype(np.float32)
+    # interpolation_functions=[]
+    # for k in range(len(coord_list)):
+    #     interpolation_functions.append(create_interpolation_gridding( phi_list, theta_list,abs_gridding[k, :, :],interpolation_method))
+    # interpolation_functions=np.array(interpolation_functions)
+    #del abs_gridding    
+
+    shared_gridding = sharedctypes.RawArray('d', abs_gridding.size)
+    shared_gridding_np = np.frombuffer(shared_gridding, dtype=abs_gridding.dtype).reshape(abs_gridding.shape)
+    # buffer the data can save the time for copying data to shared array and better memory management
+
+
+    # Copy data to shared array
+    np.copyto(shared_gridding_np, abs_gridding)
     len_data=len(selected_data)
     processes = []
     if num_processes > 1:
@@ -230,20 +245,20 @@ def mp_interpolation_gridding(t1, low,  abs_gridding, selected_data, label_list,
             if i != num_processes-1:
 
                 process = mp.Process(target=interpolation_gridding,
-                                     args=(t1, low+i*each_core,interpolation_functions , selected_data[i*each_core:(i+1)
+                                     args=(t1, low+i*each_core , selected_data[i*each_core:(i+1)
                                                          * each_core], label_list,
                           voxel_size, coefficients, F, coord_list,
                           omega_axis, axes_data, gridding_dir, args,
-                          offset, full_iteration, store_paths, printing, num_cls,interpolation_method  ))
+                          offset, full_iteration, store_paths, printing, num_cls,interpolation_method ,phi_list,theta_list,shared_gridding,len_theta,len_phi)    )
 
             else:
 
                 process = mp.Process(target=interpolation_gridding,
-                                     args=(t1, low+i*each_core,  interpolation_functions, selected_data[i *
+                                     args=(t1, low+i*each_core, selected_data[i *
                                                          each_core:], label_list,
                           voxel_size, coefficients, F, coord_list,
                           omega_axis, axes_data, gridding_dir, args,
-                          offset, full_iteration, store_paths, printing, num_cls,interpolation_method))
+                          offset, full_iteration, store_paths, printing, num_cls,interpolation_method,phi_list,theta_list,shared_gridding,len_theta,len_phi)     )
 
             processes.append(process)
         # pdb.set_trace()
@@ -256,15 +271,16 @@ def mp_interpolation_gridding(t1, low,  abs_gridding, selected_data, label_list,
             process.join()
     else:
 
-        interpolation_gridding(t1, low,  interpolation_functions, selected_data, label_list,
+        interpolation_gridding(t1, low, selected_data, label_list,
                           voxel_size, coefficients, F, coord_list,
                           omega_axis, axes_data, gridding_dir, args,
-                          offset, full_iteration, store_paths, printing, num_cls,interpolation_method='linear')                         
+                          offset, full_iteration, store_paths, printing, num_cls,interpolation_method='linear',phi_list=phi_list,theta_list=theta_list,shared_gridding=shared_gridding,len_theta=len_theta,len_phi=len_phi)         
 
-def interpolation_gridding(t1, low,  interpolation_functions, selected_data, label_list,
+def interpolation_gridding(t1, low, selected_data, label_list,
                           voxel_size, coefficients, F, coord_list,
                           omega_axis, axes_data, gridding_dir, args,
-                          offset, full_iteration, store_paths, printing, num_cls,interpolation_method='linear'):
+                          offset, full_iteration, store_paths, printing, num_cls,interpolation_method='linear',phi_list=None,theta_list=None,shared_gridding=None,len_theta=None,len_phi=None):
+    abs_gridding = np.frombuffer(shared_gridding, dtype=np.float64).reshape(len(coord_list),len_phi, len_theta)
     up = low+len(selected_data)
     corr = []
     dict_corr = []
@@ -273,9 +289,54 @@ def interpolation_gridding(t1, low,  interpolation_functions, selected_data, lab
     IsExp = 1
     xray = -np.array(axes_data[1]["direction"])
     shape = np.array(label_list.shape)
-
-
-
+    # print(os.path.join(os.path.dirname( os.path.dirname( os.path.abspath(__file__))), './src/gridding_interpolation.so'))
+    print("gridding_dir is {}".format(gridding_dir))
+    lib = ct.CDLL(os.path.join(os.path.dirname( os.path.dirname( os.path.abspath(__file__))), './src/gridding_interpolation.so'))
+    lib.interpolate.restype = ct.c_double 
+    # Define the argument types and return type of the function
+    
+    lib.interpolate.argtypes = [ct.c_int64,
+                                np.ctypeslib.ndpointer(dtype=np.float64),
+                                np.ctypeslib.ndpointer(dtype=np.float64),
+                                np.ctypeslib.ndpointer(dtype=np.float64),
+                                ct.c_int,
+                                ct.c_int,
+                                ct.c_double,
+                                ct.c_double,
+                                ct.c_double,
+                                ct.c_double,]
+    lib.interpolate_single.restype = ct.c_double 
+    # Define the argument types and return type of the function
+    
+    lib.interpolate_single.argtypes = [
+                                np.ctypeslib.ndpointer(dtype=np.float64),
+                                np.ctypeslib.ndpointer(dtype=np.float64),
+                                np.ctypeslib.ndpointer(dtype=np.float64),
+                                ct.c_int,
+                                ct.c_int,
+                                ct.c_double,
+                                ct.c_double,]
+    # lib.interpolate_overall.restype = ct.POINTER(ct.c_double)
+    # lib.ray_tracing_overall.argtypes = [  # crystal_coordinate_shape
+    #     ct.c_int64,  # low
+    #     ct.c_int64,  # up
+    #     np.ctypeslib.ndpointer(dtype=np.int64),  # coordinate_list
+    #     ct.c_int64,  # coordinate_list_length
+    #     np.ctypeslib.ndpointer(dtype=np.float64),  # scattering_vector_list
+    #     np.ctypeslib.ndpointer(dtype=np.float64),  # omega_list
+    #     np.ctypeslib.ndpointer(dtype=np.float64),  # xray
+    #     np.ctypeslib.ndpointer(dtype=np.float64),  # omega_axis
+    #     np.ctypeslib.ndpointer(dtype=np.float64),  # kp rotation matrix: F
+    #     ct.c_int64,  # len_result
+    #     np.ctypeslib.ndpointer(dtype=np.float64),  # voxel_size
+    #     np.ctypeslib.ndpointer(dtype=np.float64),  # coefficients
+    #     ct.POINTER(ct.POINTER(ct.POINTER(ct.c_int8))),  # label_list
+    #     np.ctypeslib.ndpointer(dtype=np.int64),  # shape
+    #     ct.c_int,  # full_iteration
+    #     ct.c_int,  # store_paths
+    #     ct.c_int,  # num_workers
+    #     ct.c_int,                      # IsExp
+    # ]
     for i, row in enumerate(selected_data):
 
         intensity = float(row['intensity.sum.value'])
@@ -301,11 +362,14 @@ def interpolation_gridding(t1, low,  interpolation_functions, selected_data, lab
         ray_direction = dials_2_myframe(rotated_s1)
         xray_direction = dials_2_myframe(xray)
 
-        absorp = np.empty(len(coord_list))
-        absorprt = np.empty(len(coord_list))
-     
-        for k, coord in enumerate(coord_list):
-            if args.DEBUG:
+        # pdb.set_trace()
+        # grid=abs_gridding[:,:,k].flatten()
+        result =lib.interpolate(np.int64(len(coord_list)),theta_list,phi_list, abs_gridding.flatten(), len_theta,len_phi, theta_1, phi_1,theta,phi )
+       
+        if args.DEBUG:  
+            absorp = np.empty(len(coord_list))
+            absorprt = np.empty(len(coord_list))        
+            for k, coord in enumerate(coord_list):
                 face_1 = cube_face(coord, xray_direction, shape, L1=True)
                 face_2 = cube_face(coord, ray_direction, shape)
                 path_1 = cal_coord(theta_1, phi_1, coord, face_1, shape, label_list)  # 37
@@ -320,27 +384,36 @@ def interpolation_gridding(t1, low,  interpolation_functions, selected_data, lab
             # inter_1 = interpolation_v1(theta_1, phi_1, theta_list, phi_list, abs_gridding[k, :, :])
             # inter_1 =create_interpolation_gridding(theta_list, phi_list, abs_gridding[:, :, k],interpolation_method)(np.array([theta_1, phi_1]))
             # inter_2 =create_interpolation_gridding(theta_list, phi_list, abs_gridding[:, :, k],interpolation_method)(np.array([theta, phi]))
-            try:
-                inter_1 =interpolation_functions[k](np.array([ phi_1,theta_1]))
-                inter_2 =interpolation_functions[k](np.array([ phi,theta]))
-            except:
-                pdb.set_trace()
+                grid=abs_gridding[k,:,:].flatten()
+                inter_1=lib.interpolate_single(theta_list,phi_list, grid, len_theta,len_phi,   theta_1,phi_1,)
+                inter_2=lib.interpolate_single(theta_list,phi_list, grid, len_theta,len_phi, theta, phi, )
+                absorption = np.exp(-(inter_1+inter_2))
+                absorp[k] = absorption
+            # inter_1 =interpolation_functions[k](np.array([ phi_1,theta_1]))
+            # inter_2 =interpolation_functions[k](np.array([ phi,theta]))
+            # try:
+
+                
+
+                # pdb.set_trace()
+            # except:
+            #     print('error in c')
+            #     pdb.set_trace()
             # inter_2 = interpolation_v1(
             #     theta, phi, theta_list, phi_list, abs_gridding[k, :, :])
-            absorption = np.exp(-(inter_1+inter_2))
-            # pdb.set_trace()
-            absorp[k] = absorption
 
-        result = absorp.mean()
+
         if args.DEBUG:
-
+            result = absorp.mean()
             diff_2 = (result - absorprt.mean()) / absorprt.mean() *100
+            if diff_2 > 1:
+                print('diff_2 is {}'.format(diff_2))
 
-            print('diff_2 is {}'.format(diff_2))
-
-            pdb.set_trace()
+                pdb.set_trace()
         t2 = time.time()
-      
+        # if i == 1000:
+        #     print('time spent {}'.format(t2 - t1))
+        #     pdb.set_trace()
         if printing:
             print('[{}/{}] theta: {:.4f}, phi: {:.4f} , rotation: {:.4f},  absorption: {:.4f}'.format(low + i,
                                                                                                       low + len(
@@ -361,13 +434,13 @@ def interpolation_gridding(t1, low,  interpolation_functions, selected_data, lab
                           'theta_1': theta_1 * 180 / np.pi,
                           'phi_1': phi_1 * 180 / np.pi, })
         if i % 1000 == 1:
-
+            
             with open(os.path.join(gridding_dir, "{}_refl_{}.json".format(args.dataset, up)), "w") as fz:  # Pickling
                 json.dump(corr, fz, indent=2)
             with open(os.path.join(gridding_dir, "{}_dict_refl_{}.json".format(args.dataset, up)),
                       "w") as f1:  # Pickling
                 json.dump(dict_corr, f1, indent=2)
-
+            print('[{} /{} ]it spends {}'.format( low+i,up ,t2 - t1))
     with open(os.path.join(gridding_dir, "{}_refl_{}.json".format(args.dataset, up)), "w") as fz:  # Pickling
         json.dump(corr, fz, indent=2)
 

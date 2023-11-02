@@ -47,10 +47,11 @@ GCC_OPTS =-O3 -fPIC -Wall -Wextra  $(LDFLAGS)  $(INC)
 GCC_OPTS_D =-O0 -fPIC -Wall -Wextra $(INC)  $(LDFLAGS)  -g
 ANALYZE = FFT.exe
 
-all: clean sharedlibrary_cpu
-debug: clean sharedlibrary_cpu_d sharedlibrary_gpu_d
+all: clean sharedlibrary_cpu sharedlibrary_interpolation sharedlibrary_gpu 
+debug: clean sharedlibrary_cpu_d sharedlibrary_gpu_d sharedlibrary_interpolation_d
 cpu: clean sharedlibrary_cpu
 gpu: clean sharedlibrary_gpu
+
 
 
 sharedlibrary_cpu: ray_tracing.o ray_tracing_basic.o bisection.o testkit.o Makefile
@@ -108,6 +109,13 @@ ray_tracing_c_d.o: ray_tracing_gpu.c
 
 ray_tracing_gpu_d.o:  $(gpu_pth)ray_tracing_gpu.cu
 	$(NVCC) -c  $(gpu_pth)ray_tracing_gpu.cu $(NVCCFLAGS_D) -o ray_tracing_gpu_d.o
+
+sharedlibrary_interpolation: gridding_interpolation.c
+	$(GCC) -shared -o gridding_interpolation.so  -fPIC -std=c99 $(GCC_OPTS) $(LDFLAGS) -lgsl -lgslcblas gridding_interpolation.c
+
+sharedlibrary_interpolation_d: gridding_interpolation.c
+	$(GCC) -shared -o gridding_interpolation.so  -fPIC -std=c99 $(GCC_OPTS_D) $(LDFLAGS) -lgsl -lgslcblas gridding_interpolation.c
+
 
 # bisection_d.o: $(pth)bisection.c
 # 	$(GCC) -c $(pth)bisection.c $(GCC_OPTS_D) -o bisection_d.o

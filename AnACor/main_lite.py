@@ -5,6 +5,7 @@ import pdb
 import numpy as np
 # from dials.array_family import flex
 from ast import literal_eval
+from multiprocessing import Pool
 import argparse
 try:
     from utils.utils_rt import *
@@ -300,12 +301,31 @@ def set_parser():
         default=True,
         help="whether to apply sampling evenly",
     )
+    parser.add_argument(
+        "--single-distribution",
+        type=str2bool,
+        default=False,
+        help="whether to apply sampling evenly",
+    )
     global args
     args = parser.parse_args()
     return args
 
 
+def process_chunk(params):
+    chunk,xray_direction,ray_direction,theta_1,phi_1,theta,phi,shape,voxel_size,coefficients,label_list=params
+    absorp_chunk = np.empty(len(chunk))
+    for k, coord in enumerate(chunk):
+        face_1 = cube_face(coord, xray_direction, shape, L1=True)
+        face_2 = cube_face(coord, ray_direction, shape)
+        path_1 = cal_coord(theta_1, phi_1, coord, face_1, shape, label_list)
+        path_2 = cal_coord(theta, phi, coord, face_2, shape, label_list)
 
+        numbers_1 = cal_path_plus(path_1, voxel_size)
+        numbers_2 = cal_path_plus(path_2, voxel_size)
+        absorption = cal_rate((numbers_1 + numbers_2), coefficients)
+        absorp_chunk[k] = absorption    
+    return absorp_chunk
 
 
 
@@ -382,9 +402,9 @@ def worker_function(t1, low,  dataset, selected_data, label_list,
             os.path.abspath(__file__)), './src/ray_tracing_gpu.so'))
         anacor_lib_gpu.ray_tracing_gpu_overall.restype = ct.POINTER(ct.c_float)
         anacor_lib_gpu.ray_tracing_gpu_overall.argtypes = [  # crystal_coordinate_shape
-            ct.c_int,  # low
-            ct.c_int,  # up
-            np.ctypeslib.ndpointer(dtype=np.int64),  # coordinate_list
+            ct.c_int64,  # low
+            ct.c_int64,  # up
+            np.ctypeslib.ndpointer(dtype=np.int32),  # coordinate_list
             ct.c_int64,  # coordinate_list_length
             np.ctypeslib.ndpointer(dtype=np.float32),  # scattering_vector_list
             np.ctypeslib.ndpointer(dtype=np.float32),  # omega_list
@@ -421,9 +441,16 @@ def worker_function(t1, low,  dataset, selected_data, label_list,
         if args.gpu:
             t1 = time.time()
             print("\033[92m GPU  is used for ray tracing \033[0m")
-
+            # Initialize an empty list to hold the indices of non-zero elements.
+            nonzero_indices = []
+            # abc = label_list.ctypes.data_as(ct.POINTER(ct.c_int8))
+            # # Iterate over the array and check each element.
+            # for i in range(660*850*850):
+            #     if abc[i] != 0:
+            #         nonzero_indices.append(i)
+            # pdb.set_trace()
             result_list = anacor_lib_gpu.ray_tracing_gpu_overall(low, low+len(selected_data),
-                                                                 coord_list.astype(np.int64), np.int64(len(
+                                                                 coord_list.astype(np.int32), np.int64(len(
                                                                      coord_list)),
                                                                  arr_scattering.astype(np.float32), arr_omega.astype(
                 np.float32), xray.astype(np.float32), omega_axis.astype(np.float32),
@@ -509,6 +536,39 @@ def worker_function(t1, low,  dataset, selected_data, label_list,
 
                 absorp = np.empty(len(coord_list))
                 absorprt = np.empty(len(coord_list))
+
+                if args.single_distribution:
+
+                    t1 = time.time()
+
+                    # Determine the number of processes based on the number of available CPUs
+                    num_processes = os.cpu_count()
+                    print('num_processes is {}'.format(num_processes))
+                    chunk_size = max(len(coord_list) // num_processes, 1)  # Ensure chunk_size is at least 1
+
+                    chunks=[]
+                    for k,i in enumerate( range(0, len(coord_list), chunk_size)):
+                        if k !=num_processes-1:
+                            chunks.append(coord_list[i:i + chunk_size])
+                        else:
+                            chunks.append(coord_list[i:])
+                    params =  [(chunk, xray_direction, ray_direction, theta_1, phi_1, theta, phi, shape, voxel_size, coefficients, label_list) for chunk in chunks]
+                    
+                    pool = mp.Pool(num_processes)
+                    absorptions_list  = pool.map(process_chunk, params)
+                    pool.close()
+                    pool.join()
+                    absorptions = [absorp for sublist in absorptions_list for absorp in sublist]
+                    absorptions = np.array(absorptions)
+                    
+                    np.save(os.path.join(save_dir, '{}_single_distribution_{}_{}.npy'.format(dataset,low+i, args.sampling_ratio)), absorp)
+                    t2 = time.time()
+                    with open(os.path.join(save_dir, "{}_time_{}.json".format(dataset, up)), "w") as f1:  # Pickling
+                        json.dump(t2 - t1, f1, indent=2)
+                    import sys
+                    sys.exit(0)
+
+
                 for k, coord in enumerate(coord_list):
                     # face_1 = which_face_2(coord, shape, theta_1, phi_1)
                     # face_2 = which_face_2(coord, shape, theta, phi)
@@ -564,6 +624,7 @@ def worker_function(t1, low,  dataset, selected_data, label_list,
 
                     absorp[k] = absorption
                 result = absorp.mean()
+
             if args.DEBUG:
                 result_c = anacor_lib_cpu.ray_tracing_single(
                     coord_list, len(coord_list),
@@ -1056,10 +1117,12 @@ def main():
 
 
     if args.gridding is True:
-        
-        abs_gridding=stacking(gridding_dir,'gridding_{}'.format(args.sampling_ratio))
+        afterfix=f'gridding_{args.sampling_ratio}_{args.gridding_theta}_{args.gridding_phi}'
+        print(os.path.join(os.path.dirname( os.path.abspath(__file__)), './src/gridding_interpolation.so'))
+        lib = ct.CDLL(os.path.join(os.path.dirname( os.path.abspath(__file__)), './src/gridding_interpolation.so'))
+        abs_gridding=stacking(gridding_dir,afterfix)
         # abs_gridding=stacking(gridding_dir,'gridding')
-        
+  
 
 
  
@@ -1069,10 +1132,11 @@ def main():
             mp_create_gridding(t1, low, label_list,dataset,
                              voxel_size, coefficients,coord_list,
                              gridding_dir, args,
-                             offset, full_iteration, store_paths, printing, num_cls, args.gridding_method,num_processes)
+                             offset, full_iteration, store_paths, printing,afterfix, num_cls, args.gridding_method,num_processes)
             print('gridding map is finished and created')
+            abs_gridding=stacking(gridding_dir,afterfix)
+   
 
-        abs_gridding=stacking(gridding_dir,'gridding_{}'.format(args.sampling_ratio))
         print('Loading gridding map')
         mp_interpolation_gridding(t1, low,  abs_gridding, select_data, label_list,
                           voxel_size, coefficients, F, coord_list,
@@ -1080,144 +1144,121 @@ def main():
                           offset, full_iteration, store_paths, printing, num_cls,num_processes,args.interpolation_method)
 
     else:
-        def create_process(worker_function, data_slice, data_copy,i):
-            return mp.Process(target=worker_function, args=(t1, low + i * each_core, dataset, data_slice, data_copy,
-                                                            voxel_size, coefficients, F, coord_list,
-                                                            omega_axis, axes_data, args.save_dir, args,
-                                                            offset, full_iteration, store_paths, printing, num_cls))
 
-        def determine_worker_function_and_data():
-            if args.absorption_map is True:
-                return worker_function_am, map_data
-            else:
-                return worker_function, select_data
 
+        # Create a list of 48 data copies
+
+        # Create a queue to store the results from each worker process
+        # pdb.set_trace()
+        # Create a list of worker processes
         processes = []
-        num_processes = 1 if args.gpu or args.openmp else num_processes
+        if args.gpu is True:
+            num_processes = 1
+        if args.openmp is True:
+            num_processes = 1
 
         if num_processes > 1:
-            each_core = int(len_data // num_processes)
+
+            each_core = int(len_data//num_processes)
             data_copies = [label_list.copy() for _ in range(num_processes)]
-            worker_function, data = determine_worker_function_and_data()
-            
             for i in range(num_processes):
-                if i != num_processes - 1:
-                    process = create_process(worker_function, data[i * each_core:(i + 1) * each_core], data_copies[i,i])
+                # Create a new process and pass it the data copy and result queue
+                if i != num_processes-1:
+                    if args.absorption_map is True:
+                        process = mp.Process(target=worker_function_am,
+                                            args=(t1, low+i*each_core, dataset,
+                                                map_data[i*each_core:(i+1)
+                                                            * each_core], select_data,  data_copies[i],
+                                                voxel_size, coefficients, F, coord_list,
+                                                omega_axis, axes_data, args.save_dir, args,
+                                                offset, full_iteration, store_paths, printing, num_cls))
+                    else:
+                        process = mp.Process(target=worker_function,
+                                            args=(t1, low+i*each_core, dataset,
+                                                select_data[i*each_core:(i+1)
+                                                            * each_core], data_copies[i],
+                                                voxel_size, coefficients, F, coord_list,
+                                                omega_axis, axes_data, args.save_dir, args,
+                                                offset, full_iteration, store_paths, printing, num_cls))
+                    # worker_function()
                 else:
-                    process = create_process(worker_function, data[i * each_core:], data_copies[i],i)
+                    if args.absorption_map is True:
+                        process = mp.Process(target=worker_function_am,
+                                            args=(t1, low+i*each_core, dataset,
+                                                map_data[i*each_core:], select_data,  data_copies[i],
+                                                voxel_size, coefficients, F, coord_list,
+                                                omega_axis, axes_data, args.save_dir, args,
+                                                offset, full_iteration, store_paths, printing, num_cls))
+                    else:
+                        process = mp.Process(target=worker_function,
+                                            args=(t1, low+i*each_core, dataset,
+                                                select_data[i *
+                                                            each_core:], data_copies[i],
+                                                voxel_size, coefficients, F, coord_list,
+                                                omega_axis, axes_data, args.save_dir, args,
+                                                offset, full_iteration, store_paths, printing, num_cls))
 
                 processes.append(process)
-
+            # pdb.set_trace()
+            # Start all worker processes
             for process in processes:
                 process.start()
 
+            # Wait for all worker processes to finish
             for process in processes:
                 process.join()
         else:
-            worker_function, data = determine_worker_function_and_data()
-            worker_function(t1, low, dataset, data, label_list, voxel_size, coefficients, F, coord_list,
-                            omega_axis, axes_data, args.save_dir, args, offset, full_iteration, store_paths, printing, num_cls)
-
-
-    # Create a list of 48 data copies
-
-    # Create a queue to store the results from each worker process
-    # pdb.set_trace()
-    # Create a list of worker processes
-    # processes = []
-    # if args.gpu is True:
-    #     num_processes = 1
-    # if args.openmp is True:
-    #     num_processes = 1
-
-    # if num_processes > 1:
-
-    #     each_core = int(len_data//num_processes)
-    #     data_copies = [label_list.copy() for _ in range(num_processes)]
-    #     for i in range(num_processes):
-    #         # Create a new process and pass it the data copy and result queue
-    #         if i != num_processes-1:
-    #             if args.absorption_map is True:
-    #                 process = mp.Process(target=worker_function_am,
-    #                                      args=(t1, low+i*each_core, dataset,
-    #                                            map_data[i*each_core:(i+1)
-    #                                                     * each_core], select_data,  data_copies[i],
-    #                                            voxel_size, coefficients, F, coord_list,
-    #                                            omega_axis, axes_data, args.save_dir, args,
-    #                                            offset, full_iteration, store_paths, printing, num_cls))
-    #             elif args.gridding is True:
-    #                 process = mp.Process(target=worker_function_gridding,
-    #                                      args=(t1, low+i*each_core, dataset,
-    #                                            gridding_data[i*each_core:(i+1)
-    #                                                          * each_core], data_copies[i],
-    #                                            voxel_size, coefficients, F, coord_list,
-    #                                            omega_axis, axes_data, args.save_dir, args,
-    #                                            offset, full_iteration, store_paths, printing, num_cls))
-    #             else:
-    #                 process = mp.Process(target=worker_function,
-    #                                      args=(t1, low+i*each_core, dataset,
-    #                                            select_data[i*each_core:(i+1)
-    #                                                        * each_core], data_copies[i],
-    #                                            voxel_size, coefficients, F, coord_list,
-    #                                            omega_axis, axes_data, args.save_dir, args,
-    #                                            offset, full_iteration, store_paths, printing, num_cls))
-    #             # worker_function()
-    #         else:
-    #             if args.absorption_map is True:
-    #                 process = mp.Process(target=worker_function_am,
-    #                                      args=(t1, low+i*each_core, dataset,
-    #                                            map_data[i*each_core:], select_data,  data_copies[i],
-    #                                            voxel_size, coefficients, F, coord_list,
-    #                                            omega_axis, axes_data, args.save_dir, args,
-    #                                            offset, full_iteration, store_paths, printing, num_cls))
-    #             elif args.gridding is True:
-    #                 process = mp.Process(target=worker_function_gridding,
-    #                                      args=(t1, low+i*each_core, dataset,
-    #                                            gridding_data[i *
-    #                                                          each_core:],  data_copies[i],
-    #                                            voxel_size, coefficients, F, coord_list,
-    #                                            omega_axis, axes_data, args.save_dir, args,
-    #                                            offset, full_iteration, store_paths, printing, num_cls))
-    #             else:
-    #                 process = mp.Process(target=worker_function,
-    #                                      args=(t1, low+i*each_core, dataset,
-    #                                            select_data[i *
-    #                                                        each_core:], data_copies[i],
-    #                                            voxel_size, coefficients, F, coord_list,
-    #                                            omega_axis, axes_data, args.save_dir, args,
-    #                                            offset, full_iteration, store_paths, printing, num_cls))
-
-    #         processes.append(process)
-    #     # pdb.set_trace()
-    #     # Start all worker processes
-    #     for process in processes:
-    #         process.start()
-
-    #     # Wait for all worker processes to finish
-    #     for process in processes:
-    #         process.join()
-    # else:
-    #     if args.absorption_map is True:
-    #         worker_function_am(t1, low,  dataset, map_data, select_data, label_list,
-    #                            voxel_size, coefficients, F, coord_list,
-    #                            omega_axis, axes_data, args.save_dir, args,
-    #                            offset, full_iteration, store_paths, printing, num_cls)
-    #     elif args.gridding is True:
-    #         worker_function_gridding(t1, low, dataset,
-    #                                  gridding_data,  label_list,
-    #                                  voxel_size, coefficients, F, coord_list,
-    #                                  omega_axis, axes_data, args.save_dir, args,
-    #                                  offset, full_iteration, store_paths, printing, num_cls, args.gridding_method)
-    #     else:
-    #         worker_function(t1, low,  dataset, select_data, label_list,
-    #                         voxel_size, coefficients, F, coord_list,
-    #                         omega_axis, axes_data, args.save_dir, args,
-    #                         offset, full_iteration, store_paths, printing, num_cls)
+            if args.absorption_map is True:
+                worker_function_am(t1, low,  dataset, map_data, select_data, label_list,
+                                voxel_size, coefficients, F, coord_list,
+                                omega_axis, axes_data, args.save_dir, args,
+                                offset, full_iteration, store_paths, printing, num_cls)
+            else:
+                worker_function(t1, low,  dataset, select_data, label_list,
+                                voxel_size, coefficients, F, coord_list,
+                                omega_axis, axes_data, args.save_dir, args,
+                                offset, full_iteration, store_paths, printing, num_cls)
 
 
 
 
+        # def create_process(worker_function, data_slice, data_copy,i):
+        #     return mp.Process(target=worker_function, args=(t1, low + i * each_core, dataset, data_slice, data_copy,
+        #                                                     voxel_size, coefficients, F, coord_list,
+        #                                                     omega_axis, axes_data, args.save_dir, args,
+        #                                                     offset, full_iteration, store_paths, printing, num_cls))
 
+        # def determine_worker_function_and_data():
+        #     if args.absorption_map is True:
+        #         return worker_function_am, map_data
+        #     else:
+        #         return worker_function, select_data
+
+        # processes = []
+        # num_processes = 1 if args.gpu or args.openmp else num_processes
+
+        # if num_processes > 1:
+        #     each_core = int(len_data // num_processes)
+        #     data_copies = [label_list.copy() for _ in range(num_processes)]
+        #     worker_function, data = determine_worker_function_and_data()
+            
+        #     for i in range(num_processes):
+        #         if i != num_processes - 1:
+        #             process = create_process(worker_function, data[i * each_core:(i + 1) * each_core], data_copies[i,i])
+        #         else:
+        #             process = create_process(worker_function, data[i * each_core:], data_copies[i],i)
+
+        #         processes.append(process)
+
+        #     for process in processes:
+        #         process.start()
+
+        #     for process in processes:
+        #         process.join()
+        # else:
+        #     worker_function, data = determine_worker_function_and_data()
+        #     worker_function(t1, low, dataset, data, label_list, voxel_size, coefficients, F, coord_list,
+        #                     omega_axis, axes_data, args.save_dir, args, offset, full_iteration, store_paths, printing, num_cls)
 
 
 
