@@ -1604,7 +1604,7 @@ void ray_tracing_gpu_single(int rotated_s1_size, int rotated_xray_size, size_t h
 	{
 		nCUDAErrors++;
 		printf("ERROR: memory allocation d_python_result_list\n");
-		d_result_list = NULL;
+		d_python_result_list = NULL;
 	}
 	cudaError = cudaMalloc((void **)&d_scattering_vector_list, scattering_vector_list_size);
 	if (cudaError != cudaSuccess)
@@ -1706,27 +1706,31 @@ void ray_tracing_gpu_single(int rotated_s1_size, int rotated_xray_size, size_t h
 		printf("ERROR: memory allocation d_increments\n");
 		d_label_list = NULL;
 	}
-	cudaError = cudaMalloc((void **)&d_ray_classes, ray_classes_size);
-	if (cudaError != cudaSuccess)
-	{
-		nCUDAErrors++;
-		printf("ERROR: memory allocation d_ray_classes\n");
-		d_label_list = NULL;
-	}
-	cudaError = cudaMalloc((void **)&d_absorption_lengths, absorption_size);
-	if (cudaError != cudaSuccess)
-	{
-		nCUDAErrors++;
-		printf("ERROR: memory allocation d_absorption_lengths \n");
-		d_label_list = NULL;
-	}
-	cudaError = cudaMalloc((void **)&d_absorption_lengths, absorption_size);
-	if (cudaError != cudaSuccess)
-	{
-		nCUDAErrors++;
-		printf("ERROR: memory allocation d_absorption_lengths \n");
-		d_label_list = NULL;
-	}
+
+	size_t free_mem, total_mem;
+	cudaMemGetInfo(&free_mem, &total_mem);
+	printf("--> GPU info:before  d_ray_classes Device has %0.3f MB of total memory, which %0.3f MB is available.\n", ((float)total_mem) / (1024.0 * 1024.0), (float)free_mem / (1024.0 * 1024.0));
+	// cudaError = cudaMalloc((void **)&d_ray_classes, ray_classes_size);
+	// if (cudaError != cudaSuccess)
+	// {
+	// 	nCUDAErrors++;
+	// 	printf("ERROR: memory allocation d_ray_classes\n");
+	// 	d_label_list = NULL;
+	// }
+	// cudaError = cudaMalloc((void **)&d_absorption_lengths, absorption_size);
+	// if (cudaError != cudaSuccess)
+	// {
+	// 	nCUDAErrors++;
+	// 	printf("ERROR: memory allocation d_absorption_lengths \n");
+	// 	d_label_list = NULL;
+	// }
+	// cudaError = cudaMalloc((void **)&d_absorption_lengths, absorption_size);
+	// if (cudaError != cudaSuccess)
+	// {
+	// 	nCUDAErrors++;
+	// 	printf("ERROR: memory allocation d_absorption_lengths \n");
+	// 	d_label_list = NULL;
+	// }
 
 	//---------> Memory copy and preparation
 	GpuTimer timer;
@@ -2079,8 +2083,12 @@ void ray_tracing_gpu_single(int rotated_s1_size, int rotated_xray_size, size_t h
 	cudaFree(d_face);
 	cudaFree(d_angles);
 	cudaFree(d_increments);
-	cudaFree(d_ray_classes);
-	cudaFree(d_absorption_lengths);
+	// cudaFree(d_ray_classes);
+	// cudaFree(d_absorption_lengths);
+	cudaFree(d_angles_overall);
+	cudaFree(d_increments_overall);
+	
+
 	free(h_rotated_s1_list);
 	free(h_rotated_xray_list);
 
@@ -2167,11 +2175,12 @@ int ray_tracing_gpu_overall_kernel(size_t low, size_t up,
 	size_t increments_size_overall = 36 * sizeof(float) * h_len_result;
 	printf("len_coord_list %d \n", h_len_coord_list);
 	printf("h_len_result %d \n", h_len_result);
-	size_t total_memory_required_bytes = increments_size_overall + angle_size_overall + face_size + angle_size + increments_size + absorption_size + cube_size + ray_classes_size + coord_list_size + ray_directions_size + result_size + scattering_vector_list_size + omega_list_size + raw_xray_size + omega_axis_size + kp_rotation_matrix_size + rotated_s1_size + rotated_xray_size;
+	size_t total_memory_required_bytes = increments_size_overall + angle_size_overall + face_size + angle_size + increments_size + absorption_size + cube_size + coord_list_size + ray_directions_size + result_size + scattering_vector_list_size + omega_list_size + raw_xray_size + omega_axis_size + kp_rotation_matrix_size + rotated_s1_size + rotated_xray_size+python_result_size ;
 
 	// printf("total_memory_required_bytes %f \n", total_memory_required_bytes);
 	printf("--> DEBUG: Total memory required %0.3f MB.\n", (double)total_memory_required_bytes / (1024.0 * 1024.0));
-	
+	float free_mem_factor = 0.9;
+	free_mem = free_mem_factor * free_mem;
 	if (total_memory_required_bytes > free_mem)
 	{
 		printf("--> DEBUG: Total memory required %0.3f MB.\n", (double)

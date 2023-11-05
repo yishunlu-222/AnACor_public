@@ -266,6 +266,12 @@ def set_parser():
         help="whether to apply sampling evenly",
     )
     parser.add_argument(
+        "--gpu-card",
+        type=str,
+        default='a100',
+        help="whether to apply sampling evenly",
+    )
+    parser.add_argument(
         "--gridding",
         type=str2bool,
         default=False,
@@ -399,7 +405,7 @@ def worker_function(t1, low,  dataset, selected_data, label_list,
     label_list_c = python_2_c_3d(label_list)
     if args.gpu:
         anacor_lib_gpu = ct.CDLL(os.path.join(os.path.dirname(
-            os.path.abspath(__file__)), './src/ray_tracing_gpu.so'))
+            os.path.abspath(__file__)), f'./src/ray_tracing_gpu_{args.gpu_card}.so'))
         anacor_lib_gpu.ray_tracing_gpu_overall.restype = ct.POINTER(ct.c_float)
         anacor_lib_gpu.ray_tracing_gpu_overall.argtypes = [  # crystal_coordinate_shape
             ct.c_int64,  # low
