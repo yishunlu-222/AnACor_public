@@ -313,6 +313,12 @@ def set_parser():
         default=False,
         help="whether to apply sampling evenly",
     )
+    parser.add_argument(
+        "--inter-method",
+        type=str,
+        default='linear',
+        help="whether to apply sampling evenly",
+    )
     global args
     args = parser.parse_args()
     return args
@@ -1128,7 +1134,7 @@ def main():
         lib = ct.CDLL(os.path.join(os.path.dirname( os.path.abspath(__file__)), './src/gridding_interpolation.so'))
         abs_gridding=stacking(gridding_dir,afterfix)
         # abs_gridding=stacking(gridding_dir,'gridding')
-  
+        
 
 
  
@@ -1141,8 +1147,7 @@ def main():
                              offset, full_iteration, store_paths, printing,afterfix, num_cls, args.gridding_method,num_processes)
             print('gridding map is finished and created')
             abs_gridding=stacking(gridding_dir,afterfix)
-   
-
+            t1 = time.time()
         print('Loading gridding map')
         mp_interpolation_gridding(t1, low,  abs_gridding, select_data, label_list,
                           voxel_size, coefficients, F, coord_list,

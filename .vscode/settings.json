@@ -4,7 +4,9 @@
         "bisection.h": "c",
         "stdint.h": "c",
         "math.h": "c",
-        "stdlib.h": "c"
+        "stdlib.h": "c",
+        "omp.h": "c",
+        "testkit.h": "c"
     },
     "cmake.configureOnOpen": false
 }

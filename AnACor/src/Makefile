@@ -13,7 +13,7 @@ NVCC = ${CUDA_HOME}/bin/nvcc
 
 
 
-ARCH=titanx
+
 # Determine the architecture flag based on the GPU model
 ifeq ($(ARCH),h100)
   SM_ARCH = sm_90
@@ -82,7 +82,7 @@ testkit_d.o: $(pth)testkit.c
 
 
 sharedlibrary_gpu: ray_tracing_c.o  ray_tracing_gpu.o 
-	$(NVCC) $(NVCCFLAGS) -shared -o ray_tracing_gpu_${ARCH}.so  ray_tracing_c.o  ray_tracing_gpu.o  
+	$(NVCC) $(NVCCFLAGS) -shared -o ray_tracing_gpu.so  ray_tracing_c.o  ray_tracing_gpu.o  
 
 ray_tracing_c.o: ray_tracing_gpu.c 
 		g++  -c ray_tracing_gpu.c $(GCC_OPTS) -o  ray_tracing_c.o  
@@ -107,61 +107,14 @@ ray_tracing_gpu_d.o:  $(gpu_pth)ray_tracing_gpu.cu
 # 	$(NVCC) -c  $(gpu_pth)ray_tracing_kernels.cu $(NVCCFLAGS_D) -o ray_tracing_kernels_d.o
 
 
-sharedlibrary_interpolation: gridding_interpolation.c
-	$(GCC) -shared -o gridding_interpolation.so  -fPIC -std=c99 $(GCC_OPTS) $(LDFLAGS) -lgsl -lgslcblas gridding_interpolation.c
+sharedlibrary_interpolation: gridding_interpolation.c ray_tracing_basic.o
+	$(GCC) -shared -o gridding_interpolation.so  -fPIC -std=c99 $(GCC_OPTS) $(LDFLAGS) -lgsl -lgslcblas gridding_interpolation.c ray_tracing_basic.o
 
-sharedlibrary_interpolation_d: gridding_interpolation.c
-	$(GCC) -shared -o gridding_interpolation.so  -fPIC -std=c99 $(GCC_OPTS_D) $(LDFLAGS) -lgsl -lgslcblas gridding_interpolation.c
-
-
-# bisection_d.o: $(pth)bisection.c
-# 	$(GCC) -c $(pth)bisection.c $(GCC_OPTS_D) -o bisection_d.o
-
-# # Modify the 'de' target to include bisection_d.o in the linking process
-# de: ray_tracing_d.o ray_tracing_gpu_d.o bisection_d.o testkit_d.o  ray_tracing_basic_d.o 
-# 	$(NVCC) $(NVCCFLAGS_D) -shared -o ray_tracing.so ray_tracing_d.o ray_tracing_gpu_d.o bisection_d.o testkit_d.o ray_tracing_basic_d.o
-
-
-# ray_tracing_gpu_d.o:  $(gpu_pth)ray_tracing_gpu.cu
-# 	$(NVCC) -c  $(gpu_pth)ray_tracing_gpu.cu $(NVCCFLAGS_D) -o ray_tracing_gpu_d.o
-
-# ray_tracing_d.o: $(pth)ray_tracing.c
-# 	$(GCC) -c $(pth)ray_tracing.c $(GCC_OPTS_D) -o ray_tracing_d.o
-
-# ray_tracing_basic_d.o: $(pth)ray_tracing_basic.c
-# 	$(GCC) -c $(pth)ray_tracing_basic.c $(GCC_OPTS) -o ray_tracing_basic_d.o
-
-# bisection_d.o: $(pth)bisection.c
-# 	$(GCC) -c $(pth)bisection.c $(GCC_OPTS) -o bisection_d.o
-
-# testkit_d.o: $(pth)testkit.c
-# 	$(GCC) -c $(pth)testkit.c $(GCC_OPTS) -o testkit_d.o
-
-# # nnormal
-
-# sharedlibrary: ray_tracing.o ray_tracing_gpu.o bisection.o testkit.o  ray_tracing_basic.o Makefile
-# 	$(NVCC) $(NVCCFLAGS) $(INC) $(LIB) -shared -o ray_tracing.so ray_tracing.o ray_tracing_gpu.o bisection.o testkit.o ray_tracing_basic.o
-
-
-# sharedlibrary_cpu: ray_tracing.o bisection.o testkit.o  ray_tracing_basic.o Makefile
-# 	$(CC)  -fPIC -std=c99 $(GCC_OPTS) -shared -o ray_tracing.so ray_tracing.o bisection.o testkit.o  ray_tracing_basic.o
+sharedlibrary_interpolation_d: gridding_interpolation.c ray_tracing_basic.o
+	$(GCC) -shared -o gridding_interpolation.so  -fPIC -std=c99 $(GCC_OPTS_D) $(LDFLAGS) -lgsl -lgslcblas gridding_interpolation.c ray_tracing_basic.o
 
 
 
-# ray_tracing_gpu.o:  $(gpu_pth)ray_tracing_gpu.cu
-# 	$(NVCC) -c  $(gpu_pth)ray_tracing_gpu.cu $(NVCCFLAGS) -o ray_tracing_gpu.o
-
-# ray_tracing.o: $(pth)ray_tracing.c
-# 	$(GCC) -c $(pth)ray_tracing.c $(GCC_OPTS) -o ray_tracing.o
-
-# ray_tracing_basic.o: $(pth)ray_tracing_basic.c
-# 	$(GCC) -c $(pth)ray_tracing_basic.c $(GCC_OPTS) -o ray_tracing_basic.o
-
-# bisection.o: $(pth)bisection.c
-# 	$(GCC) -c $(pth)bisection.c $(GCC_OPTS) -o bisection.o
-
-# testkit.o: $(pth)testkit.c
-# 	$(GCC) -c $(pth)testkit.c $(GCC_OPTS) -o testkit.o
 
 clean:	
 	rm -f *.o *.~ $(ANALYZE)
