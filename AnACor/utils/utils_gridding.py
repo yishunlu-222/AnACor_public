@@ -19,11 +19,11 @@ from utils.utils_rt import (
     cal_rate,
     cal_rate_single,
 )
-from utils.utils_os import python_2_c_3d, kp_rotation
+from utils.utils_os import python_2_c_3d, kp_rotation,stacking
 import gc
 import sys
 import multiprocessing as mp
-from multiprocessing import Pool, sharedctypes, shared_memory, Process
+# from multiprocessing import Pool, sharedctypes, shared_memory, Process
 import ctypes as ct
 from scipy.interpolate import RegularGridInterpolator
 
@@ -97,6 +97,21 @@ def worker_function_create_gridding(
         ct.c_int,  # index
         ct.c_int,  # IsExp
     ]
+    anacor_lib_cpu.ib_single_gridding.restype = ct.c_double
+    anacor_lib_cpu.ib_single_gridding.argtypes = [  # crystal_coordinate_shape
+        np.ctypeslib.ndpointer(dtype=np.int64),  # coord
+        np.ctypeslib.ndpointer(dtype=np.float64),  # rotated_s1
+        ct.c_double,  # theta
+        ct.c_double,  # phi
+        np.ctypeslib.ndpointer(dtype=np.float64),  # voxel_size
+        np.ctypeslib.ndpointer(dtype=np.float64),  # coefficients
+        ct.POINTER(ct.POINTER(ct.POINTER(ct.c_int8))),  # label_list
+        np.ctypeslib.ndpointer(dtype=np.int64),  # shape
+        ct.c_int,  # full_iteration
+        ct.c_int,  # index
+        ct.c_int,  # num_cls
+        ct.c_int,  # IsExp
+    ]
     print("gridding method is {}".format(gridding_method))
     assert gridding_method < 3
     absorption_map = []
@@ -114,25 +129,34 @@ def worker_function_create_gridding(
         theta_1, phi_1 = 0, 0
         numbers_1 = (0, 0, 0, 0)
         for k, coord in enumerate(coord_list):
+           
             if gridding_method == 1:
                 # absorption = cal_rate(numbers_2, coefficients)
-                absorption = anacor_lib_cpu.ray_tracing_single_gridding(
-                    coord,
-                    rotated_s1,
-                    theta,
-                    phi,
-                    voxel_size,
-                    coefficients,
-                    label_list_c,
-                    shape,
-                    full_iteration,
+                if args.gridding_bisection:
+                    absorption = anacor_lib_cpu.ib_single_gridding(coord,rotated_s1,theta,phi,voxel_size,coefficients,label_list_c,shape,full_iteration,
                     i,
+                    num_cls,
                     1,
                 )
+                else:
+                    absorption = anacor_lib_cpu.ray_tracing_single_gridding(
+                        coord,
+                        rotated_s1,
+                        theta,
+                        phi,
+                        voxel_size,
+                        coefficients,
+                        label_list_c,
+                        shape,
+                        full_iteration,
+                        i,
+                        1,
+                    )
 
             elif gridding_method == 2:
                 # absorption = cal_rate(numbers_2, coefficients, exp=False)
-                absorption = anacor_lib_cpu.ray_tracing_single_gridding(
+                if args.gridding_bisection:
+                    absorption = anacor_lib_cpu.ib_single_gridding(
                     coord,
                     rotated_s1,
                     theta,
@@ -143,8 +167,23 @@ def worker_function_create_gridding(
                     shape,
                     full_iteration,
                     i,
+                    num_cls,
                     0,
                 )
+                else:
+                    absorption = anacor_lib_cpu.ray_tracing_single_gridding(
+                        coord,
+                        rotated_s1,
+                        theta,
+                        phi,
+                        voxel_size,
+                        coefficients,
+                        label_list_c,
+                        shape,
+                        full_iteration,
+                        i,
+                        0,
+                    )
 
             if args.DEBUG:
                 face_2 = cube_face(coord, ray_direction, shape)
@@ -163,7 +202,7 @@ def worker_function_create_gridding(
         absorption_map.append(absorption_row)
         if printing:
             print(
-                "[{}/{}] theta: {:.4f}, phi: {:.4f}".format(
+                "[{}/{}] gridding map theta: {:.4f}, phi: {:.4f}".format(
                     low + i, up, theta * 180 / np.pi, phi * 180 / np.pi
                 )
             )
@@ -321,13 +360,21 @@ def mp_interpolation_gridding(
     printing,
     num_cls,
     num_processes,
-    interpolation_method="linear",
+    interpolation_method="linear",afterfix=''
 ):
     abs_gridding = np.array(abs_gridding)  # .astype(np.float32)
-
-    abs_gridding = abs_gridding.reshape(
-        (args.gridding_phi, args.gridding_theta, len(coord_list))
-    )
+    try:
+        abs_gridding = abs_gridding.reshape(
+            (args.gridding_phi, args.gridding_theta, len(coord_list))
+        )
+    except:
+        print("error in reshape")
+        print("recreating the gridding")
+        mp_create_gridding(t1, low, label_list,args.dataset,
+                             voxel_size, coefficients,coord_list,
+                             gridding_dir, args,
+                             offset, full_iteration, store_paths, printing,afterfix, num_cls, args.gridding_method,num_processes)
+        abs_gridding=stacking(gridding_dir,afterfix)
     #
     # theta_list = np.linspace(-180 , 180 ,
     #                          args.gridding_theta, endpoint=False) / 180 * np.pi
@@ -479,7 +526,7 @@ def mp_interpolation_gridding(
             store_paths,
             printing,
             num_cls,
-            interpolation_method="linear",
+            interpolation_method=interpolation_method,
             phi_list=phi_list,
             theta_list=theta_list,
             abs_gridding=abs_gridding,
@@ -508,7 +555,7 @@ def interpolation_gridding(
     store_paths,
     printing,
     num_cls,
-    interpolation_method="linear",
+    interpolation_method="nearest",
     phi_list=None,
     theta_list=None,
     abs_gridding=None,

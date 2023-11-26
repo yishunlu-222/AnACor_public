@@ -7,7 +7,7 @@ import numpy as np
 # from dials.array_family import flex
 from ast import literal_eval
 import argparse
-from utils.utils_rt import *
+# from utils.utils_rt import *
 import gc
 import sys
 import multiprocessing

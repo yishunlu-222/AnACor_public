@@ -7,6 +7,7 @@ from skimage.draw import line
 import ctypes as ct
 np.set_printoptions(suppress=True)
 
+np.random.seed(99)
 
 def generate_sampling(label_list, cr=3, dim='z', sampling_size=5000, auto=True,method='even',sampling_ratio=None):
     """
@@ -33,6 +34,7 @@ def generate_sampling(label_list, cr=3, dim='z', sampling_size=5000, auto=True,m
     """
     zz, yy, xx = np.where(label_list == cr)  
     crystal_coordinate = np.stack((zz,yy,xx),axis=1)
+    
     # Find the indices of the non-zero elements directly
     if sampling_ratio is not None:
         sampling=int(len(crystal_coordinate)*sampling_ratio/100) # sampling ratio in %
@@ -143,7 +145,8 @@ def generate_sampling(label_list, cr=3, dim='z', sampling_size=5000, auto=True,m
         coord_list = np.array(coord_list_even)
         
     else:
-        raise RuntimeError("The sampling method is not defined")
+
+        raise RuntimeError(f"The sampling method {method} is not defined")
     
     return coord_list
 

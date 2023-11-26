@@ -95,7 +95,7 @@ ray_tracing_gpu.o:  $(gpu_pth)ray_tracing_gpu.cu
 
 
 sharedlibrary_gpu_d: ray_tracing_c_d.o  ray_tracing_gpu_d.o 
-	$(NVCC) $(NVCCFLAGS_D) -shared -o ray_tracing_gpu.so  ray_tracing_c_d.o  ray_tracing_gpu_d.o 
+	$(NVCC) $(NVCCFLAGS_D) -shared -o ray_tracing_gpu_${ARCH}.so  ray_tracing_c_d.o  ray_tracing_gpu_d.o 
 
 ray_tracing_c_d.o: ray_tracing_gpu.c 
 		g++  -c ray_tracing_gpu.c $(GCC_OPTS_D) -o  ray_tracing_c_d.o  
