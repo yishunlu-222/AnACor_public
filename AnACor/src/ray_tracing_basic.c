@@ -1429,12 +1429,11 @@ double cal_rate(double *numbers_1, double *numbers_2, double *coefficients,
     double lo_l_2 = numbers_2[1];
     double cr_l_2 = numbers_2[2];
     double bu_l_2 = numbers_2[3];
-
     double result = (mu_li * (li_l_1 + li_l_2) +
                      mu_lo * (lo_l_1 + lo_l_2) +
                      mu_cr * (cr_l_1 + cr_l_2) +
                      mu_bu * (bu_l_1 + bu_l_2));
-
+   
     if (Isexp == 1)
     {
         result = exp(-result);

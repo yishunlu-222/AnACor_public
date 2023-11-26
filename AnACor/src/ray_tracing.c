@@ -277,6 +277,77 @@ double ray_tracing_single(
     return absorption_mean;
 }
 
+double ray_tracing_single_mp(
+    int64_t *coord_list,
+    int64_t len_coord_list,
+    const double *rotated_s1, const double *xray,
+    double *voxel_size, double *coefficients,
+    int8_t ***label_list, int64_t *shape, int full_iteration,
+    int64_t store_paths,int IsExp,int num_workers){
+    omp_set_num_threads(num_workers);
+        double x_ray_angle[3], x_ray_trans[3];
+    double rotated_s1_angle[3], rotated_s1_trans[3];
+    memcpy(x_ray_angle, xray, 3 * sizeof(xray));
+    memcpy(x_ray_trans, xray, 3 * sizeof(xray));
+    memcpy(rotated_s1_angle, rotated_s1, 3 * sizeof(rotated_s1));
+    memcpy(rotated_s1_trans, rotated_s1, 3 * sizeof(rotated_s1));
+
+    ThetaPhi result_2 = dials_2_thetaphi_22(rotated_s1_angle, 0);
+    ThetaPhi result_1 = dials_2_thetaphi_22(x_ray_angle, 1);
+
+    double theta = result_2.theta;
+    double phi = result_2.phi;
+    double theta_1 = result_1.theta;
+    double phi_1 = result_1.phi;
+    // printf("theta_1 is %f \n", theta_1);
+    // printf("phi_1 is %f \n", phi_1);
+    // printf("theta is %f \n", theta);
+    // printf("phi is %f \n", phi);
+
+    double absorption_sum = 0, absorption_mean = 0;
+
+    double xray_direction[3], scattered_direction[3];
+    dials_2_myframe(x_ray_trans, xray_direction);
+    dials_2_myframe(rotated_s1_trans, scattered_direction);
+
+    #pragma omp parallel for default(none) shared(coord_list, xray_direction, scattered_direction, shape, label_list, full_iteration, voxel_size, coefficients, len_coord_list, theta_1, phi_1, theta, phi, store_paths, IsExp) reduction(+ : absorption_sum)
+
+    for (int64_t i = 0; i < len_coord_list; i++)
+    {
+            Path2_c path_2, path_1;
+    double *numbers_1, *numbers_2;
+    double absorption;
+        int64_t coord[3] = {coord_list[i * 3],
+                            coord_list[i * 3 + 1],
+                            coord_list[i * 3 + 2]};
+
+        int64_t face_1 = cube_face(coord, xray_direction, shape, 1);
+        int64_t face_2 = cube_face(coord, scattered_direction, shape, 0);
+
+        path_1 = cal_coord(theta_1, phi_1, coord, face_1, shape, label_list, full_iteration);
+
+        path_2 = cal_coord(theta, phi, coord, face_2, shape, label_list, full_iteration);
+
+        numbers_1 = cal_path2_plus(path_1, voxel_size);
+        numbers_2 = cal_path2_plus(path_2, voxel_size);
+
+        absorption = cal_rate(numbers_1, numbers_2, coefficients, IsExp);
+ 
+        absorption_sum += absorption;
+        free(path_1.ray);
+        free(path_1.classes);
+        free(path_1.posi);
+
+        free(numbers_1);
+        free(path_2.ray);
+        free(path_2.classes);
+        free(path_2.posi);
+        free(numbers_2);
+    }
+    // printf("absorption_sum is %f \n", absorption_sum);
+    absorption_mean = absorption_sum / len_coord_list;
+    return absorption_mean;
+    }
 double *ray_tracing_overall(int64_t low, int64_t up,
                             int64_t *coord_list,
                             int64_t len_coord_list,
@@ -330,6 +401,62 @@ double *ray_tracing_overall(int64_t low, int64_t up,
     }
 
     return result_list;
+}
+
+double ib_single_gridding(
+    int64_t *coord,
+    const double *rotated_s1, double theta, double phi,
+    double *voxel_size, double *coefficients,
+    int8_t ***label_list, int64_t *shape, int full_iteration, int index,int num_cls,int IsExp)
+{
+
+    ThetaPhi result_2 = dials_2_thetaphi_22(rotated_s1, 0);
+    if (fabs(result_2.theta - theta) < 1e-6)
+    {
+    }
+    else
+    {
+        printf("ERROR! there is a problem in %d where theta is %f \n", index, theta);
+        printf("result_2.theta is %f \n", result_2.theta);
+        assert(fabs(result_2.theta - theta) < 1e-6);
+    }
+    if (fabs(result_2.phi - phi) < 1e-6)
+    {
+    }
+    else
+    {
+        printf("ERROR! there is a problem in %d where phi is %f \n", index, phi);
+        assert(fabs(result_2.phi - phi) < 1e-6);
+    }
+
+    double resolution = 1.0;
+    Path2_c path_2;
+    double *numbers_2;
+    double numbers_1[4] = {0, 0, 0, 0};
+    double absorption;
+    double scattered_direction[3];
+    dials_2_myframe(rotated_s1, scattered_direction);
+
+    int64_t face_2;
+    face_2 = cube_face(coord, scattered_direction, shape, 0);
+
+    Path_iterative_bisection ibpath_2 = iterative_bisection(theta, phi,
+                                                                coord, face_2, label_list, shape, resolution, num_cls);
+
+    numbers_2 = cal_path_bisection(ibpath_2, voxel_size);
+
+    absorption = cal_rate(numbers_1, numbers_2, coefficients, IsExp);
+
+        // free(ibpath_1.path);
+        free(ibpath_2.path);
+        // free(ibpath_1.classes);
+        free(ibpath_2.classes);
+        // free(ibpath_1.boundary_list);
+        free(ibpath_2.boundary_list);
+        // free(numbers_1);
+        free(numbers_2);
+    return absorption;
+
 }
 
 

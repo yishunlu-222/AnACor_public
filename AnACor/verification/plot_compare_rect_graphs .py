@@ -127,7 +127,7 @@ plt.legend(handles=[legend_triangle, legend_circle, legend_square], fontsize = 4
 # Add legend to the plot
 
 
-
+pdb.set_trace()
 
 y =np.ones(len(xx))/2
 plt.plot( angle_list, y  , '--',linewidth = 10,color='r')

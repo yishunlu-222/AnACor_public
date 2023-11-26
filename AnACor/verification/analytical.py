@@ -103,8 +103,11 @@ def ana_f_exit_sides ( mu , radian , width , height ) :
     return (T_l + T_l_2) / (height * width)
 
 def ana_f_exit_top ( mu , radian , width , height ) :
+    # if np.abs(radian-np.pi/2) < 1e-3:
+    #     pdb.set_trace()
     T_s = ana_f_s_1( mu , radian , width , height )
     T_s_2 = ana_f_s_2( mu , radian , width , height )
+    
     return (T_s + T_s_2) / (height * width)
 
 if __name__ == '__main__':

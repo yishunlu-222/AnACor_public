@@ -113,6 +113,7 @@ def rect_ana_ac_test(mu,angle, width,height,length,sampling):
     seg = int(np.round(len(crystal_coordinate) / sampling))
     absorp = np.empty( len( crystal_coordinate  ) )
     coordinate_list = np.linspace(0, len(crystal_coordinate), num=seg, endpoint=False, dtype=int)
+    pdb.set_trace() 
     del zz , yy , xx
     theta , phi =  angle / 180 * np.pi, 0/ 180 * np.pi
     theta_1 , phi_1 = 180 / 180 * np.pi, 0/ 180 * np.pi
@@ -196,12 +197,12 @@ if __name__ == '__main__':
     else:
       length=1  
       sampling=1
-    for mur in [(100,50),(100,100),(100,150)]:
+    for mur in [(100,100),(100,50),(100,150)]:
         width=mur[0]
         height=mur[1]
         # radius= mur/mu # mm
         voxel_size=[0.3,0.3,0.3] # um
-        voxel_size=[0.1,0.1,0.1]     
+        # voxel_size=[0.1,0.1,0.1]     
         #resolution=int(min( width , height ) / voxel_size[0])
         errors=[]
         for angle in angle_list:
