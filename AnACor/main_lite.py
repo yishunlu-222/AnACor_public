@@ -14,12 +14,14 @@ try:
     from utils.utils_gridding import mp_create_gridding,mp_interpolation_gridding
     from utils.utils_os import stacking,python_2_c_3d,kp_rotation
     from utils.utils_mp import *
+    from utils.utils_resolution import model3D_resize
 except:
     from AnACor.utils.utils_rt import *
     from AnACor.utils.utils_ib import *
     from AnACor.utils.utils_gridding import mp_create_gridding,mp_interpolation_gridding
     from AnACor.utils.utils_os import stacking,python_2_c_3d,kp_rotation
     from AnACor.utils.utils_mp import *
+    from AnACor.utils.utils_resolution import model3D_resize
 
 from param import set_parser
 # try:
@@ -80,7 +82,20 @@ def main():
     # algorithm = RayTracingBasic(args)
     # algorithm.mp_run(printing=True,test=args.test_mode)
     # algorithm.run()
+    voxel_size = np.array([args.pixel_size_z * 1e-3,
+                           args.pixel_size_y * 1e-3,
+                           args.pixel_size_x * 1e-3])
     label_list = np.load(args.model_storepath).astype(np.int8)
+    if args.resolution_voxel_size is not None:
+
+        factor=args.pixel_size_x /  args.resolution_voxel_size
+        factors=[factor, factor,factor ]
+        label_list = model3D_resize(label_list, factors)
+        print("model is resized to voxel size of {}".format(args.resolution_voxel_size))
+        voxel_size = np.array([args.resolution_voxel_size * 1e-3,
+                           args.resolution_voxel_size * 1e-3,
+                           args.resolution_voxel_size * 1e-3])
+
     refl_filename = args.refl_path
     expt_filename = args.expt_path   # only contain axes
 
@@ -110,9 +125,7 @@ def main():
         data = json.load(f1)
     print('The total size of the dataset is {}'.format(len(data)))
 
-    voxel_size = np.array([args.pixel_size_z * 1e-3,
-                           args.pixel_size_y * 1e-3,
-                           args.pixel_size_x * 1e-3])
+
     low = args.low
     up = args.up
 
@@ -189,7 +202,7 @@ def main():
         mp_interpolation_gridding(t1, low,  abs_gridding, select_data, label_list,
                           voxel_size, coefficients, F, coord_list,
                           omega_axis, axes_data, gridding_dir, args,
-                          offset, full_iteration, store_paths, printing, num_cls,num_processes,args.interpolation_method,afterfix)
+                          offset, full_iteration, store_paths, printing, num_cls,num_processes,args.interpolation_method)
 
     else:
 

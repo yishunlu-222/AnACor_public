@@ -297,6 +297,11 @@ def set_parser():
         default=False,
         help="Flag to enable gridding with bisection (True/False)",
     )
-    
+    parser.add_argument(
+        "--resolution-voxel-size",
+        type=float,
+        default=None,
+        help="Flag to enable gridding with bisection (True/False)",
+    )
     args = parser.parse_args()
     return args
