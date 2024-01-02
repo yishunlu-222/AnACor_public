@@ -4,7 +4,11 @@ import yaml
 import pdb
 import numpy as np
 import sys
-import logging
+parent_dir =os.path.dirname( os.path.abspath(__file__))
+sys.path.append(parent_dir)
+
+
+from anacor_logging import setup_logger
 import argparse
 try:
     from AnACor.utils.image_process import Image2Model
@@ -186,18 +190,29 @@ def set_parser ( ) :
 # else:
 #     print("arg a is not entered")
 
-def preprocess_dial_lite ( args , save_dir ) :
+def preprocess_dial_lite ( args , save_dir,logger ) :
     # from dials.util.filter_reflections import *
+    # pdb.set_trace() 
+    if os.path.isfile(args.expt_path) is False:
+        logger.error("The experiment file is not found")
+        print("The experiment file is not found")
+        return None
+    if os.path.isfile(args.refl_path) is False:
+        logger.error("The reflection table is not found")
+        print("The reflection table is not found")
+        return None
     import subprocess
+    logger.info( "\npreprocessing dials data.....\n" )
     print('preprocessing dials data.....')
     with open( os.path.join( save_dir , "preprocess_script.sh" ) , "w" ) as f :
         f.write( "#!/bin/bash \n" )
-        f.write( "{} \n".format( args.dials_dependancy ) )
+        
         f.write( "expt_pth=\'{}\' \n".format( args.expt_path) )
         f.write( "refl_pth=\'{}\' \n".format( args.refl_path ) )
         f.write( "store_dir=\'{}\' \n".format( save_dir ) )
         f.write( "dataset={} \n".format( args.dataset ) )
         f.write( "full={} \n".format( args.full_reflection ) )
+        f.write( "dials_dependancy=\'{}\' \n".format( args.dials_dependancy ) )
         f.write( "dials.python {}  --dataset ${{dataset}} " 
                  " --refl-filename ${{refl_pth}} " 
                  "--expt-filename ${{expt_pth}} --full ${{full}} "
@@ -208,8 +223,9 @@ def preprocess_dial_lite ( args , save_dir ) :
         result = subprocess.run( ["bash" , os.path.join( save_dir , "preprocess_script.sh" )] , check = True ,
                                  capture_output = True )
         print( result.stdout.decode( ) )
-
+        logger.info( result.stdout.decode( ) )
     except subprocess.CalledProcessError as e :
+        logger.error( "Error: " , e )
         print( "Error: " , e )
 
 
@@ -270,17 +286,17 @@ def main ( ) :
     # ModelGenerator = Image2Model(segimg_path , model_name ).run()
     create_save_dir( args )
     save_dir = os.path.join( args.store_dir , '{}_save_data'.format( args.dataset ) )
+    global logger
+    logger = setup_logger( os.path.join( save_dir , "Logging" , 'preprocess.log') )
+    # logger.setLevel( logging.INFO )
 
-    logger = logging.getLogger( )
-    logger.setLevel( logging.INFO )
+    # handler = logging.FileHandler( os.path.join( save_dir , "Logging" , 'preprocess_lite.log') ,
+    #                                mode = "w+" , delay=True)
+    # handler.setLevel( logging.INFO )
 
-    handler = logging.FileHandler( os.path.join( save_dir , "Logging" , 'preprocess_lite.log') ,
-                                   mode = "w+" , delay=True)
-    handler.setLevel( logging.INFO )
-
-    formatter = logging.Formatter( '%(asctime)s - %(levelname)s - %(message)s' )
-    handler.setFormatter( formatter )
-    logger.addHandler( handler )
+    # formatter = logging.Formatter( '%(asctime)s - %(levelname)s - %(message)s' )
+    # handler.setFormatter( formatter )
+    # logger.addHandler( handler )
     logger.info( "\nResultData directory is created... \n")
     print( "\nResultData directory is created... \n" )
     
@@ -356,7 +372,8 @@ def main ( ) :
             args.padding = list(args.padding)
         else:
             args.padding = None
-        coefficient_model = RunAbsorptionCoefficient( args.rawimg_path , model_storepath ,
+        try:
+            coefficient_model = RunAbsorptionCoefficient( args.rawimg_path , model_storepath ,
                                                      coe_li= args.coe_li ,
                                                      coe_lo= args.coe_lo ,
                                                         coe_cr= args.coe_cr ,
@@ -371,24 +388,35 @@ def main ( ) :
                                                       kernel_square = (5 , 5) ,
                                                       full = False , thresholding = args.coefficient_thresholding,
                                                       flat_fielded=args.flat_field_name,base=args.abs_base_cls, crop=args.crop,padding=args.padding)
-                                                  
-        coefficient_model.run( )
+            coefficient_model.run( )
+        except Exception as e:
+            logger.error("The absorption coefficient calculation is failed")
+            logger.error(e)
+            raise RuntimeError("The absorption coefficient calculation is failed")
+    
 
-    preprocess_dial_lite( args , save_dir )
 
-    for file in os.listdir(save_dir):
-        if '.json' in file:
-            if 'expt' in file:
-                expt_filename=os.path.join(save_dir,file)
-            if 'refl' in file:
-                refl_filename = os.path.join(save_dir,file)
+    
+    preprocess_dial_lite( args , save_dir,logger )
+
 
     with open('./default_mpprocess_input.yaml', 'r' ) as f3 :
             mp_config = yaml.safe_load( f3 )
-    mp_config[ 'model_storepath' ] = model_storepath
+
     mp_config[ 'refl_path' ] = args.refl_path
     mp_config[ 'expt_path' ] = args.expt_path
-    mp_config[ 'dataset' ] = args.dataset
+    mp_config[ 'dataset' ] = args.dataset      
+    mp_config[ 'model_storepath' ] = model_storepath
+
+    # for file in os.listdir(save_dir):
+    #     if '.json' in file:
+    #         if 'expt' in file:
+    #             expt_filename=os.path.join(save_dir,file)
+    #         if 'refl' in file:
+    #             refl_filename = os.path.join(save_dir,file)
+
+    # mp_config[ 'refl_path' ] = refl_filename
+    # mp_config[ 'expt_path' ] = expt_filename
 
     try:
         with open(os.path.join( result_path , "absorption_coefficient","median_coefficients_with_percentage.json" )) as f2:
@@ -401,6 +429,7 @@ def main ( ) :
             mp_config[ 'buac' ] =coe[5][2]
         except:
             mp_config[ 'buac' ] =0
+        logger.info( "\nAbsorption coefficients are written in the mp process input file... \n" )
     except:
         pass
     with open( 'default_mpprocess_input.yaml' , 'w' ) as file :

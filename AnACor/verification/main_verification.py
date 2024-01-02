@@ -61,9 +61,23 @@ parser.add_argument(
 
 )
 parser.add_argument(
+    "--voxel-size",
+    type=float,
+    default=0.3,
+    help="coordinate setting",
+
+)
+parser.add_argument(
     "--num-cores",
     type=int,
     default=4,
+    help="coordinate setting",
+
+)
+parser.add_argument(
+    "--scale-factor",
+    type=float,
+    default=1,
     help="coordinate setting",
 
 )
@@ -237,12 +251,16 @@ if __name__ == '__main__':
     angle_list=np.linspace(start = 0,stop=180,num = 10,endpoint = True)
 
     mu=0.01 #um-1
-    voxel_size=[0.3,0.3,0.3] # um
+    args.voxel_size=np.round(args.voxel_size/args.scale_factor,4)
+    voxel_size=[args.voxel_size,args.voxel_size,args.voxel_size] # um
+    
     t1=time.time()
     if args.shape=='sphere':
         radius=50  # mur =1
         mur = radius*mu
-        filename=f"veri_{args.shape}_r_{radius}_{args.sampling_ratio}_mur_{mur}_{args.sampling_method}.json"
+        filename=f"veri_{args.shape}_{voxel_size[0]}_r_{radius}_{args.sampling_ratio}_mur_{mur}_{args.sampling_method}.json"
+        if args.scale_factor!=1:
+            filename=f"veri_{args.shape}_{voxel_size[0]}_{args.scale_factor}_r_{radius}_{args.sampling_ratio}_mur_{mur}_{args.sampling_method}.json"
         model=Sphere(radius,voxel_size[0],3)
         if mu*50==0.5:
             reference=sphere_correct_p5
@@ -254,7 +272,9 @@ if __name__ == '__main__':
         radius=50 # mur =1
         length=50
         mur = radius*mu
-        filename=f"veri_{args.shape}_r_{radius}_l_{length}_{args.sampling_ratio}_mur_{mur}_{args.sampling_method}.json"
+        filename=f"veri_{args.shape}_{voxel_size[0]}_r_{radius}_l_{length}_{args.sampling_ratio}_mur_{mur}_{args.sampling_method}.json"
+        if args.scale_factor!=1:
+            filename=f"veri_{args.shape}_{voxel_size[0]}_{args.scale_factor}_r_{radius}_l_{length}_{args.sampling_ratio}_mur_{mur}_{args.sampling_method}.json"
         model=Cylinder(radius,voxel_size[0],3,length)
         if mu*50==0.5:
             reference=cylinder_correct_p5
@@ -267,13 +287,18 @@ if __name__ == '__main__':
         length=100
         width=100
         height=100
-        filename=f"veri_{args.shape}_l_{length}_w_{width}_h_{height}_{args.sampling_ratio}_{args.sampling_method}.json"
+        filename=f"veri_{args.shape}_{voxel_size[0]}_l_{length}_w_{width}_h_{height}_{args.sampling_ratio}_{args.sampling_method}.json"
+        if args.scale_factor!=1:
+            filename=f"veri_{args.shape}_{voxel_size[0]}_{args.scale_factor}_l_{length}_w_{width}_h_{height}_{args.sampling_ratio}_{args.sampling_method}.json"
         model=cuboid(length, width, height, voxel_size)
         reference=[]
         angle_list/=2
         for theta in angle_list:
+                # theta = 180-theta
                 if theta == 0:
-                    theta = 0.01
+                    result  = ana_180( mu ,width , height )
+                    reference.append(result)
+                    continue 
                 theta = theta / 180 * np.pi
                 
                 try :

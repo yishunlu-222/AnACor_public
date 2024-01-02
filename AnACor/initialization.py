@@ -1,6 +1,13 @@
 import yaml
 import os
 import pdb
+import sys
+parent_dir =os.path.dirname( os.path.abspath(__file__))
+
+sys.path.append(parent_dir)
+# pdb.set_trace()
+from param import set_parser_init
+
 
 def comment():
     import yaml
@@ -66,8 +73,9 @@ def find_dir(directory,word,base=False):
         return None
 def main():
     # Define the directory to search
+    args = set_parser_init( )
     directory = os.getcwd( )
-
+    
     # Get a list of all files in the directory
     files = os.listdir( directory )
 
@@ -101,83 +109,74 @@ def main():
         dirs_3D , dirs_flat_fielded='',''
     images_my_dict = {'3d model image directory' : dirs_3D,
                       'flat fielded image directory':dirs_flat_fielded}
-    pre_data = {
-        'store_dir': directory,
-        'dataset': 'test',
-        'segimg_path' : dirs_3D,
-        'rawimg-path':dirs_flat_fielded,
-        'refl-path':refl_file,
-        'expt-path': expt_file,
-        'create3D': True,
-        'cal_coefficient': True,
-        'coefficient_auto_orientation':False,
-        'coefficient_auto_viewing':True,
-        'coefficient_orientation': 0,
-        'coefficient_viewing': 0,
-        'flat_field_name' : None ,
-        'coefficient_thresholding':'mean',
-        'dials_dependancy':'source /dls/science/groups/i23/yishun/dials_yishun/dials' ,
-        'full_reflection': False,
-        'model_storepath':npy_file,
+    if args.pre:
+        pre_data = {
+            'store_dir': directory,
+            'dataset': 'test',
+            'segimg_path' : dirs_3D,
+            'rawimg-path':dirs_flat_fielded,
+            'refl-path':refl_file,
+            'expt-path': expt_file,
+            'create3D': True,
+            'cal_coefficient': True,
+            'coefficient_auto_orientation':False,
+            'coefficient_auto_viewing':True,
+            'coefficient_orientation': 0,
+            'coefficient_viewing': 0,
+            'flat_field_name' : None ,
+            'coefficient_thresholding':'mean',
+            'dials_dependancy':'module load dials/latest' ,
+            'full_reflection': False,
+            'model_storepath':npy_file,
 
-    }
-    
-    mp_data = {
-        'store_dir': directory,
-        'dataset': 'test',
-        'liac' : 0 ,
-        'loac' : 0 ,
-        'crac' : 0 ,
-        'buac' : 0 ,
-        'num_cores' : 20 ,
-        'hour' : 3,
-        'minute' : 10 ,
-        'second' : 10 ,
-        'sampling' : 5000 ,
-        'dials_dependancy' : 'source /dls/science/groups/i23/yishun/dials_yishun/dials' ,
-        'hpc_dependancies' : 'module load global/cluster' ,
-        'offset':0,
-        'refl_path':refl_file,
-        'expt_path': expt_file,
-        'model_storepath': '',
-        'post_process': True,
-        'full_reflection' : 0 ,
-        'with_scaling' : True ,
-        'anomalous':True,
-        'mtz2sca_dependancy' : 'module load ccp4' ,
-    }
-    post_data = {
-        'store_dir': directory,
-        'dials_dependancy' : 'source /dls/science/groups/i23/yishun/dials_yishun/dials' ,
-        'mtz2sca_dependancy' : 'module load ccp4' ,
-        'dataset': 'test',
-        'refl_path':refl_file,
-        'expt_path': expt_file,
-        'full_reflection' : 0,
-        'with_scaling':True,
-    }
-    multi_data = {
-        'store_dir': directory,
-        'dials_dependancy' : 'source /dls/science/groups/i23/yishun/dials_yishun/dials' ,
-        'mtz2sca_dependancy' : 'module load ccp4' ,
-        'dataset': 'multi_dataset',
-        'refl_path':refl_files,
-        'expt_path': expt_files,
-        'full_reflection' : 0 ,
-        'with_scaling':True,
-    }
-    # Write the image file paths to a YAML file
-    with open( 'default_preprocess_input.yaml' , 'w' ) as file :
-        yaml.dump( pre_data , file, default_flow_style=False, sort_keys=False, indent=4 )
+        }
+        with open( 'default_preprocess_input.yaml' , 'w' ) as file :
+            yaml.dump( pre_data , file, default_flow_style=False, sort_keys=False, indent=4 )
 
-    with open( 'default_mpprocess_input.yaml' , 'w' ) as file :
-        yaml.dump( mp_data , file, default_flow_style=False, sort_keys=False, indent=4)
-    
-    # with open( 'default_multi_dataset_input.yaml' , 'w' ) as file :
-    #     yaml.dump( multi_data , file, default_flow_style=False, sort_keys=False, indent=4)
+        print('preprocess input file created')
+    if args.mp:   
+        mp_data = {
+            'store_dir': directory,
+            'dataset': 'test',
+            'liac' : 0 ,
+            'loac' : 0 ,
+            'crac' : 0 ,
+            'buac' : 0 ,
+            'num_cores' : 20 ,
+            'hour' : 6,
+            'minute' : 10 ,
+            'second' : 10 ,
+            'sampling_ratio' : 0.1 ,
+            'dials_dependancy' : 'module load dials/latest' ,
+            'hpc_dependancies' : 'module load global/cluster' ,
+            'offset':0,
+            'refl_path':refl_file,
+            'expt_path': expt_file,
+            'model_storepath': '',
+            'post_process': True,
+            'full_reflection' : 0 ,
+            'with_scaling' : True ,
+            'anomalous':False,
+            'mtz2sca_dependancy' : 'module load ccp4' ,
+        }
+        with open( 'default_mpprocess_input.yaml' , 'w' ) as file :
+            yaml.dump( mp_data , file, default_flow_style=False, sort_keys=False, indent=4)
 
-    with open( 'default_postprocess_input.yaml' , 'w' ) as file :
-        yaml.dump( post_data , file, default_flow_style=False, sort_keys=False, indent=4 )
+    if args.post:
+        post_data = {
+            'store_dir': directory,
+            'dials_dependancy' : 'source /dls/science/groups/i23/yishun/dials_yishun/dials' ,
+            'mtz2sca_dependancy' : 'module load ccp4' ,
+            'dataset': 'test',
+            'refl_path':refl_file,
+            'expt_path': expt_file,
+            'full_reflection' : 0,
+            'with_scaling':True,
+        }
+
+
+        with open( 'default_postprocess_input.yaml' , 'w' ) as file :
+            yaml.dump( post_data , file, default_flow_style=False, sort_keys=False, indent=4 )
 
 if __name__ == '__main__':
     main()

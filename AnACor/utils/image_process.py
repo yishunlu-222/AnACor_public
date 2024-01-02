@@ -356,6 +356,7 @@ class Image2Model(object):
                         img = cv2.flip(img,1)
 
                     if self.v_flip :
+                        # flip the image vertically
                         img = cv2.flip( img , 0 )
                     if crop :
                         img = img[crop[0] :crop[1] , crop[2] :crop[3]]  # [y1:y2,x1:x2]

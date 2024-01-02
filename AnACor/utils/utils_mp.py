@@ -22,7 +22,7 @@ except:
 def worker_function(t1, low,  dataset, selected_data, label_list,
                     voxel_size, coefficients, F, coord_list,
                     omega_axis, axes_data, save_dir, args,
-                    offset, full_iteration, store_paths, printing, num_cls):
+                    offset, full_iteration, store_paths, printing, num_cls,logger):
     corr = []
     dict_corr = []
     arr_scattering = []
@@ -140,6 +140,7 @@ def worker_function(t1, low,  dataset, selected_data, label_list,
 
         if args.gpu:
             t1 = time.time()
+            logger.info("\033[92m GPU  is used for ray tracing \033[0m")
             print("\033[92m GPU  is used for ray tracing \033[0m")
             # Initialize an empty list to hold the indices of non-zero elements.
             nonzero_indices = []
@@ -161,8 +162,11 @@ def worker_function(t1, low,  dataset, selected_data, label_list,
                 full_iteration, store_paths, args.gpumethod)
 
             t2 = time.time()
+            logger.info('GPU time is {}'.format(t2-t1))
             print('GPU time is {}'.format(t2-t1))
         elif args.openmp is True:
+            logger.info("\033[92m Openmp/C with {} cores is used for ray tracing \033[0m".format(
+                args.num_workers))
             print(
                 "\033[92m Openmp/C with {} cores is used for ray tracing \033[0m".format(args.num_workers))
             result_list = anacor_lib_cpu.ray_tracing_overall(low, low+len(selected_data),
@@ -209,6 +213,10 @@ def worker_function(t1, low,  dataset, selected_data, label_list,
 
             # if by_c :
             if args.bisection:
+                if i == 0:
+                    logger.info("\033[92m C with {} cores is used for bisection method \033[0m".format(
+                        args.num_workers))
+                    print("\033[92m C with {} cores is used for bisection method \033[0m".format(args.num_workers))
                 result = anacor_lib_cpu.ib_test(
                     coord_list, len(coord_list),
                     rotated_s1, xray, voxel_size,
@@ -216,7 +224,8 @@ def worker_function(t1, low,  dataset, selected_data, label_list,
                     args.full_iteration, args.store_paths, num_cls, IsExp)
             elif args.single_c:
                 if i == 0:
-
+                    logger.info("\033[92m C with {} cores is used for ray tracing \033[0m".format(
+                        args.num_workers))
                     print("\033[92m C with {} cores is used for ray tracing \033[0m".format(
                         args.num_workers))
                 result = anacor_lib_cpu.ray_tracing_single(
@@ -228,7 +237,8 @@ def worker_function(t1, low,  dataset, selected_data, label_list,
             else:
 
                 if i == 0:
-
+                    logger.info("\033[92m Python with {} cores is used for ray tracing \033[0m".format(
+                        args.num_workers))
                     print("\033[92m Python with {} cores is used for ray tracing \033[0m".format(
                         args.num_workers))
                 ray_direction = dials_2_myframe(rotated_s1)
@@ -349,7 +359,7 @@ def worker_function(t1, low,  dataset, selected_data, label_list,
                                                                                                           phi * 180 / np.pi,
                                                                                                           rotation_frame_angle * 180 / np.pi,
                                                                                                           result))
-
+            
             print('process {} it spends {}'.format(os.getpid(), t2 -
                                                    t1))
 
@@ -377,7 +387,7 @@ def worker_function(t1, low,  dataset, selected_data, label_list,
     with open(os.path.join(save_dir, "{}_time_{}.json".format(dataset, up)), "w") as f1:  # Pickling
         json.dump(t2 - t1, f1, indent=2)
     print('{} ({} ) process is Finish!!!!'.format(os.getpid(), up))
-
+    logger.info('{} ({} ) process is Finish!!!!'.format(os.getpid(), up))
 
 def worker_function_am(t1, low,  dataset, map_data, selected_data, label_list,
                        voxel_size, coefficients, F, coord_list,

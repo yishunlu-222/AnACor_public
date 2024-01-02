@@ -18,17 +18,29 @@ def str2bool(v):
     else:
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
-
+def set_parser_init():
+    parser = argparse.ArgumentParser(prog="AnACor initialization" )
+    parser.add_argument(
+        "--post",
+        type=str2bool,
+        default=False,
+        help="initialize the postprocessing configuation file", 
+    )
+    parser.add_argument(
+        "--pre",
+        type=str2bool,
+        default=True,
+        help="initialize the preprocessing configuation file",
+    )  
+    parser.add_argument(
+        "--mp",
+        type=str2bool,
+        default=True,
+        help="initialize the multiprocessing configuation file", 
+    )
+    args = parser.parse_args()
+    return args
 def set_parser():
-    def str2bool(v):
-        if isinstance(v, bool):
-            return v
-        if v.lower() in ('yes', 'true', 't', 'y', '1'):
-            return True
-        elif v.lower() in ('no', 'false', 'f', 'n', '0'):
-            return False
-        else:
-            raise argparse.ArgumentTypeError('Boolean value expected.')
 
     parser = argparse.ArgumentParser(prog="AnACor" ,
                                      description="AnACor is an accelerated absorption correction software for crystallography by written in Python, C and Cuda. It's currently built at the I23 beamline of Diamond Light Source.\n source link= https://github.com/yishunlu-222/AnACor_public \n documentation is on https://yishunlu-222.github.io/anacor.github.io/")
@@ -228,7 +240,7 @@ def set_parser():
     parser.add_argument(
         "--sampling-ratio",
         type=float,
-        default=0.05,
+        default=None,
         help="Ratio for sampling (relevant for certain sampling methods)",
     )
     parser.add_argument(
@@ -298,7 +310,7 @@ def set_parser():
         help="Flag to enable gridding with bisection (True/False)",
     )
     parser.add_argument(
-        "--resolution-voxel-size",
+        "--resolution-factor",
         type=float,
         default=None,
         help="Flag to enable gridding with bisection (True/False)",

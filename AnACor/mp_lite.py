@@ -4,6 +4,10 @@ import json
 import os
 import pdb
 import yaml
+import sys
+parent_dir =os.path.dirname( os.path.abspath(__file__))
+sys.path.append(parent_dir)
+from anacor_logging import setup_logger
 try:
     from AnACor.preprocess_lite import create_save_dir,preprocess_dial_lite
 except:
@@ -124,26 +128,29 @@ def main ( ) :
     if os.path.isfile(os.path.join( save_dir , 'preprocess_script.sh' )) is False:
         
         preprocess_dial_lite( args , save_dir )
-    for file in os.listdir( save_dir ) :
-        if '.json' in file :
-            if args.full_reflection:
-                if 'expt' in file and 'True' in file :
-                    expt_path = os.path.join( save_dir , file )
-                if 'refl' in file and 'True' in file:
-                    refl_path = os.path.join( save_dir , file )
-            else:
-                if 'expt' in file and 'False' in file :
-                    expt_path = os.path.join( save_dir , file )
-                if 'refl' in file and 'False' in file:
-                    refl_path = os.path.join( save_dir , file )
-    pdb.set_trace()
+    # for file in os.listdir( save_dir ) :
+    #     if '.json' in file :
+    #         if args.full_reflection:
+    #             if 'expt' in file and 'True' in file :
+    #                 expt_path = os.path.join( save_dir , file )
+    #             if 'refl' in file and 'True' in file:
+    #                 refl_path = os.path.join( save_dir , file )
+    #         else:
+    #             if 'expt' in file and 'False' in file :
+    #                 expt_path = os.path.join( save_dir , file )
+    #             if 'refl' in file and 'False' in file:
+    #                 refl_path = os.path.join( save_dir , file )
+    py_pth = os.path.join( os.path.dirname( os.path.abspath( __file__ ) ) , 'main_lite.py' )
+    logger = setup_logger(os.path.join(save_dir,'Logging' ,'mpprocess.log'))
     try :
         with open( expt_path ) as f2 :
             axes_data = json.load( f2 )
         print( "experimental data is loaded... \n" )
+        logger.info( "experimental data is loaded... \n" )
         with open( refl_path ) as f1 :
             data = json.load( f1 )
         print( "reflection table is loaded... \n" )
+        logger.info( "reflection table is loaded... \n" )
     except :
         try :
 
@@ -155,10 +162,11 @@ def main ( ) :
                 data = json.load( f1 )
             print( "reflection table is loaded... \n" )
         except :
+            logger.error( 'no reflections or experimental files detected'
+                                'please use --refl_path --expt-filename to specify' )
             raise RuntimeError( 'no reflections or experimental files detected'
                                 'please use --refl_path --expt-filename to specify' )
 
-    py_pth = os.path.join( os.path.dirname( os.path.abspath( __file__ ) ) , 'main_lite.py' )
 
 
     ### define the default values of some optional arguments  ###
@@ -176,7 +184,7 @@ def main ( ) :
     if hasattr(args, 'single_c'):
             pass
     else:
-        args.single_c=True
+        args.single_c=False
     
     if hasattr(args, 'sampling_method'):
             pass
@@ -196,7 +204,7 @@ def main ( ) :
     if hasattr(args, 'openmp'):
             pass
     else:
-        args.openmp=False
+        args.openmp=True
 
     if hasattr(args, 'absorption_map'):
             pass
@@ -213,6 +221,7 @@ def main ( ) :
 
         f.write( "#!/bin/sh\n" )
         f.write( "{}\n".format( args.dials_dependancy ) )
+        # f.write( "source /dls/science/groups/i23/yishun/dials_yishun/dials \n" )
         # f.write("module load python/3.9 \n")
         f.write( "num={}\n".format( args.num_cores ) )
         f.write( "sampling_method={}\n".format( args.sampling_method ) )
@@ -241,7 +250,7 @@ def main ( ) :
             f.write( "expt_pth={}\n".format( args.expt_path ) )
         f.write( "store_dir={}\n".format(args.store_dir  ) )
         f.write( "logging_dir={}\n".format( os.path.join( save_dir , 'Logging' ) ) )
-        f.write( 'nohup python -u  ${py_file}  --dataset ${dataset} '
+        f.write( 'nohup /dls/science/groups/i23/yishun/dials_yishun/conda_base/bin/python -u  ${py_file}  --dataset ${dataset} '
                  '--loac ${loac} --liac ${liac} --crac ${crac}  --buac ${buac} --offset ${offset} '
                  ' --store-dir ${store_dir} --refl-path ${refl_pth} --expt-path ${expt_pth}  '
                  '--model-storepath ${model_storepath} --full-iteration ${full_iter} --num-workers ${num}  '
@@ -249,47 +258,54 @@ def main ( ) :
                  ' --sampling-method ${sampling_method} --gpu ${gpu} --sampling-ratio ${sampling_ratio} '
                     ' --absorption-map ${absorption_map} '
                  ' > ${logging_dir}/nohup_${dataset}_${counter}.out\n' )
-
-
+        f.write( "echo \"${dataset} is finished\" \n" )
+        # f.write( "bash dialsprocess_script.sh \n" )
+    # f.close( )
+        
         if args.post_process is True:
-            dataset = args.dataset
-            save_dir = os.path.join( args.store_dir , '{}_save_data'.format( dataset ) )
-            result_path = os.path.join( save_dir , 'ResultData' , 'absorption_factors' )
-            dials_dir = os.path.join( save_dir , 'ResultData' , 'dials_output' )
-            dials_save_name = 'anacor_{}.refl'.format( dataset )
-            stackingpy_pth = os.path.join( os.path.dirname( os.path.abspath( __file__ ) ) , 'utils','stacking.py' )
-            intoflexpy_pth = os.path.join( os.path.dirname( os.path.abspath( __file__ ) ) , 'utils', 'into_flex.py' )
-            f.write( "{}\n".format( args.dials_dependancy ) )
-            f.write( "\n" )
-            f.write(
-                "dials.python {} --save-dir {} --dataset {} \n".format( stackingpy_pth , result_path , args.dataset ) )
-            f.write( "\n" )
-            f.write( "dials.python {0} "
-                     "--save-number {1}  --refl-filename {2}  "
-                     "--full {3} --with-scaling {4} "
-                     "--dataset {5} "
-                     "--target-pth {6} --store-dir {7}  \n".format( intoflexpy_pth , args.dataset ,
-                                                                    args.refl_path , args.full_reflection ,
-                                                                    args.with_scaling , dataset , dials_dir ,
-                                                                    args.store_dir
-                                                                    ) )
-            f.write( "cd {} \n".format( dials_dir ) )
-            f.write( "\n" )
-            f.write( "dials.scale  {0} {1} "
-                     "anomalous={3}  physical.absorption_correction=False physical.analytical_correction=True "
-                     "output.reflections=result_{2}_ac.refl  output.html=result_{2}_ac.html "
-                     "output{{log={2}_ac_log.log}} output{{unmerged_mtz={2}_unmerged_ac.mtz}} output{{merged_mtz={2}_merged_ac.mtz}} "
-                     "\n".format( os.path.join( dials_dir , dials_save_name ) , args.expt_path , dataset,args.anomalous ) )
-            f.write( "\n" )
-            f.write( "dials.scale  {0} {1}  "
-                     "anomalous={3}  physical.absorption_level=high physical.analytical_correction=True "
-                     "output.reflections=result_{2}_acsh.refl  output.html=result_{2}_acsh.html "
-                     "output{{log={2}_acsh_log.log}}  output{{unmerged_mtz={2}_unmerged_acsh.mtz}} "
-                     "output{{merged_mtz={2}_merged_acsh.mtz}} "
-                     "\n".format( os.path.join( dials_dir , dials_save_name ) , args.expt_path , dataset,args.anomalous ) )
-            f.write( "{} \n".format( args.mtz2sca_dependancy ) )
-            f.write( "mtz2sca {}_merged_acsh.mtz   \n".format( dataset ) )
-            f.write( "mtz2sca {}_merged_ac.mtz   \n".format( dataset ) )
+            # with open( os.path.join( save_dir , "dialsprocess_script.sh" ) , "w" ) as f :
+                # f.write( "#!/bin/sh\n" )
+                dataset = args.dataset
+                save_dir = os.path.join( args.store_dir , '{}_save_data'.format( dataset ) )
+                result_path = os.path.join( save_dir , 'ResultData' , 'absorption_factors' )
+                dials_dir = os.path.join( save_dir , 'ResultData' , 'dials_output' )
+                dials_save_name = 'anacor_{}.refl'.format( dataset )
+                stackingpy_pth = os.path.join( os.path.dirname( os.path.abspath( __file__ ) ) , 'utils','stacking.py' )
+                intoflexpy_pth = os.path.join( os.path.dirname( os.path.abspath( __file__ ) ) , 'utils', 'into_flex.py' )
+                f.write( "{}\n".format( args.dials_dependancy ) )
+                f.write( "\n" )
+                f.write(
+                    "dials.python {} --save-dir {} --dataset {} \n".format( stackingpy_pth , result_path , args.dataset ) )
+                f.write( "\n" )
+                f.write( "dials.python {0} "
+                        "--save-number {1}  --refl-filename {2}  "
+                        "--full {3} --with-scaling {4} "
+                        "--dataset {5} "
+                        "--target-pth {6} --store-dir {7}  \n".format( intoflexpy_pth , args.dataset ,
+                                                                        args.refl_path , args.full_reflection ,
+                                                                        args.with_scaling , dataset , dials_dir ,
+                                                                        args.store_dir
+                                                                        ) )
+                f.write( "cd {} \n".format( dials_dir ) )
+                f.write( "\n" )
+                f.write( "dials.scale  {0} {1} "
+                        "anomalous={3}  physical.absorption_correction=False physical.analytical_correction=True "
+                        "output.reflections=result_{2}_ac.refl  output.html=result_{2}_ac.html "
+                        "output{{log={2}_ac_log.log}} output{{unmerged_mtz={2}_unmerged_ac.mtz}} output{{merged_mtz={2}_merged_ac.mtz}} "
+                        "\n".format( os.path.join( dials_dir , dials_save_name ) , args.expt_path , dataset,args.anomalous ) )
+                f.write( "\n" )
+                f.write( "dials.scale  {0} {1}  "
+                        "anomalous={3}  physical.absorption_level=high physical.analytical_correction=True "
+                        "output.reflections=result_{2}_acsh.refl  output.html=result_{2}_acsh.html "
+                        "output{{log={2}_acsh_log.log}}  output{{unmerged_mtz={2}_unmerged_acsh.mtz}} "
+                        "output{{merged_mtz={2}_merged_acsh.mtz}} "
+                        "\n".format( os.path.join( dials_dir , dials_save_name ) , args.expt_path , dataset,args.anomalous ) )
+                f.write( "{} \n".format( args.mtz2sca_dependancy ) )
+                f.write( "mtz2sca {}_merged_acsh.mtz   \n".format( dataset ) )
+                f.write( "mtz2sca {}_merged_ac.mtz   \n".format( dataset ) )
+
+
+
 
     cluster_command = "qsub -S /bin/sh -l h_rt={0}:{1}:{2} -pe smp {3}  -o {5} -e {6} {4}".format(
         str( args.hour ).zfill( 2 ) ,
@@ -297,9 +313,10 @@ def main ( ) :
         str( args.second ).zfill( 2 ) ,
         args.num_cores ,
         os.path.join( save_dir , "mpprocess_script.sh" ) ,
-        os.path.join( save_dir , "Logging" ) ,
-        os.path.join( save_dir , "Logging" ) )
+        os.path.join( save_dir , "Logging/mp_lite_output.log" ) ,
+        os.path.join( save_dir , "Logging/mp_lite_error.log" ) )
 
+    logger.info( "submitting job to cluster..." )
     if args.hpc_dependancies is not None :
         all_command = [args.hpc_dependancies] + [cluster_command]
     else :
@@ -317,9 +334,15 @@ def main ( ) :
     #                           ],
     #                          shell = True , stdout = subprocess.PIPE , stderr = subprocess.PIPE )
     print( result.returncode )
+    # pdb.set_trace( )
+    # logger.info( result.returncode  )
+    # logger.info( result.stdout.decode( ) )
+    # logger.info( result.stderr.decode( ) )
     print( result.stdout.decode( ) )
+    
     print( result.stderr.decode( ) )
 
+    
 
 if __name__ == '__main__' :
     main( )

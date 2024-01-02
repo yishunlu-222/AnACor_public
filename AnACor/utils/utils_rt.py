@@ -5,11 +5,26 @@ from numba import jit
 from skimage.draw import line
 # import math
 import ctypes as ct
+from skimage import morphology, filters
+from skimage.segmentation import watershed
+from scipy.ndimage import label, center_of_mass
+from sklearn.cluster import KMeans,MiniBatchKMeans
+from scipy.spatial import cKDTree,distance
+from sklearn.decomposition import PCA
+import time
 np.set_printoptions(suppress=True)
 
 np.random.seed(99)
 
-def generate_sampling(label_list, cr=3, dim='z', sampling_size=5000, auto=True,method='even',sampling_ratio=None):
+def create_probability_distribution(coords, centroid):
+
+    dists = distance.cdist(coords, centroid.reshape(1, -1), 'euclidean').flatten()
+    # Inverse distances as probabilities (closer points have higher probability)
+    probabilities = 1 / (1 + dists)
+    probabilities /= probabilities.sum()  # Normalize to sum to 1
+    return probabilities
+
+def generate_sampling(label_list, cr=3, dim='z', sampling_size=5000, auto=True,method='even',sampling_ratio=None,kmeans_cluster=1000):
     """
     Probability Sampling: Every member of the population has a known (non-zero) probability of being selected. This includes:
     ###
@@ -40,12 +55,15 @@ def generate_sampling(label_list, cr=3, dim='z', sampling_size=5000, auto=True,m
         sampling=int(len(crystal_coordinate)*sampling_ratio/100) # sampling ratio in %
         sampling_size=1/sampling_ratio*100
     else:
-        if auto:
-            # When sampling ~= N/2000, the results become stable
-            sampling = len(crystal_coordinate) // 2000
+        # if auto:
+        #     # When sampling ~= N/2000, the results become stable
+        #     sampling = len(crystal_coordinate) // 2000
             
-        else:
-            sampling = len(crystal_coordinate) // sampling_size
+        # else:
+            if len(crystal_coordinate) < sampling_size:
+                sampling = len(crystal_coordinate)
+            else:
+                sampling = len(crystal_coordinate) // sampling_size
    
     print(" The sampling number is {}".format(sampling))
     if method =='even':
@@ -122,7 +140,7 @@ def generate_sampling(label_list, cr=3, dim='z', sampling_size=5000, auto=True,m
         # Random sampling
         coord_list_random=[]
         arr = np.array(range(len(crystal_coordinate)))
-        np.random.seed(0)  
+       
         samples =np.sort( np.random.choice(arr, sampling, replace=False))
         for i in samples:
             coord_list_random.append(crystal_coordinate[i])
@@ -143,11 +161,95 @@ def generate_sampling(label_list, cr=3, dim='z', sampling_size=5000, auto=True,m
             coord_list_even.append(crystal_coordinate[i])
 
         coord_list = np.array(coord_list_even)
+    elif method =='stratified':
+        #https://scikit-learn.org/stable/modules/clustering.html
+
+        from sklearn.cluster import AgglomerativeClustering,BisectingKMeans
+        # model = AgglomerativeClustering(n_clusters=sampling)
         
+        coordinate_list = np.linspace(0, len(crystal_coordinate), num=sampling, endpoint=False, dtype=int)
+        # print(" {} voxels in even sampling are calculated".format(len(coordinate_list)))
+        init_list=[]
+        for i in coordinate_list:
+            init_list.append(crystal_coordinate[i])
+
+        batch_size= 2 ** (np.round(np.log2(1/sampling_ratio)).astype(int))
+        init_list =  np.array(init_list)
+
+        clustering='kmeans'
+        if clustering=='kmeans':
+            pca = PCA(n_components=3)
+            transformed_coordinates = pca.fit_transform(crystal_coordinate)
+            model = MiniBatchKMeans(n_clusters=sampling, batch_size=batch_size, init='k-means++',verbose=0).fit(transformed_coordinates)
+            
+            region_centroids  = pca.inverse_transform(model.cluster_centers_)
+            # original_space_centroids = np.around(original_space_centroids).astype(int)
+            # for coords in region_centroids:
+            #     z, y, x = coords
+            #     yes.append(label_list[z, y, x])
+            # coord_list = np.array([coords for coords, label in zip(region_centroids, yes) if label == 3])
+            # pdb.set_trace()
+        elif clustering=='bisection':
+            model = BisectingKMeans(n_clusters=sampling,init='random').fit(crystal_coordinate)
+
+        print("Kmeans straified is applied")
+        t1 = time.time()
+
+        # kmeans = MiniBatchKMeans(n_clusters=sampling, batch_size=batch_size, n_init=10,init='k-means++',verbose=0).fit(crystal_coordinate)       
+        labels = model.labels_
+        # region_centroids = model.cluster_centers_
+        region_centroids = np.around(region_centroids).astype(int)
+        yes=[]
+        for coords in region_centroids:
+            z, y, x = coords
+            yes.append(label_list[z, y, x])
+        coord_list = np.array([coords for coords, label in zip(region_centroids, yes) if label == 3])
+        t2=time.time()
+
+
+        print("time for building kmeans is {}".format(t2-t1))
+        t3=time.time()
+        print("time for finding closest coordinate is {}".format(t3-t2))
+        # pdb.set_trace()
+    #     else:
+    #         kmeans = MiniBatchKMeans(n_clusters=kmeans_cluster, batch_size=1024*8, n_init=10,init='random',verbose=0).fit(crystal_coordinate)       
+    #         labels = kmeans.labels_
+    #         region_centroids = kmeans.cluster_centers_
+    #         region_centroids = np.around(region_centroids).astype(int)
+    #         # clustered_coordinates=[]
+    #         # for i in range(sampling):
+    #         #     cluster_coords = crystal_coordinate[labels == i]
+    #         #     clustered_coordinates.append(cluster_coords)
+    #         # combined_3d_array = np.array(clustered_coordinates, dtype=object)
+            
+            
+    #         sampled_points = []
+    #         n_samples_per_cluster = sampling//kmeans_cluster
+    #         remaining_samples = sampling - kmeans_cluster * n_samples_per_cluster
+    #         for i in range(kmeans_cluster):
+    #             cluster_points = crystal_coordinate[labels == i]
+    #             probabilities = create_probability_distribution(cluster_points, region_centroids[i])
+    #             sampled_indices = np.random.choice(len(cluster_points), n_samples_per_cluster, replace=False, p=probabilities)
+    #             sampled_cluster_points = cluster_points[sampled_indices]
+    #             sampled_points.extend(sampled_cluster_points)
+                
+    #         coords_set = set(map(tuple, crystal_coordinate))
+    #         sampled_set = set(map(tuple, sampled_points))
+    #         remaining_coords = np.array(list(coords_set - sampled_set))
+
+    #         overall_centroid = np.mean(crystal_coordinate, axis=0)
+    #         overall_probabilities = create_probability_distribution(remaining_coords, overall_centroid)
+    #         remaining_indices = np.random.choice(len(remaining_coords), size=remaining_samples, replace=False)
+    #         sampled_points.extend(remaining_coords[remaining_indices])
+    #         coord_list = np.array(sampled_points)
+    #         coord_list = np.sort(coord_list, axis=0)
+        
+
+
     else:
 
         raise RuntimeError(f"The sampling method {method} is not defined")
-    
+    # pdb.set_trace()
     return coord_list
 
 

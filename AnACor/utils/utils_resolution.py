@@ -7,42 +7,56 @@ import matplotlib.pyplot as plt
 import timeit
 import os
 import json
-
+from scipy.ndimage import zoom
 
 """
 extrapolation:
 https://analyticsindiamag.com/an-illustrative-guide-to-extrapolation-in-machine-learning/
 """
 
-def model3D_resize(model,factors):
+def model3D_resize(model,factors,save_dir=None):
     t1=timeit.default_timer()
     z,y,x=model.shape
+    opencv=True
     desired_x=int(x * factors[2])
     desired_y = int( y * factors[1] )
     desired_z = int( z * factors[0] )
-    new_model_xy=np.zeros((z,desired_y,desired_x))
-    new_model_xz = np.zeros( (desired_z , desired_y , desired_x) )
-    # pdb.set_trace()
-    for i,img in enumerate(model):
-        new_img = cv2.resize( img , (desired_x,desired_y) , interpolation = cv2.INTER_NEAREST )
-        new_model_xy[i]=new_img
-    for j in range(desired_y):
-        slice =  new_model_xy[:,j,:]
-        final_img = cv2.resize( slice, (desired_x,desired_z) , interpolation = cv2. INTER_NEAREST )
+    if opencv is not True:
+        new_model_xz = zoom(model, factors, order=0)
 
-        new_model_xz[:,j,:] = final_img
+    else:
 
+        new_model_xy=np.zeros((z,desired_y,desired_x))
+        new_model_xz = np.zeros( (desired_z , desired_y , desired_x) )
+        
+        for i,img in enumerate(model):
+            new_img = cv2.resize( img , (desired_x,desired_y) , interpolation = cv2.INTER_NEAREST )
+            # new_img = cv2.resize( img , (desired_x,desired_y) , interpolation =cv2.INTER_CUBIC)
+            new_model_xy[i]=new_img
+
+        for j in range(desired_y):
+            slice =  new_model_xy[:,j,:]
+            final_img = cv2.resize( slice, (desired_x,desired_z) , interpolation = cv2. INTER_NEAREST )
+            # final_img = cv2.resize( slice, (desired_x,desired_z) , interpolation = cv2.INTER_CUBIC )
+
+            new_model_xz[:,j,:] = final_img
+    
     t2=timeit.default_timer()
     print("time for resizing is {}".format(t2-t1))
+    # try:
+    #     difference = np.unique( new_model ) -np.unique(model)
+    #     if np.count_nonzero(difference) >0:
+    #         new_model = np.floor( new_model )
+    # except:
+    #     new_model=np.floor(new_model)
     # pdb.set_trace()
-    # plt.clf( )
-    # plt.imshow(new_model_xz[int(desired_z/2)])
-    # plt.title("middle slice of the model for factor of {}".format(factors[0]),fontsize=12)
-
-    # plt.savefig(os.path.join(save_dir,'middle slice for factor of {}.png'.format(factors[0])))
-    # np.save(os.path.join(save_dir,new_name),new)
-    # print("factor {} is saved".format(factors))
-    # new_model = np.floor(new_model)
+    if save_dir is not None:
+        plt.clf( )
+        plt.imshow(new_model_xz[int(desired_z/2)])
+        plt.title("middle slice of the model for factor of {}".format(factors[0]),fontsize=12)
+        plt.savefig(os.path.join(save_dir,'middle slice for factor of {}.png'.format(factors[0])),dpi=600)
+        print("factor {} is saved".format(factors))
+    # 
     # try:
     #     difference = np.unique( new_model ) -np.unique(model)
     #     if np.count_nonzero(difference) >0:
@@ -68,15 +82,17 @@ if __name__ == '__main__':
     global args
     args = parser.parse_args()
     voxel_size = [0.3, 0.3, 0.3]
-    new_voxel_size = [0.4,0.5,0.6, 0.9, 1.2,1.5,1.8,2.1,2.4,2.7,3.0]
+    new_voxel_size = [0.35,0.4,0.5,0.6, 0.9, 1.2,1.5,1.8,2.1,2.4,2.7,3.0]
     param=[new_voxel_size]
     new_voxel_size =np. array(new_voxel_size)
     factors_list = voxel_size[0] /new_voxel_size 
+    factors_list = np.array([1,0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,1.2,1.5])
+    new_voxel_size=0.3  / factors_list
     modelname=os.path.basename(args.filepath)
     print("model is {}".format(args.filepath))
     print("target dir is {}".format(args.save_dir))
     prefix,afterfix=modelname.split('.')
-    save_dir=os.path.join(args.save_dir, prefix+"resolution" )
+    save_dir=os.path.join(args.save_dir, prefix+"resolution_cv_near" )
     try:
         os.makedirs(save_dir)
     except:
@@ -99,6 +115,7 @@ if __name__ == '__main__':
         print("voxel size {} factor {} is saved".format(new_voxel_size[i],factors))
         print( "The time difference is :" , timeit.default_timer( ) - starttime )
         time_list.append(timeit.default_timer( ) - starttime)
+    pdb.set_trace()
     param.append(time_list)
 
     with open(os.path.join(save_dir,f"{prefix}resolution_time.json"),'w') as f:

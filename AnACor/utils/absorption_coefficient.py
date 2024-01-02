@@ -46,7 +46,7 @@ class AbsorptionCoefficient( object ) :
             'cr' : coe_cr ,
             'bu' : coe_bu
         }
-
+        self.yxoffset = [0,0]
         self.logger = logger
         self.save_dir = save_dir
         self.thresholding = thresholding
@@ -72,7 +72,7 @@ class AbsorptionCoefficient( object ) :
 
         # if  self.auto_viewing is True:
         #     self.cal_viewing_auto()
-
+        self.img_loading(self.angle , flat_fielded = flat_fielded )
         self.differet_orientation(self.angle )
         self.pixel_size = pixel_size
         self.upper_lim_li = 0.1
@@ -86,7 +86,7 @@ class AbsorptionCoefficient( object ) :
         # import plotly.graph_objects as go
         # Z , Y , X = np.arange(self.img_list.shape[0]),np.arange(self.img_list.shape[1]),np.arange(self.img_list.shape[2])
         # values = self.img_list
-        # pdb.set_trace()
+        # 
         # fig = go.Figure( data = go.Volume(
         #     x = X.flatten( ) ,
         #     y = Y.flatten( ) ,
@@ -172,7 +172,7 @@ class AbsorptionCoefficient( object ) :
         self.cr_region = self.region_interaction_of_two_classes( target = 3 )
         self.bu_region = self.region_interaction_of_two_classes( target = 4 )
 
-
+        # pdb.set_trace( )    
         self.imagemask_overlapping( self.img1 , np.roll( self.li_region , self.yxshift ) ,
                                     title = '{}_region_of_interest_overall'.format( 'li' ) )
         self.imagemask_overlapping( self.img1 , np.roll( self.lo_region , self.yxshift ) ,
@@ -275,9 +275,9 @@ class AbsorptionCoefficient( object ) :
         # region_back[region_back == 10] = 1
         plt.clf( )
         # if cls=='lo':
-        #     pdb.set_trace()
+        #     
         # if percent==0.5 and cls=='lo':
-        #     pdb.set_trace()
+        #     
         self.imagemask_overlapping( self.img1 , np.roll( region_background , self.yxshift ) ,
                                     title = 'area_of_{}_with_acceptance_percentage_of_{}'.format( cls , percent ) )
 
@@ -285,7 +285,7 @@ class AbsorptionCoefficient( object ) :
         # plt.title( ' area of {} with acceptance percentage of {} '.format( cls , percent ) )
         return roi_cls
 
-    def imagemask_overlapping ( self , img1 , mask , title = 'Null' ) :
+    def imagemask_overlapping ( self , img1 , mask , title = 'Null',colour ='yellow' ) :
 
         img1, mask=self.same_shape(img1,mask)
         try :
@@ -295,7 +295,14 @@ class AbsorptionCoefficient( object ) :
         img1 = skimage.color.gray2rgb( img1 )
 
         maskrgb = skimage.color.gray2rgb( mask )
-        maskrgb[mask == label] = np.array( [255 , 255 , 0] )
+        if colour=='yellow':
+            maskrgb[mask == label] = np.array( [255 , 255 , 0] )
+        elif colour=='red':
+            maskrgb[mask == label] = np.array( [255 , 0 , 0] )
+        elif colour=='blue':
+            maskrgb[mask == label] = np.array( [0 , 0 , 255] )
+        elif colour=='cyan':
+            maskrgb[mask == label] = np.array( [0 , 255 , 255] )
         # overaly = np.ubyte( img1 + 0.1 * maskrgb )
         overaly = img1 + 0.3 * maskrgb
         overaly[overaly > 255] = 255
@@ -385,6 +392,7 @@ class AbsorptionCoefficient( object ) :
         final_map[np.isnan( final_map )] = 0
 
         final_map[final_map != target] = 0
+        # pdb.set_trace( )
         return final_map
 
     def region_of_interest_overlap ( self , target ) :
@@ -519,11 +527,13 @@ class AbsorptionCoefficient( object ) :
 
                 candidate_img = cv2.normalize( cv2.imread( file , 2 ) , None , 0 , 255 , cv2.NORM_MINMAX ).astype(
                     'uint8' )
+                candidate_img, mask_label = self.same_shape(candidate_img,mask_label)
                 if self.v_flip :
                     candidate_img = cv2.flip( candidate_img , 0 )
                 thresh = self.thresholding_method( )( candidate_img )
                 candidate_mask = self.mask_generation(
                     candidate_img , thresh = thresh )
+                # pdb.set_trace( )    
                 candidate_mask , mask_label = self.padding(
                     candidate_mask , mask_label )
                 contents.append( len( candidate_mask[candidate_mask > 0] ) )
@@ -656,7 +666,8 @@ class AbsorptionCoefficient( object ) :
             # 1 : flip over horizontal ; 0 : flip over vertical
             self.img = cv2.flip( self.img , 1 )
 
-        self.img, self.modelproj = self.same_shape(self.img,self.modelproj)
+        self.img, self.modelproj = self.same_shape(self.img,self.modelproj,offset=True)
+        
         # shape1 = self.img.shape
         # shape2 = self.modelproj.shape 
         # if shape1 != shape2:
@@ -678,91 +689,81 @@ class AbsorptionCoefficient( object ) :
         # self.img[self.img > 2] = 2
         # self.img[self.img < 0] = 0
         # self.img , self.modelproj = self.padding( self.img , self.modelproj , pad = self.pad )
-        # pdb.set_trace()
+        # 
         """ special case for partial illumination"""
 
         print("the shape of the image is {}".format(self.img.shape))
         print("the shape of the model is {}".format(self.modelproj.shape))
 
     @staticmethod
-    def same_shape(img1,img2):
+    def same_shape_v1(img1,img2):
         shape1 = img1.shape
         shape2 = img2.shape 
+        
         if shape1 != shape2:
-            # Calculate the padding needed for height and width
-            pad_height = abs(shape1[0] - shape2[0])
-            pad_width = abs(shape1[1] - shape2[1])
+      
 
-            # Determine which image is smaller
-            if shape1 < shape2:
-                # Pad image1
-                img1= cv2.copyMakeBorder(img1, 0, pad_height, 0, pad_width, cv2.BORDER_CONSTANT, value=[0, 0, 0])
-            else:
-                # Pad image2
-                img2 = cv2.copyMakeBorder(img2, 0, pad_height, 0, pad_width, cv2.BORDER_CONSTANT, value=[0, 0, 0])
+            while shape1 != shape2:
+               
+                pad_height = abs(shape1[0] - shape2[0])
+                pad_width = abs(shape1[1] - shape2[1])
+                if shape1 < shape2:
+                    
+                    img1= cv2.copyMakeBorder(img1, 0, pad_height, 0, pad_width, cv2.BORDER_CONSTANT, value=[0, 0, 0])
+                else:
+                   
+                    img2 = cv2.copyMakeBorder(img2, 0, pad_height, 0, pad_width, cv2.BORDER_CONSTANT, value=[0, 0, 0])
+                shape1 = img1.shape
+                shape2 = img2.shape
+        return img1,img2
+    # @staticmethod
+    def same_shape(self,img1,img2,offset=False):
+        shape1 = img1.shape
+        shape2 = img2.shape 
+        width1 = shape1[1]
+        width2 = shape2[1]
+        height1 = shape1[0]
+        height2 = shape2[0]
+        #
+
+        if self.crop:
+            width_low, width_high, height_low, height_high = self.crop
+            img1 = img1[height_low : height_high, width_low : width_high]
+        else:
+            
+            if width1 != width2:
+                if width1 > width2:
+                    difference = width1 - width2
+                    img2 = np.pad(img2, ((0, 0), (int(np.floor(difference/2)), int(np.ceil(difference/2)))), mode='constant', constant_values=0)
+                    if offset:
+                        self.yxoffset[1] += int(np.floor(difference/2))
+                    
+                else:
+                    difference = width2 - width1
+                    img2 = img2[:, int(np.floor(difference/2)) : width2 - int(np.ceil(difference/2)) ]
+                    if offset:
+                        self.yxoffset[1] += -int(np.floor(difference/2))
+                    
+            if height1 != height2:
+                if height1 > height2:
+                    difference = height1 - height2
+                    # img1 = img1[int(np.floor(difference/2)) : height1 - int(np.ceil(difference/2)) , :]
+                    img2 = np.pad(img2, ((int(np.floor(difference/2)), int(np.ceil(difference/2))), (0, 0)), mode='constant', constant_values=0)
+                    if offset:
+                        self.yxoffset[0] += int(np.floor(difference/2))
+                    
+                else:
+                    difference = height2 - height1
+                    img2 = img2[int(np.floor(difference/2)) : height2 - int(np.ceil(difference/2)) , :]
+                    if offset:
+                        self.yxoffset[0] += -int(np.floor(difference/2))
+                    
+    
+        # 
+            
         return img1,img2
     def differet_orientation ( self , angle  ) :
 
-        # angle_inv = -(angle + self.offset)
-        # self.img_list = np.load( self.ModelFilename )
-        # # if self.ModelRotate< 0:
-        # #     self.ModelRotate = 360+self.ModelRotate
-        # # counter = self.ModelRotate //90
-
-        # # self.img_list = np.rot90(self.img_list,k=counter,axes=(1,2))  # rotate clockwisely along 0 axis, if axes(2,1), anti-clockwise
-
-        # if angle_inv != 0 :
-        #     self.img_list = self.rotate_3D(self.img_list,angle_inv)
-
-        # if flat_fielded is not None and flat_fielded.isspace( ) is not True \
-        #         and flat_fielded != '' :
-        #     file = os.path.join( self.tomo_img_path , flat_fielded )
-        # else :
-        #     afterfix = len( os.listdir( self.tomo_img_path ) ) / 180
-
-        #     fileindex = int( angle * afterfix )
-        #     if fileindex == 0 :
-        #         pass
-        #     else:
-        #         fileindex -= 1
-        #     print("the fileindex is {}".format(fileindex))
-        #     for f in os.listdir( self.tomo_img_path ) :
-        #         index = int( re.findall( r'\d+' , f )[-1] )
-        #         if index == fileindex :
-        #             filename = f
-        #             break
-        #     file = os.path.join( self.tomo_img_path , filename )
-   
-        # self.logger.info(
-        #     "the examined flat-fielded corrected image is {}".format( os.path.basename( file ) ) )
-        # print(
-        #     "the examined flat-fielded corrected image is {}".format( os.path.basename( file ) ) )
-        # new1 = self.img_list.mean( axis = 1 )
-        # self.img = cv2.imread( file , 2 )
-        
-        # if self.v_flip :
-        #     # 1 : flip over horizontal ; 0 : flip over vertical
-        #     self.img = cv2.flip( self.img , 0 )
-        # if self.h_flip :
-        #     # 1 : flip over horizontal ; 0 : flip over vertical
-        #     self.img = cv2.flip( self.img , 1 )
-        # if self.img.shape[0] != new1.shape[0] :
-        #     if self.img.shape[0] > new1.shape[0]:
-        #         self.img , new1 = self.cropping( self.img , new1 , crop = self.crop )
-        #     else:
-        #         self.img , new1 = self.padding( self.img , new1 , pad = self.pad )
-        
-        # """ special case for partial illumination """
-        # new1 = self.img_list.mean( axis = 1 )
-        # self.img = cv2.imread( file , 2 )
-        # self.img[self.img > 2] = 2
-        # self.img[self.img < 0] = 0
-        # self.img , new1 = self.padding( self.img , new1 , pad = self.pad )
-        # # pdb.set_trace()
-        # """ special case for partial illumination"""
-
-        # print("the shape of the image is {}".format(self.img.shape))
-        # print("the shape of the model is {}".format(new1.shape))
        
         candidate_img = cv2.normalize( self.img , None , 0 , 255 , cv2.NORM_MINMAX ).astype(
             'uint8' )
@@ -773,14 +774,16 @@ class AbsorptionCoefficient( object ) :
         mask_label = self.mask_generation( img_label , thresh = 255 )
         shifted_mask , xyshift = self.skimage_translation_matching(
             candidate_mask , mask_label )
-        # pdb.set_trace()
+        # 
         self.imagemask_overlapping( candidate_img , shifted_mask ,
-                                    "Overlap_threshold_of_angle_{}_yellow_is_the_projection_of_3d_model".format( angle ) )
-        self.imagemask_overlapping_tri( candidate_img , candidate_mask , shifted_mask ,
-                                        "Debug_threshold_of_angle_of_{}_degree\n"
-                                        "yellow is the thresholding of flat-field \n"
-                                        "blue is the projection of 3D model \n"
-                                        "green is where they overlap".format( angle ) )
+                                    "3d_model_projection_on_angle_{}_of_raw_flat_fielded".format( angle ),colour='cyan' )
+        self.imagemask_overlapping( candidate_img , candidate_mask ,
+                                    "Thresholding_flat_fielded_on_angle_{}_of_raw_flat_fielded".format( angle ) )
+        # self.imagemask_overlapping_tri( candidate_img , candidate_mask , shifted_mask ,
+        #                                 "Debug_threshold_of_angle_of_{}_degree\n"
+        #                                 "yellow is the thresholding of flat-field \n"
+        #                                 "blue is the projection of 3D model \n"
+        #                                 "green is where they overlap".format( angle ) )
         
     def cropping ( self , img , label_img , crop = None ) :
 
@@ -929,6 +932,7 @@ class AbsorptionCoefficient( object ) :
         output_x_list = []
         # as we need to fix mask2 and extract intensities from mask1
         zshift , xshift = self.yxshift
+        zoffset , xoffset = self.yxoffset
         proportion_list = []
         for i , y in enumerate( y_list ) :
             x = x_list[i]
@@ -953,14 +957,17 @@ class AbsorptionCoefficient( object ) :
             lengths = thingoi[2]
             x = x_list[index]
             y = y_list[index]
-
-            intensity = self.img[y + int( zshift ) , x + int( xshift )]
-            coe = self.calculate_lin_abscoe_li( lengths , intensity , cls = cls )
-
-            # print( '[{}]/[{}] calculating [{}][{}] absorption coefficient'.format( index , len( prop_list ) , y , x ) )
-            output_x_list.append( x )
-            output_y_list.append( y )
-            roi.append( coe )
+            try:
+                intensity = self.img[y + int( zshift )+ int(zoffset), x + int( xshift )+ int(xoffset)]
+                coe = self.calculate_lin_abscoe_li( lengths , intensity , cls = cls )
+                # pdb.set_trace()
+                # print( '[{}]/[{}] calculating [{}][{}] absorption coefficient'.format( index , len( prop_list ) , y , x ) )
+                output_x_list.append( x )
+                output_y_list.append( y )
+                roi.append( coe )
+            except:
+                self.logger.warning("Single class: some of {} pixel is out of bound, artefacts are outside of the segmentation".format(cls))
+                pass
 
         return np.array( roi ) , np.array( output_y_list ) , np.array( output_x_list )
 
@@ -993,7 +1000,7 @@ class AbsorptionCoefficient( object ) :
             intensity )) / (
                             len_target * self.pixel_size)
         # if coe_other<0:
-        #     pdb.set_trace()
+        #     
         return coe_other
 
     def calculate_area_coe_multi ( self , y_list , x_list , percentile = 1 , cls = 'li' , ranktype = "proportion" ) :
@@ -1007,6 +1014,7 @@ class AbsorptionCoefficient( object ) :
         output_x_list = []
         # as we need to fix mask2 and extract intensities from mask1
         zshift , xshift = self.yxshift
+        zoffset , xoffset = self.yxoffset   
         proportion_list = []
         for i , y in enumerate( y_list ) :
             x = x_list[i]
@@ -1030,13 +1038,18 @@ class AbsorptionCoefficient( object ) :
             lengths = thingoi[2]
             x = x_list[index]
             y = y_list[index]
-            intensity = self.img[y + int( zshift ) , x + int( xshift )]
-            coe = self.calculate_ray_abscoe_multi( lengths , intensity , cls = cls )
+            # 
+            try:
+                intensity = self.img[y + int( zshift )+ int(zoffset) , x + int( xshift )+ int(xoffset)]
+                coe = self.calculate_ray_abscoe_multi( lengths , intensity , cls = cls )
 
-            # print( '[{}]/[{}] calculating [{}][{}] absorption coefficient'.format( index , len( prop_list ) , y , x ) )
-            output_x_list.append( x )
-            output_y_list.append( y )
-            roi.append( coe )
+                # print( '[{}]/[{}] calculating [{}][{}] absorption coefficient'.format( index , len( prop_list ) , y , x ) )
+                output_x_list.append( x )
+                output_y_list.append( y )
+                roi.append( coe )
+            except:
+                self.logger.warning("Multi-class: some of {} pixel is out of bound, maybe due to artefact in the segmentation".format(cls))
+                pass
 
         return np.array( roi ) , np.array( output_y_list ) , np.array( output_x_list )
 
@@ -1167,7 +1180,7 @@ class RunAbsorptionCoefficient( AbsorptionCoefficient ) :
                            offset = offset , v_flip = v_flip , h_flip = h_flip ,
                            ModelRotate = ModelRotate , crop = crop , thresholding = thresholding ,
                            flat_fielded = flat_fielded , padding=padding)
-
+        
     def run ( self , singlecls = False ) :
         # new = self.img_list.mean( axis = 1 )
         # img2 = 255 - cv2.normalize( new , None , 0 , 255 , cv2.NORM_MINMAX ).astype( 'uint8' )
@@ -1184,8 +1197,11 @@ class RunAbsorptionCoefficient( AbsorptionCoefficient ) :
         # mask2 , yxshift = skimage_translation_matching( mask1 , mask2 )  # move mask2 to get mask1
         # zshift,xshift = yxshift # in the projection of 3D tomography, the image axes are z of 3D (y in image) and x of 3D (x in image)
         # #imagemask_overlapping( img1 , mask2 )
+       
 
         self.pre_process( )
+        
+
         """ extract inner area of the region of interest to mitiagte edge effect
         (this is can be improved by morthogonal erosion)
         """
@@ -1227,6 +1243,7 @@ class RunAbsorptionCoefficient( AbsorptionCoefficient ) :
         percent = 1
         # 1 has to be the first to constraint the range of histogram
         order = [1 , 0.75 , 0.5 , 0.25]
+        order = [ 0.5 , 0.25]
         liac_mean_list = []
         loac_mean_list = []
         crac_mean_list = []
@@ -1337,7 +1354,7 @@ class RunAbsorptionCoefficient( AbsorptionCoefficient ) :
                             self.variable_coe[other_cls] = roi_othercls.mean( )
                             variable_mean_dict_list[other_cls].append( roi_othercls.mean( ) )
                             variable_median_dict_list[other_cls].append( np.median( roi_othercls ) )
-                            # pdb.set_trace()
+                            # 
                         else :
                             self.variable_coe[other_cls] = 0
                             variable_mean_dict_list[other_cls].append(0 )
@@ -1422,7 +1439,7 @@ class RunAbsorptionCoefficient( AbsorptionCoefficient ) :
             output.append(  crac_mean_list )
             if number_cls == 5 :
                 output.append( buac_mean_list )
-            # pdb.set_trace()
+            
             with open( os.path.join( self.save_dir , "mean_coefficients_with_percentage.json" ) , 'w' ) as f1 :
                 json.dump( output , f1 , indent = 2 )
 
@@ -1433,7 +1450,7 @@ class RunAbsorptionCoefficient( AbsorptionCoefficient ) :
             output.append( crac_median_list)
             if number_cls == 5 :
                 output.append( buac_median_list )
-            # pdb.set_trace()
+            # 
             with open( os.path.join( self.save_dir , "median_coefficients_with_percentage.json" ) , 'w' ) as f1 :
                 json.dump( output , f1 , indent = 2 )
 
