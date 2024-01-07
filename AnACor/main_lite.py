@@ -102,6 +102,10 @@ def main():
         voxel_size = np.array([args.pixel_size_z /args.resolution_factor* 1e-3,
                            args.pixel_size_y /args.resolution_factor* 1e-3,
                            args.pixel_size_x /args.resolution_factor* 1e-3])
+        args.sampling_ratio = args.sampling_ratio / (args.resolution_factor)**3
+        args.sampling_ratio=min(args.sampling_ratio,100)
+        logger.info("model is resized to voxel size of {}".format(args.resolution_factor))
+        logger.info("sampling ratio is changed to {}".format(args.sampling_ratio))
         # pdb.set_trace()
     else:
         label_list=label_list.astype(np.int8)
@@ -113,8 +117,9 @@ def main():
     num_cls = np.unique(label_list).shape[0]-1
     # num_cls=4
     print("the number of classes is {}".format(num_cls))
+    logger.info("the number of classes is {}".format(num_cls))
     print(" {} voxels are calculated".format(len(coord_list)))
-
+    logger.info(" {} voxels are calculated".format(len(coord_list)))
     """tomography setup """
     # pixel_size = args.pixel_size * 1e-3  # it means how large for a pixel of tomobar in real life
 
@@ -133,7 +138,7 @@ def main():
     with open(refl_filename) as f1:
         data = json.load(f1)
     print('The total size of the dataset is {}'.format(len(data)))
-    
+    logger.info('The total size of the dataset is {}'.format(len(data)))
 
     low = args.low
     up = args.up
@@ -199,15 +204,20 @@ def main():
  
         if abs_gridding is None:
             print('gridding map is not found')
+            logger.info('gridding map is not found')
             print('creating gridding map...')
+            logger.info('creating gridding map...')
+
             mp_create_gridding(t1, low, label_list,dataset,
                              voxel_size, coefficients,coord_list,
                              gridding_dir, args,
                              offset, full_iteration, store_paths, printing,afterfix, num_cls, args.gridding_method,num_processes)
             print('gridding map is finished and created')
+            logger.info('gridding map is finished and created')
             abs_gridding=stacking(gridding_dir,afterfix)
             t1 = time.time()
         print('Loading gridding map')
+        logger.info('Loading gridding map')
         mp_interpolation_gridding(t1, low,  abs_gridding, select_data, label_list,
                           voxel_size, coefficients, F, coord_list,
                           omega_axis, axes_data, gridding_dir, args,
