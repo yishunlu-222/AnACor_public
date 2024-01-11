@@ -531,6 +531,7 @@ class AbsorptionCoefficient( object ) :
                 if self.v_flip :
                     candidate_img = cv2.flip( candidate_img , 0 )
                 thresh = self.thresholding_method( )( candidate_img )
+
                 candidate_mask = self.mask_generation(
                     candidate_img , thresh = thresh )
                 # pdb.set_trace( )    
@@ -727,37 +728,79 @@ class AbsorptionCoefficient( object ) :
         #
 
         if self.crop:
-            width_low, width_high, height_low, height_high = self.crop
-            img1 = img1[height_low : height_high, width_low : width_high]
-        else:
             
-            if width1 != width2:
-                if width1 > width2:
-                    difference = width1 - width2
-                    img2 = np.pad(img2, ((0, 0), (int(np.floor(difference/2)), int(np.ceil(difference/2)))), mode='constant', constant_values=0)
-                    if offset:
-                        self.yxoffset[1] += int(np.floor(difference/2))
-                    
+            combined = []
+            current_segment = ""
+            for element in self.crop:
+                if element == ',':
+                    if current_segment:  # Add the segment to the list if it's not empty
+                        combined.append(current_segment)
+                        current_segment = ""
                 else:
-                    difference = width2 - width1
-                    img2 = img2[:, int(np.floor(difference/2)) : width2 - int(np.ceil(difference/2)) ]
-                    if offset:
-                        self.yxoffset[1] += -int(np.floor(difference/2))
-                    
-            if height1 != height2:
-                if height1 > height2:
-                    difference = height1 - height2
-                    # img1 = img1[int(np.floor(difference/2)) : height1 - int(np.ceil(difference/2)) , :]
-                    img2 = np.pad(img2, ((int(np.floor(difference/2)), int(np.ceil(difference/2))), (0, 0)), mode='constant', constant_values=0)
-                    if offset:
-                        self.yxoffset[0] += int(np.floor(difference/2))
-                    
-                else:
-                    difference = height2 - height1
-                    img2 = img2[int(np.floor(difference/2)) : height2 - int(np.ceil(difference/2)) , :]
-                    if offset:
-                        self.yxoffset[0] += -int(np.floor(difference/2))
-                    
+                    current_segment += element
+            # Adding the last segment if it's not empty
+            if current_segment:
+                combined.append(current_segment)
+            combined = [element.replace(" ", "") for element in combined]
+            # pdb.set_trace()
+            if combined[0] == ':':
+                width_low = 0
+            else:
+                width_low = int(combined[0])
+            
+            if combined[1] == ':':
+                width_high = width1
+            else:
+                width_high = int(combined[1])
+            
+            if combined[2] == ':':
+                height_low = 0
+            else:
+                height_low = int(combined[2])
+            
+            if combined[3] == ':':
+                height_high = height1
+            else:
+                height_high = int(combined[3])
+
+            # pdb.set_trace()
+            img1 = img1[height_low : height_high, width_low : width_high]
+        # else:
+
+
+        shape1 = img1.shape
+        shape2 = img2.shape 
+        width1 = shape1[1]
+        width2 = shape2[1]
+        height1 = shape1[0]
+        height2 = shape2[0]
+        if width1 != width2:
+            if width1 > width2:
+                difference = width1 - width2
+                img2 = np.pad(img2, ((0, 0), (int(np.floor(difference/2)), int(np.ceil(difference/2)))), mode='constant', constant_values=0)
+                if offset:
+                    self.yxoffset[1] += int(np.floor(difference/2))
+                
+            else:
+                difference = width2 - width1
+                img2 = img2[:, int(np.floor(difference/2)) : width2 - int(np.ceil(difference/2)) ]
+                if offset:
+                    self.yxoffset[1] += -int(np.floor(difference/2))
+                
+        if height1 != height2:
+            if height1 > height2:
+                difference = height1 - height2
+                # img1 = img1[int(np.floor(difference/2)) : height1 - int(np.ceil(difference/2)) , :]
+                img2 = np.pad(img2, ((int(np.floor(difference/2)), int(np.ceil(difference/2))), (0, 0)), mode='constant', constant_values=0)
+                if offset:
+                    self.yxoffset[0] += int(np.floor(difference/2))
+                
+            else:
+                difference = height2 - height1
+                img2 = img2[int(np.floor(difference/2)) : height2 - int(np.ceil(difference/2)) , :]
+                if offset:
+                    self.yxoffset[0] += -int(np.floor(difference/2))
+                
     
         # 
             
@@ -768,6 +811,8 @@ class AbsorptionCoefficient( object ) :
         candidate_img = cv2.normalize( self.img , None , 0 , 255 , cv2.NORM_MINMAX ).astype(
             'uint8' )
         thresh = self.thresholding_method( )( candidate_img )
+        print('thresholding pixel value is {0}, any values above {0} will be removed '.format(thresh))
+        self.logger.info('thresholding pixel value is {0}, any values above {0} will be removed '.format(thresh))
         candidate_mask = self.mask_generation( candidate_img , thresh = thresh )
         img_label = 255 - \
                     cv2.normalize( self.modelproj , None , 0 , 255 , cv2.NORM_MINMAX ).astype( 'uint8' )
