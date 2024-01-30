@@ -65,7 +65,6 @@ class AbsorptionCoefficient( object ) :
         self.h_flip = h_flip
         self.auto_orientation = auto_orientation
         self.auto_viewing = auto_viewing
-        self.flat_fielded = flat_fielded
         self.img_loading(self.angle , flat_fielded = flat_fielded )
         # current the first image is where the gonionmeter is 0
         if self.auto_orientation or self.auto_viewing is True :
@@ -588,7 +587,7 @@ class AbsorptionCoefficient( object ) :
             print( "the zone is at  {} which is the offset".format(
                 angle_start + ori_peak2 ) )
 
-        if self.auto_viewing and os.path.isfile(os.path.join( self.tomo_img_path , self.flat_fielded )) is True:
+        if self.auto_viewing :
             view_peak = np.where( contents_1 == np.max( contents_1 ) )[0][0]
 
             if view_peak != 0 and view_peak != 18 :
@@ -1469,16 +1468,13 @@ class RunAbsorptionCoefficient( AbsorptionCoefficient ) :
             self.logger.info( "The starting omega angle of "
                               "tomography experiment is chosen as {} degree".format( self.offset ) )
 
-            print( "The starting omega angle of "
-                   "tomography experiment is chosen as {} degree".format( self.offset ) )
-            if os.path.isfile( os.path.join( self.tomo_img_path,self.flat_fielded)) :
-                self.logger.info( "The flat fielded image {} is used".format( self.flat_fielded ) )
-                print( "The flat fielded image {} is used".format( self.flat_fielded ) )
-            else:
-                self.logger.info( "The angle where"
+            self.logger.info( "The angle where"
                               " the sample perfectly perpendicular to the screen is chosen as {} degree".format(
                 self.angle ) )
-                print( "The angle where"
+            print( "The starting omega angle of "
+                   "tomography experiment is chosen as {} degree".format( self.offset ) )
+
+            print( "The angle where"
                    " the sample perfectly perpendicular to the screen is chosen as {} degree".format( self.angle ) )
 
             output = [order]
