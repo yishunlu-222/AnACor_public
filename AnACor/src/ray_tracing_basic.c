@@ -10,7 +10,6 @@
 #include <sys/resource.h>
 #include "ray_tracing.h"
 
-
 ThetaPhi dials_2_thetaphi_22(double rotated_s1[3], int64_t L1)
 {
     ThetaPhi result;
@@ -69,7 +68,7 @@ void dials_2_myframe(double vector[3], double result[3])
 
 int64_t cube_face(int64_t ray_origin[3], double ray_direction[3], int64_t cube_size[3], int L1)
 {
-        // deciding which plane to go out, to see which direction (xyz) has increment of 1
+    // deciding which plane to go out, to see which direction (xyz) has increment of 1
     /*  'FRONTZY' = 1;
 *   'LEYX' = 2 ;
 *   'RIYX' = 3;
@@ -77,14 +76,13 @@ int64_t cube_face(int64_t ray_origin[3], double ray_direction[3], int64_t cube_s
     'BOTZX' = 5;
     "BACKZY" = 6 ;
 
-*/  
+*/
     int64_t min_x = 0;
     int64_t max_x = cube_size[2];
     int64_t min_y = 0;
     int64_t max_y = cube_size[1];
     int64_t min_z = 0;
     int64_t max_z = cube_size[0];
-    
 
     double tx_min = (min_x - ray_origin[2]) / ray_direction[2];
     double tx_max = (max_x - ray_origin[2]) / ray_direction[2];
@@ -93,7 +91,8 @@ int64_t cube_face(int64_t ray_origin[3], double ray_direction[3], int64_t cube_s
     double tz_min = (min_z - ray_origin[0]) / ray_direction[0];
     double tz_max = (max_z - ray_origin[0]) / ray_direction[0];
 
-    if (L1){
+    if (L1)
+    {
         tx_min = -tx_min;
         tx_max = -tx_max;
         ty_min = -ty_min;
@@ -124,29 +123,29 @@ int64_t cube_face(int64_t ray_origin[3], double ray_direction[3], int64_t cube_s
         }
     }
     // printf("t_min: %f\n", t_min);
-        if (t_min == tx_min)
+    if (t_min == tx_min)
     {
-        return  6;
+        return 6;
     }
     else if (t_min == tx_max)
     {
-        return  1;
+        return 1;
     }
     else if (t_min == ty_min)
     {
-        return  4;
+        return 4;
     }
     else if (t_min == ty_max)
     {
-        return  5;
+        return 5;
     }
     else if (t_min == tz_min)
     {
-        return  2;
+        return 2;
     }
     else if (t_min == tz_max)
     {
-        return  3;
+        return 3;
     }
     else
     {
@@ -502,7 +501,7 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
 
         if (fabs(theta) < M_PI / 2)
         {
-            assert (phi < 0);
+            assert(phi < 0);
             double increment_ratio_x = 1 / tan(fabs(phi));
             double increment_ratio_y = tan(theta) / sin(fabs(phi));
             double increment_ratio_z = -1;
@@ -590,7 +589,7 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
         }
         else
         {
-            assert (phi > 0);
+            assert(phi > 0);
             double increment_ratio_x = 1 / tan(fabs(phi));
             double increment_ratio_y = tan(M_PI - theta) / sin(fabs(phi));
             double increment_ratio_z = -1;
@@ -676,7 +675,7 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
 
         if (fabs(theta) < M_PI / 2)
         {
-            assert (phi > 0);
+            assert(phi > 0);
             double increment_ratio_x = 1 / tan(fabs(phi));
             double increment_ratio_y = tan(theta) / sin(fabs(phi));
             double increment_ratio_z = 1;
@@ -753,7 +752,7 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
 
         else
         {
-            assert (phi<0);
+            assert(phi < 0);
             double increment_ratio_x = 1 / (tan(fabs(phi)));
             double increment_ratio_y = tan(M_PI - theta) / sin(fabs(phi));
             double increment_ratio_z = 1;
@@ -834,7 +833,7 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
 
     else if (face == 4)
     {
-           assert(theta > 0);
+        assert(theta > 0);
         if (fabs(theta) < M_PI / 2)
         {
             double increment_ratio_x = cos(fabs(phi)) / tan(fabs(theta));
@@ -1013,10 +1012,10 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
 
     else if (face == 5)
     {
-        assert (theta<0);
+        assert(theta < 0);
         if (fabs(theta) < M_PI / 2)
         {
-            
+
             double increment_ratio_x = cos(fabs(phi)) / (tan(fabs(theta)));
             double increment_ratio_y = -1;
             double increment_ratio_z = sin(phi) / (tan(fabs(theta)));
@@ -1163,10 +1162,9 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
 
     else if (face == 1)
 
-    {   
+    {
 
-        
-        assert(fabs(theta) >= M_PI / 2 );
+        assert(fabs(theta) >= M_PI / 2);
         increment_ratio_x = -1;
         increment_ratio_y = tan(M_PI - theta) / cos(fabs(phi));
         increment_ratio_z = tan(phi);
@@ -1266,9 +1264,9 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
     result.len_classes = len_classes;
     result.len_classes_posi = len_classes_posi;
 
-    result.posi =(int64_t*) realloc(classes_posi, len_classes_posi * sizeof(int64_t));
-    result.classes = (int64_t*)realloc(classes, len_classes * sizeof(int64_t));
-    result.ray = (int64_t*)realloc(path_2, len_path_2 * 3 * sizeof(int64_t));
+    result.posi = (int64_t *)realloc(classes_posi, len_classes_posi * sizeof(int64_t));
+    result.classes = (int64_t *)realloc(classes, len_classes * sizeof(int64_t));
+    result.ray = (int64_t *)realloc(path_2, len_path_2 * 3 * sizeof(int64_t));
     // result.posi = malloc(len_classes_posi * sizeof(int64_t));
     // result.classes = malloc(len_classes * sizeof(int64_t));
     // result.ray = malloc(len_path_2 * 3 * sizeof(int64_t));
@@ -1353,62 +1351,74 @@ double *cal_path2_plus(Path2_c path_2_cal_result, double *voxel_size)
                                pow((path_ray[(len_path_2 - 1) * 3 + 0] - path_ray[0]) * voxel_length_z, 2) +
                                pow((path_ray[(len_path_2 - 1) * 3 + 2] - path_ray[2]) * voxel_length_x, 2));
 
-    for (int j = 0; j < len_classes_posi; j++)
+    len_path_2 -= 1;
+    if (len_path_2 == 0)
     {
-        if (classes[j] == 3)
-        {
-            if (j < len_classes_posi - 1)
-            {
-                cr_l_2 += total_length * ((double)(posi[j + 1] - posi[j]) / (double)len_path_2);
-            }
-            else
-            {
-                cr_l_2 += total_length * ((double)(len_path_2 - posi[j]) / (double)len_path_2);
-            }
-        }
-        else if (classes[j] == 1)
-        {
-            if (j < len_classes_posi - 1)
-            {
-                li_l_2 += total_length * ((double)(posi[j + 1] - posi[j]) / (double)len_path_2);
-            }
-            else
-            {
-                li_l_2 += total_length * ((double)(len_path_2 - posi[j]) / (double)len_path_2);
-            }
-        }
-        else if (classes[j] == 2)
-        {
-            if (j < len_classes_posi - 1)
-            {
-                lo_l_2 += total_length * ((double)(posi[j + 1] - posi[j]) / (double)len_path_2);
-            }
-            else
-            {
-                lo_l_2 += total_length * ((double)(len_path_2 - posi[j]) / (double)len_path_2);
-            }
-        }
-        else if (classes[j] == 4)
-        {
-            if (j < len_classes_posi - 1)
-            {
-                bu_l_2 += total_length * ((double)(posi[j + 1] - posi[j]) / (double)len_path_2);
-            }
-            else
-            {
-                bu_l_2 += total_length * ((double)(len_path_2 - posi[j]) / (double)len_path_2);
-            }
-        }
-        else
-        {
-        }
+        result[2] = cr_l_2;
+        result[1] = lo_l_2;
+        result[0] = li_l_2;
+        result[3] = bu_l_2;
+        return result;
     }
+    else
+    {
+        for (int j = 0; j < len_classes_posi; j++)
+        {
+            if (classes[j] == 3)
+            {
+                if (j < len_classes_posi - 1)
+                {
+                    cr_l_2 += total_length * ((double)(posi[j + 1] - posi[j]) / (double)len_path_2);
+                }
+                else
+                {
+                    cr_l_2 += total_length * ((double)(len_path_2 - posi[j]) / (double)len_path_2);
+                }
+            }
+            else if (classes[j] == 1)
+            {
+                if (j < len_classes_posi - 1)
+                {
+                    li_l_2 += total_length * ((double)(posi[j + 1] - posi[j]) / (double)len_path_2);
+                }
+                else
+                {
+                    li_l_2 += total_length * ((double)(len_path_2 - posi[j]) / (double)len_path_2);
+                }
+            }
+            else if (classes[j] == 2)
+            {
+                if (j < len_classes_posi - 1)
+                {
+                    lo_l_2 += total_length * ((double)(posi[j + 1] - posi[j]) / (double)len_path_2);
+                }
+                else
+                {
+                    lo_l_2 += total_length * ((double)(len_path_2 - posi[j]) / (double)len_path_2);
+                }
+            }
+            else if (classes[j] == 4)
+            {
+                if (j < len_classes_posi - 1)
+                {
+                    bu_l_2 += total_length * ((double)(posi[j + 1] - posi[j]) / (double)len_path_2);
+                }
+                else
+                {
+                    bu_l_2 += total_length * ((double)(len_path_2 - posi[j]) / (double)len_path_2);
+                }
+            }
+            else
+            {
+            }
+        }
 
-    result[2] = cr_l_2;
-    result[1] = lo_l_2;
-    result[0] = li_l_2;
-    result[3] = bu_l_2;
-    return result;
+        result[2] = cr_l_2;
+        result[1] = lo_l_2;
+        result[0] = li_l_2;
+        result[3] = bu_l_2;
+        return result;
+    }
 }
 
 double cal_rate(double *numbers_1, double *numbers_2, double *coefficients,
@@ -1433,7 +1443,7 @@ double cal_rate(double *numbers_1, double *numbers_2, double *coefficients,
                      mu_lo * (lo_l_1 + lo_l_2) +
                      mu_cr * (cr_l_1 + cr_l_2) +
                      mu_bu * (bu_l_1 + bu_l_2));
-   
+
     if (Isexp == 1)
     {
         result = exp(-result);

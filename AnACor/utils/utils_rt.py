@@ -1207,30 +1207,37 @@ def cal_path_plus(path_2,voxel_size):
     total_length=np.sqrt(((path_ray[-1][1]  - path_ray[0][1] ) * voxel_length_y ) ** 2 +
                          ((path_ray[-1][0]  - path_ray[0][0] ) * voxel_length_z ) ** 2 +
                          ( (path_ray[-1][2]  - path_ray[0][2] ) * voxel_length_x )** 2)
+    if len(path_ray) == 1:
+        return 0,0,0,0
+
+    proprotion=total_length/(len(path_ray)-1)
     for j, trans_index in enumerate(posi):
 
         if classes[j] == 'cr':
             if j < len(posi) - 1:
-                cr_l_2 += total_length * ( (posi[j+1]-posi[j])/len(path_ray))
+                cr_l_2 += proprotion * (posi[j+1]-posi[j])
             else:
-                cr_l_2 += total_length * ((len(path_ray)- posi[j]) / len(path_ray))
+                cr_l_2 += proprotion * (len(path_ray)- posi[j])
         elif classes[j] == 'li':
             if j < len(posi) - 1:
-                li_l_2 += total_length * ((posi[j + 1] - posi[j]) / len(path_ray))
+                li_l_2 +=  proprotion * (posi[j + 1] - posi[j]) 
+                len_li = ((posi[j + 1] - posi[j]) / len(path_ray))
             else:
-                li_l_2 += total_length * ((len(path_ray) - posi[j]) / len(path_ray))
+                li_l_2 +=  proprotion * (len(path_ray) - posi[j]) 
+                len_li = ((len(path_ray) - posi[j]) / len(path_ray))
         elif classes[j] == 'lo':
             if j < len(posi) - 1:
-                lo_l_2 += total_length * ((posi[j + 1] - posi[j]) / len(path_ray))
+                lo_l_2 +=  proprotion * (posi[j + 1] - posi[j]) 
             else:
-                lo_l_2 += total_length * ((len(path_ray) - posi[j]) / len(path_ray))
+                lo_l_2 +=  proprotion * (len(path_ray) - posi[j]) 
         elif classes[j] == 'bu':
             if j < len(posi) - 1:
-                bu_l_2 += total_length * ((posi[j + 1] - posi[j]) / len(path_ray))
+                bu_l_2 +=  proprotion *(posi[j + 1] - posi[j]) 
             else:
-                bu_l_2 += total_length * ((len(path_ray) - posi[j]) / len(path_ray))
+                bu_l_2 +=  proprotion * (len(path_ray) - posi[j])
         else:
             pass
+    # pdb.set_trace()
     #     # if classes[j] == 'cr':
     #     #     if j < len(posi) - 1:
     #     #         cr_l_2_total= np.abs(path_ray[posi[j+1] - 1][1] - coord[1]) + 0.5

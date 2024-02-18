@@ -1,0 +1,24 @@
+{
+    "version": "2.0.0",
+    "configurations": [
+      {
+        "name": "CUDA float Debug",
+        "type": "cuda-gdb",
+        "request": "launch",
+        "program": "python",
+        "args": ["/home/yishun/projectcode/Cuda/AnACor_public_fork/AnACor/float/test_main_lite_f.py  --dataset test --up 230000 --sampling 5000 --loac 0.00931 --liac 0.01208 --crac 0.01053  --buac 0.0322 --offset 0 --store-dir /home/yishun/projectcode/Cuda/testcase/16010_test/test_save_data_mpc/result_d/ --refl-path /home/yishun/projectcode/anacor_testcase/16010_test/16010_ompk_10_3p5keV_AUTOMATIC_DEFAULT_SAD_SWEEP1.refl16010_0.json --expt-path /home/yishun/projectcode/anacor_testcase/16010_test/16010_ompk_10_3p5keV_AUTOMATIC_DEFAULT_SAD_SWEEP1.expt16010_0.json  --model-storepath /home/yishun/projectcode/anacor_testcase/16010_test/16010_tomobar_cropped_f.npy --full-iteration 1 --num-workers 1  --sampling-num 5000 --auto-sampling False --by-c True"
+        ],
+      },
+      {
+        "name": "CUDA One_thread Debug",
+        "type": "cuda-gdb",
+        "request": "launch",
+        "program": "python",
+        "args": ["/home/yishun/projectcode/Cuda/AnACor_public_fork/AnACor/one_thread/test_main_lite.py  --dataset test --up 230000 --sampling 5000 --loac 0.00931 --liac 0.01208 --crac 0.01053  --buac 0.0322 --offset 0 --store-dir /home/yishun/projectcode/Cuda/testcase/16010_test/test_save_data_mpc/result_d/ --refl-path /home/yishun/projectcode/anacor_testcase/16010_test/16010_ompk_10_3p5keV_AUTOMATIC_DEFAULT_SAD_SWEEP1.refl16010_0.json --expt-path /home/yishun/projectcode/anacor_testcase/16010_test/16010_ompk_10_3p5keV_AUTOMATIC_DEFAULT_SAD_SWEEP1.expt16010_0.json  --model-storepath /home/yishun/projectcode/anacor_testcase/16010_test/16010_tomobar_cropped_f.npy --full-iteration 1 --num-workers 1  --sampling-num 5000 --auto-sampling False --by-c True --gpu True"
+        ],
+      }
+    ]
+    
+  }
+  
+  

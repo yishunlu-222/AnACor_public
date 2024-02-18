@@ -6,7 +6,8 @@
         "math.h": "c",
         "stdlib.h": "c",
         "omp.h": "c",
-        "testkit.h": "c"
+        "testkit.h": "c",
+        "functional": "c"
     },
     "cmake.configureOnOpen": false
 }

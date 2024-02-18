@@ -190,7 +190,7 @@ def main():
     printing=args.printing
     if args.DEBUG:
         printing = True
-
+        num_processes = 1
 
     if args.gridding is True:
         afterfix=f'gridding_{args.sampling_ratio}_{args.gridding_theta}_{args.gridding_phi}'

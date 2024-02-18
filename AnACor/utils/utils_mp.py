@@ -313,12 +313,30 @@ def worker_function(t1, low,  dataset, selected_data, label_list,
                     else:
                         path_1 = cal_coord(
                             theta_1, phi_1, coord, face_1, shape, label_list)  # 37
+                       
                         path_2 = cal_coord(
                             theta, phi, coord, face_2, shape, label_list)  # 16
 
+                        path_1_f = cal_coord(theta_1, phi_1, coord, face_1, shape, label_list,full_iteration=True)  # 37
+                        path_2_f = cal_coord(
+                            theta, phi, coord, face_2, shape, label_list,full_iteration=True)  # 16
+                        numbers_1_f = cal_path_plus(path_1_f, voxel_size)  # 3.5s
+                        numbers_2_f = cal_path_plus(path_2_f, voxel_size)  # 3.5s
+                        absorption_f= cal_rate(
+                            (numbers_1_f + numbers_2_f), coefficients)
+                        absorprt[k] = absorption_f
                         numbers_1 = cal_path_plus(path_1, voxel_size)  # 3.5s
-                        numbers_2 = cal_path_plus(path_2, voxel_size)  # 3.5s
 
+                        numbers_2 = cal_path_plus(path_2, voxel_size)  # 3.5s       
+
+                        # diff_1_cr= (numbers_1[2]-numbers_1_f[2])/numbers_1[2] *100
+                        # diff_2_cr= (numbers_2[2]-numbers_2_f[2])/numbers_2[2] *100
+                        # diff_1_li= (numbers_1[0]-numbers_1_f[0])/numbers_1[0] *100
+                        # diff_2_li= (numbers_2[0]-numbers_2_f[0])/numbers_2[0] *100
+                        # print('diff_1_cr is {}'.format(diff_1_cr))
+                        # print('diff_2_cr is {}'.format(diff_2_cr))
+                        # print('diff_1_li is {}'.format(diff_1_li))
+                        # print('diff_2_li is {}'.format(diff_2_li))
                     if store_paths == 1:
                         if k == 0:
                             path_length_arr_single = np.expand_dims(
@@ -333,6 +351,11 @@ def worker_function(t1, low,  dataset, selected_data, label_list,
                         (numbers_1 + numbers_2), coefficients)
 
                     absorp[k] = absorption
+                    if args.DEBUG:
+                        diff = (absorption - absorption_f)/absorption_f
+                        print('diff is {}'.format(diff))
+                        if diff > 0.01:
+                            pdb.set_trace()
                 result = absorp.mean()
 
             if args.DEBUG:

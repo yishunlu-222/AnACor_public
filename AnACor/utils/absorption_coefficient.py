@@ -66,9 +66,11 @@ class AbsorptionCoefficient( object ) :
         self.auto_orientation = auto_orientation
         self.auto_viewing = auto_viewing
         self.flat_fielded = flat_fielded
+        print("first attempted loading...")
         self.img_loading(self.angle , flat_fielded = flat_fielded )
         # current the first image is where the gonionmeter is 0
         if self.auto_orientation or self.auto_viewing is True :
+            
             self.cal_orientation_auto( )
 
         # if  self.auto_viewing is True:
@@ -562,7 +564,7 @@ class AbsorptionCoefficient( object ) :
         ori_peak = np.where( difference_1 == np.min( difference_1 ) )[0][0]
 
         if self.auto_orientation :
-
+            print("auto orientation is running...")
             if ori_peak != 0 and ori_peak != 18 :
                 angle_start = (ori_peak - 1) * 10
                 angle_end = (ori_peak + 1) * 10
@@ -587,8 +589,10 @@ class AbsorptionCoefficient( object ) :
                 angle_start + ori_peak2 ) )
             print( "the zone is at  {} which is the offset".format(
                 angle_start + ori_peak2 ) )
-
-        if self.auto_viewing and os.path.isfile(os.path.join( self.tomo_img_path , self.flat_fielded )) is True:
+        # pdb.set_trace( )
+        if self.auto_viewing and self.flat_fielded is None:
+            print("flat fielded image is not chosen")
+            print("auto viewing is running...")
             view_peak = np.where( contents_1 == np.max( contents_1 ) )[0][0]
 
             if view_peak != 0 and view_peak != 18 :
@@ -654,10 +658,16 @@ class AbsorptionCoefficient( object ) :
                     filename = f
                     break
             file = os.path.join( self.tomo_img_path , filename )
-        self.logger.info(
-            "the examined flat-fielded corrected image is {}".format( os.path.basename( file ) ) )
-        print(
-            "the examined flat-fielded corrected image is {}".format( os.path.basename( file ) ) )
+        if self.flat_fielded is not None:
+            self.logger.info(
+                "flat-fielded corrected image is chosen as {}".format( os.path.basename( file ) ) )
+            print(
+                "the examined flat-fielded corrected image is chosen as {}".format( os.path.basename( file ) ) )
+        else:
+            self.logger.info(
+                "the examined flat-fielded corrected image is {}".format( os.path.basename( file ) ) )
+            print(
+                "the examined flat-fielded corrected image is {}".format( os.path.basename( file ) ) )
         self.modelproj = self.img_list.mean( axis = 1 )
         self.img = cv2.imread( file , 2 )
 
@@ -812,8 +822,8 @@ class AbsorptionCoefficient( object ) :
         candidate_img = cv2.normalize( self.img , None , 0 , 255 , cv2.NORM_MINMAX ).astype(
             'uint8' )
         thresh = self.thresholding_method( )( candidate_img )
-        print('thresholding pixel value is {0}, any values above {0} will be removed '.format(thresh))
-        self.logger.info('thresholding pixel value is {0}, any values above {0} will be removed '.format(thresh))
+        print('thresholding pixel value is {0}, any values above {0} will be removed '.format(np.round(thresh,3)))
+        self.logger.info('thresholding pixel value is {0}, any values above {0} will be removed '.format(np.round(thresh,3)))
         candidate_mask = self.mask_generation( candidate_img , thresh = thresh )
         img_label = 255 - \
                     cv2.normalize( self.modelproj , None , 0 , 255 , cv2.NORM_MINMAX ).astype( 'uint8' )
@@ -1289,7 +1299,7 @@ class RunAbsorptionCoefficient( AbsorptionCoefficient ) :
         percent = 1
         # 1 has to be the first to constraint the range of histogram
         order = [1 , 0.75 , 0.5 , 0.25]
-        order = [ 0.5 , 0.25]
+        # order = [ 0.5 , 0.25]
         liac_mean_list = []
         loac_mean_list = []
         crac_mean_list = []
@@ -1471,7 +1481,7 @@ class RunAbsorptionCoefficient( AbsorptionCoefficient ) :
 
             print( "The starting omega angle of "
                    "tomography experiment is chosen as {} degree".format( self.offset ) )
-            if os.path.isfile( os.path.join( self.tomo_img_path,self.flat_fielded)) :
+            if self.flat_fielded is not None:
                 self.logger.info( "The flat fielded image {} is used".format( self.flat_fielded ) )
                 print( "The flat fielded image {} is used".format( self.flat_fielded ) )
             else:
