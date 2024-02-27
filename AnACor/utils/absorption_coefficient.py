@@ -15,6 +15,8 @@ import re
 from skimage.metrics import *
 import time
 import logging
+global debugger
+debugger = False 
 
 rate_list = {'li' : 1 , 'lo' : 2 , 'cr' : 3 , 'bu' : 4}
 
@@ -476,7 +478,8 @@ class AbsorptionCoefficient( object ) :
             thresh_method = threshold_yen
         elif self.thresholding == 'isodata' :
             thresh_method = threshold_isodata
-
+        elif self.thresholding =='local':
+            thresh_method = threshold_local
         return thresh_method
 
     def cal_orientation_auto ( self ) :
@@ -516,14 +519,14 @@ class AbsorptionCoefficient( object ) :
                 # fileindex = str( int( angle * afterfix ) ).zfill( 5 )
                 # filename = prefix.replace( 'candidate' , fileindex )
 
-                try :
-                    if angle == 180 :
+                # try :
+                if angle == 180 :
                         filename = sorted_imgfile_list[int(
                             increment * angle ) - 1]
-                    else :
+                else :
                         filename = sorted_imgfile_list[int( increment * angle )]
-                except :
-                    pdb.set_trace( )
+                # except :
+                    # pdb.set_trace( )
                 # print( filename )
 
                 file = os.path.join( self.tomo_img_path , filename )
@@ -535,8 +538,7 @@ class AbsorptionCoefficient( object ) :
                     candidate_img = cv2.flip( candidate_img , 0 )
                 thresh = self.thresholding_method( )( candidate_img )
 
-                candidate_mask = self.mask_generation(
-                    candidate_img , thresh = thresh )
+                candidate_mask = self.mask_generation(candidate_img , thresh = thresh )
                 # pdb.set_trace( )    
                 candidate_mask , mask_label = self.padding(
                     candidate_mask , mask_label )
@@ -550,6 +552,7 @@ class AbsorptionCoefficient( object ) :
                     candidate_mask , mask_label )
                 # if plot:
                 #     self.imagemask_overlapping_tri( candidate_img ,candidate_mask, shifted_mask,"threshold of angle of {} degree".format(angle))
+                
                 difference.append( np.abs( candidate_mask - shifted_mask ).mean( ) )
 
             return difference , contents
@@ -621,7 +624,8 @@ class AbsorptionCoefficient( object ) :
                    " the sample perfectly perpendicular to the screen is {} degree".format(
                 angle_start + view_peak_2 ) )
             self.angle = (angle_start + view_peak_2)
-
+        if debugger:
+            pdb.set_trace()
     def rotate_3D(self,img_list,angle_inv):
         for i , slice in enumerate( img_list ) :
                 result = self.rotate_image( slice , angle_inv )

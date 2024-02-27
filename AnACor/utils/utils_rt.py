@@ -14,7 +14,7 @@ from sklearn.decomposition import PCA
 import time
 np.set_printoptions(suppress=True)
 
-np.random.seed(99)
+np.random.seed(0)
 
 def create_probability_distribution(coords, centroid):
 
@@ -1143,11 +1143,17 @@ def cal_coord(theta ,phi,coord,face,shape,label_list,full_iteration=False):
             potential_coord = (int(  (new_z)),
                            int(  (new_y)),
                            int(  (new_x)))
-
+            va_count = 0
             if full_iteration is False :
                 if label_list[potential_coord] == 0 :
                     break
-
+            # else:
+            #     if label_list[potential_coord] == 0 :
+            #         va_count += 1
+            #     else:
+            #         va_count = 0
+            #     if va_count > 10:
+            #         break
             if increment == 0:
                 pass
             elif label_list[potential_coord] != label_list[path_2[increment - 1]]:
@@ -1170,6 +1176,7 @@ def cal_coord(theta ,phi,coord,face,shape,label_list,full_iteration=False):
                     raise RuntimeError('unexpected classes')
 
             path_2.append(potential_coord)
+            # iterate 
 
     else:
         raise RuntimeError("unexpected ray out face")
@@ -1209,8 +1216,9 @@ def cal_path_plus(path_2,voxel_size):
                          ( (path_ray[-1][2]  - path_ray[0][2] ) * voxel_length_x )** 2)
     if len(path_ray) == 1:
         return 0,0,0,0
-
+    
     proprotion=total_length/(len(path_ray)-1)
+    # print(proprotion)
     for j, trans_index in enumerate(posi):
 
         if classes[j] == 'cr':

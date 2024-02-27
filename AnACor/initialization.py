@@ -130,8 +130,29 @@ def main():
             'model_storepath':npy_file,
 
         }
-        with open( 'default_preprocess_input.yaml' , 'w' ) as file :
-            yaml.dump( pre_data , file, default_flow_style=False, sort_keys=False, indent=4 )
+        # Dump the dictionary to a YAML string
+        yaml_str = yaml.dump(pre_data, default_flow_style=False, sort_keys=False, indent=4)
+
+        # Define the line where the comment should be added
+        comment = "    # if flat-fielded thresholding doesn't look good, can try 'otsu', or 'li' or 'yen'  \n"
+        comment2="# examples of effect can be shown on https://imagej.net/plugins/auto-threshold \n"
+        key_to_comment = 'coefficient_thresholding:'
+
+        # Insert the comment after the specified key
+        lines = yaml_str.split('\n')
+        for i, line in enumerate(lines):
+            if line.startswith(key_to_comment):
+                # Insert the comment after the current line
+                lines.insert(i + 1, comment.strip())
+                lines.insert(i + 2, comment2.strip())
+                break  # Assuming only one match, we can break after inserting the comment
+
+        # Join the lines back together
+        yaml_str_with_comment = '\n'.join(lines)
+
+        # Write the modified YAML string to a file
+        with open('default_preprocess_input.yaml', 'w') as file:
+            file.write(yaml_str_with_comment)
 
         print('preprocess input file created')
     if args.mp:   

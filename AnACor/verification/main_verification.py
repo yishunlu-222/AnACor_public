@@ -284,9 +284,9 @@ if __name__ == '__main__':
             reference=cylinder_correct_1p5
     
     elif args.shape=='cuboid':
-        length=100
+        length=80
         width=100
-        height=100
+        height=120
         filename=f"veri_{args.shape}_{voxel_size[0]}_l_{length}_w_{width}_h_{height}_{args.sampling_ratio}_{args.sampling_method}.json"
         if args.scale_factor!=1:
             filename=f"veri_{args.shape}_{voxel_size[0]}_{args.scale_factor}_l_{length}_w_{width}_h_{height}_{args.sampling_ratio}_{args.sampling_method}.json"

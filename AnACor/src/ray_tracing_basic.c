@@ -400,7 +400,7 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
     int64_t z = coord[0], y = coord[1], x = coord[2];
     int64_t z_max = shape[0], y_max = shape[1], x_max = shape[2];
     int64_t diagonal = x_max * sqrt(3);
-
+    int64_t va_counter=0;
     int64_t *path_2 = (int64_t *)malloc(diagonal * 3 * sizeof(int64_t));
     int64_t *classes_posi = (int64_t *)malloc(diagonal * sizeof(int64_t));
     int64_t *classes = (int64_t *)malloc(diagonal * sizeof(int64_t));
@@ -470,6 +470,19 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
             if (!full_iteration)
             {
                 if (label == 0)
+                {
+                    break;
+                }
+            }
+            else{
+                if (label == 0)
+                {
+                    va_counter++;
+                }
+                else{
+                    va_counter = 0;
+                }
+                if (va_counter > 20)
                 {
                     break;
                 }
@@ -567,6 +580,19 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
                         break;
                     }
                 }
+                else{
+                    if (label == 0)
+                    {
+                        va_counter++;
+                    }
+                    else{
+                        va_counter = 0;
+                    }
+                    if (va_counter > 20)
+                    {
+                        break;
+                    }
+                }
 
                 if (increment == 0)
                 {
@@ -644,6 +670,19 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
                 if (!full_iteration)
                 {
                     if (label == 0)
+                    {
+                        break;
+                    }
+                }
+                else{
+                    if (label == 0)
+                    {
+                        va_counter++;
+                    }
+                    else{
+                        va_counter = 0;
+                    }
+                    if (va_counter > 20)
                     {
                         break;
                     }
@@ -729,6 +768,19 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
                         break;
                     }
                 }
+                else{
+                    if (label == 0)
+                    {
+                        va_counter++;
+                    }
+                    else{
+                        va_counter = 0;
+                    }
+                    if (va_counter > 20)
+                    {
+                        break;
+                    }
+                }
 
                 if (increment == 0)
                 {
@@ -809,6 +861,19 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
                         break;
                     }
                 }
+                else{
+                    if (label == 0)
+                    {
+                        va_counter++;
+                    }
+                    else{
+                        va_counter = 0;
+                    }
+                    if (va_counter > 20)
+                    {
+                        break;
+                    }
+                }
 
                 if (increment == 0)
                 {
@@ -880,6 +945,19 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
                         break;
                     }
                 }
+                else{
+                    if (label == 0)
+                    {
+                        va_counter++;
+                    }
+                    else{
+                        va_counter = 0;
+                    }
+                    if (va_counter > 20)
+                    {
+                        break;
+                    }
+                }
 
                 if (increment == 0)
                 {
@@ -941,6 +1019,19 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
                 if (!full_iteration)
                 {
                     if (label == 0)
+                    {
+                        break;
+                    }
+                }
+                else{
+                    if (label == 0)
+                    {
+                        va_counter++;
+                    }
+                    else{
+                        va_counter = 0;
+                    }
+                    if (va_counter > 20)
                     {
                         break;
                     }
@@ -1067,6 +1158,19 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
                         break;
                     }
                 }
+                else{
+                    if (label == 0)
+                    {
+                        va_counter++;
+                    }
+                    else{
+                        va_counter = 0;
+                    }
+                    if (va_counter > 20)
+                    {
+                        break;
+                    }
+                }
 
                 if (increment == 0)
                 {
@@ -1138,6 +1242,19 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
                         break;
                     }
                 }
+                else{
+                    if (label == 0)
+                    {
+                        va_counter++;
+                    }
+                    else{
+                        va_counter = 0;
+                    }
+                    if (va_counter > 20)
+                    {
+                        break;
+                    }
+                }   
 
                 if (increment == 0)
                 {
@@ -1220,6 +1337,19 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
             if (!full_iteration)
             {
                 if (label == 0)
+                {
+                    break;
+                }
+            }
+            else{
+                if (label == 0)
+                {
+                    va_counter++;
+                }
+                else{
+                    va_counter = 0;
+                }
+                if (va_counter > 10)
                 {
                     break;
                 }
@@ -1351,8 +1481,8 @@ double *cal_path2_plus(Path2_c path_2_cal_result, double *voxel_size)
                                pow((path_ray[(len_path_2 - 1) * 3 + 0] - path_ray[0]) * voxel_length_z, 2) +
                                pow((path_ray[(len_path_2 - 1) * 3 + 2] - path_ray[2]) * voxel_length_x, 2));
 
-    len_path_2 -= 1;
-    if (len_path_2 == 0)
+    // len_path_2 -= 1;
+    if (len_path_2 == 1)
     {
         result[2] = cr_l_2;
         result[1] = lo_l_2;
@@ -1368,44 +1498,44 @@ double *cal_path2_plus(Path2_c path_2_cal_result, double *voxel_size)
             {
                 if (j < len_classes_posi - 1)
                 {
-                    cr_l_2 += total_length * ((double)(posi[j + 1] - posi[j]) / (double)len_path_2);
+                    cr_l_2 += total_length * ((double)(posi[j + 1] - posi[j]) / (double)(len_path_2-1));
                 }
                 else
                 {
-                    cr_l_2 += total_length * ((double)(len_path_2 - posi[j]) / (double)len_path_2);
+                    cr_l_2 += total_length * ((double)(len_path_2 - posi[j]) / (double)(len_path_2-1));
                 }
             }
             else if (classes[j] == 1)
             {
                 if (j < len_classes_posi - 1)
                 {
-                    li_l_2 += total_length * ((double)(posi[j + 1] - posi[j]) / (double)len_path_2);
+                    li_l_2 += total_length * ((double)(posi[j + 1] - posi[j]) / (double)(len_path_2-1));
                 }
                 else
                 {
-                    li_l_2 += total_length * ((double)(len_path_2 - posi[j]) / (double)len_path_2);
+                    li_l_2 += total_length * ((double)(len_path_2 - posi[j]) / (double)(len_path_2-1));
                 }
             }
             else if (classes[j] == 2)
             {
                 if (j < len_classes_posi - 1)
                 {
-                    lo_l_2 += total_length * ((double)(posi[j + 1] - posi[j]) / (double)len_path_2);
+                    lo_l_2 += total_length * ((double)(posi[j + 1] - posi[j]) / (double)(len_path_2-1));
                 }
                 else
                 {
-                    lo_l_2 += total_length * ((double)(len_path_2 - posi[j]) / (double)len_path_2);
+                    lo_l_2 += total_length * ((double)(len_path_2 - posi[j]) / (double)(len_path_2-1));
                 }
             }
             else if (classes[j] == 4)
             {
                 if (j < len_classes_posi - 1)
                 {
-                    bu_l_2 += total_length * ((double)(posi[j + 1] - posi[j]) / (double)len_path_2);
+                    bu_l_2 += total_length * ((double)(posi[j + 1] - posi[j]) / (double)(len_path_2-1));
                 }
                 else
                 {
-                    bu_l_2 += total_length * ((double)(len_path_2 - posi[j]) / (double)len_path_2);
+                    bu_l_2 += total_length * ((double)(len_path_2 - posi[j]) / (double)(len_path_2-1));
                 }
             }
             else

@@ -198,7 +198,7 @@ def worker_function_create_gridding(
                     print("diff_2 is {}".format(diff_2))
                     pdb.set_trace()
 
-            absorption_row.append(absorption)
+            absorption_row.append(np.float32(absorption))
         absorption_map.append(absorption_row)
         if printing:
             print(

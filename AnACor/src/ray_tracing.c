@@ -237,6 +237,19 @@ double ray_tracing_single(
             printf("%d \n", face_2);
             printf("theta is %f ", theta);
             printf("phi is %f \n", phi);
+            printf("\n");
+            printf("classes are ");
+            for (int64_t j = 0; j < path_1.len_classes_posi; j++)
+            {
+                printf("%d ", path_1.classes[j]);
+            }
+            printf("\n");
+            printf("posi are ");
+            for (int64_t j = 0; j < path_1.len_classes_posi; j++)
+            {
+                printf("%d ", path_1.posi[j]);
+            }
+           
         }
         // printf("face_2 at %d is %d \n",i, face_2);
 

@@ -4,10 +4,27 @@ import matplotlib.pyplot as plt
 from numba import jit
 from skimage.draw import line
 # import math
+import ctypes as ct
+from skimage import morphology, filters
+from skimage.segmentation import watershed
+from scipy.ndimage import label, center_of_mass
+from sklearn.cluster import KMeans,MiniBatchKMeans
+from scipy.spatial import cKDTree,distance
+from sklearn.decomposition import PCA
+import time
 np.set_printoptions(suppress=True)
 
+np.random.seed(0)
 
-def generate_sampling(label_list, cr=3, dim='z', sampling_size=5000, auto=True,method='even',sampling_ratio=None):
+def create_probability_distribution(coords, centroid):
+
+    dists = distance.cdist(coords, centroid.reshape(1, -1), 'euclidean').flatten()
+    # Inverse distances as probabilities (closer points have higher probability)
+    probabilities = 1 / (1 + dists)
+    probabilities /= probabilities.sum()  # Normalize to sum to 1
+    return probabilities
+
+def generate_sampling(label_list, cr=3, dim='z', sampling_size=5000, auto=True,method='even',sampling_ratio=None,kmeans_cluster=1000):
     """
     Probability Sampling: Every member of the population has a known (non-zero) probability of being selected. This includes:
     ###
@@ -32,18 +49,22 @@ def generate_sampling(label_list, cr=3, dim='z', sampling_size=5000, auto=True,m
     """
     zz, yy, xx = np.where(label_list == cr)  
     crystal_coordinate = np.stack((zz,yy,xx),axis=1)
+    
     # Find the indices of the non-zero elements directly
     if sampling_ratio is not None:
-        sampling_size=int(len(crystal_coordinate)*sampling_ratio/100) # sampling ratio in %
-
-
-    if auto:
-        # When sampling ~= N/2000, the results become stable
-        sampling = len(crystal_coordinate) // 2000
-        
+        sampling=int(len(crystal_coordinate)*sampling_ratio/100) # sampling ratio in %
+        sampling_size=1/sampling_ratio*100
     else:
-        sampling = len(crystal_coordinate) // sampling_size
-        
+        # if auto:
+        #     # When sampling ~= N/2000, the results become stable
+        #     sampling = len(crystal_coordinate) // 2000
+            
+        # else:
+            if len(crystal_coordinate) < sampling_size:
+                sampling = len(crystal_coordinate)
+            else:
+                sampling = len(crystal_coordinate) // sampling_size
+   
     print(" The sampling number is {}".format(sampling))
     if method =='even':
         coord_list_even=[]
@@ -119,15 +140,116 @@ def generate_sampling(label_list, cr=3, dim='z', sampling_size=5000, auto=True,m
         # Random sampling
         coord_list_random=[]
         arr = np.array(range(len(crystal_coordinate)))
-        np.random.seed(0)  
+       
         samples =np.sort( np.random.choice(arr, sampling, replace=False))
         for i in samples:
             coord_list_random.append(crystal_coordinate[i])
         print(" {} voxels in random sampling are calculated".format(len(samples)))
         coord_list= np.array(coord_list_random)
+    elif method =='evenrandom':
+        # Random sampling
+        coord_list_even = []
+        interval_length =int(sampling_size)
+        random_indices = [np.random.randint(i, i + interval_length) for i in range(0, len(crystal_coordinate), interval_length)]
+
+        # Ensure the number of indices doesn't exceed the sampling value
+        random_indices = random_indices[:sampling]
+
+        print(" {} voxels in evenrandom sampling with randomness are calculated".format(len(random_indices)))
+
+        for i in random_indices:
+            coord_list_even.append(crystal_coordinate[i])
+
+        coord_list = np.array(coord_list_even)
+    elif method =='stratified':
+        #https://scikit-learn.org/stable/modules/clustering.html
+
+        from sklearn.cluster import AgglomerativeClustering,BisectingKMeans
+        # model = AgglomerativeClustering(n_clusters=sampling)
+        
+        coordinate_list = np.linspace(0, len(crystal_coordinate), num=sampling, endpoint=False, dtype=int)
+        # print(" {} voxels in even sampling are calculated".format(len(coordinate_list)))
+        init_list=[]
+        for i in coordinate_list:
+            init_list.append(crystal_coordinate[i])
+
+        batch_size= 2 ** (np.round(np.log2(1/sampling_ratio)).astype(int))
+        init_list =  np.array(init_list)
+
+        clustering='kmeans'
+        if clustering=='kmeans':
+            pca = PCA(n_components=3)
+            transformed_coordinates = pca.fit_transform(crystal_coordinate)
+            model = MiniBatchKMeans(n_clusters=sampling, batch_size=batch_size, init='k-means++',verbose=0).fit(transformed_coordinates)
+            
+            region_centroids  = pca.inverse_transform(model.cluster_centers_)
+            # original_space_centroids = np.around(original_space_centroids).astype(int)
+            # for coords in region_centroids:
+            #     z, y, x = coords
+            #     yes.append(label_list[z, y, x])
+            # coord_list = np.array([coords for coords, label in zip(region_centroids, yes) if label == 3])
+            # pdb.set_trace()
+        elif clustering=='bisection':
+            model = BisectingKMeans(n_clusters=sampling,init='random').fit(crystal_coordinate)
+
+        print("Kmeans straified is applied")
+        t1 = time.time()
+
+        # kmeans = MiniBatchKMeans(n_clusters=sampling, batch_size=batch_size, n_init=10,init='k-means++',verbose=0).fit(crystal_coordinate)       
+        labels = model.labels_
+        # region_centroids = model.cluster_centers_
+        region_centroids = np.around(region_centroids).astype(int)
+        yes=[]
+        for coords in region_centroids:
+            z, y, x = coords
+            yes.append(label_list[z, y, x])
+        coord_list = np.array([coords for coords, label in zip(region_centroids, yes) if label == 3])
+        t2=time.time()
+
+
+        print("time for building kmeans is {}".format(t2-t1))
+        t3=time.time()
+        print("time for finding closest coordinate is {}".format(t3-t2))
+        # pdb.set_trace()
+    #     else:
+    #         kmeans = MiniBatchKMeans(n_clusters=kmeans_cluster, batch_size=1024*8, n_init=10,init='random',verbose=0).fit(crystal_coordinate)       
+    #         labels = kmeans.labels_
+    #         region_centroids = kmeans.cluster_centers_
+    #         region_centroids = np.around(region_centroids).astype(int)
+    #         # clustered_coordinates=[]
+    #         # for i in range(sampling):
+    #         #     cluster_coords = crystal_coordinate[labels == i]
+    #         #     clustered_coordinates.append(cluster_coords)
+    #         # combined_3d_array = np.array(clustered_coordinates, dtype=object)
+            
+            
+    #         sampled_points = []
+    #         n_samples_per_cluster = sampling//kmeans_cluster
+    #         remaining_samples = sampling - kmeans_cluster * n_samples_per_cluster
+    #         for i in range(kmeans_cluster):
+    #             cluster_points = crystal_coordinate[labels == i]
+    #             probabilities = create_probability_distribution(cluster_points, region_centroids[i])
+    #             sampled_indices = np.random.choice(len(cluster_points), n_samples_per_cluster, replace=False, p=probabilities)
+    #             sampled_cluster_points = cluster_points[sampled_indices]
+    #             sampled_points.extend(sampled_cluster_points)
+                
+    #         coords_set = set(map(tuple, crystal_coordinate))
+    #         sampled_set = set(map(tuple, sampled_points))
+    #         remaining_coords = np.array(list(coords_set - sampled_set))
+
+    #         overall_centroid = np.mean(crystal_coordinate, axis=0)
+    #         overall_probabilities = create_probability_distribution(remaining_coords, overall_centroid)
+    #         remaining_indices = np.random.choice(len(remaining_coords), size=remaining_samples, replace=False)
+    #         sampled_points.extend(remaining_coords[remaining_indices])
+    #         coord_list = np.array(sampled_points)
+    #         coord_list = np.sort(coord_list, axis=0)
+        
+
+
     else:
-        raise RuntimeError("The sampling method is not defined")
-    
+
+        raise RuntimeError(f"The sampling method {method} is not defined")
+    # pdb.set_trace()
     return coord_list
 
 
@@ -156,11 +278,50 @@ def partial_illumination_selection(xray_region, total_rotation_matrix, coord, po
     else:
         return False
 
-def thetaphi_2_dials(theta,phi):
+# def myframe_2_thetaphi(vector, L1=False):
+#     if L1 is True:
+#         # L1 is the incident beam and L2 is the diffracted so they are opposite
+#         vector = -vector
+#     z,y,x=vector
+#     # y=-y # the y axis is opposite to the lab frame
+#     # x=-x 
+#     if z == 0 and x == 0:
+#         theta = np.pi / 2
+#         if y > 0:
+#             theta *= -1
+
+#         return theta,0
+
+#     # Compute theta
+#     r = np.sqrt(x**2 + y**2 + z**2)
+#     theta = np.arcsin(np.abs(y / r)  # This gives theta in the range of 0 to pi
+
+#     # Adjusting the range of theta to be from -pi to pi
+#     if y > 0:
+#         theta *= -1 
+
+#     # Compute phi
+#     phi = np.arctan2(z,-x)  # the x axis is opposite to the lab frame
+#     if phi > np.pi / 2:
+#         phi -= np.pi
+#     elif phi < -np.pi / 2:
+#         phi += np.pi
+
+#     return theta, phi
+
+def mse_diff(theta, phi, map_theta, map_phi,i):
+    if (theta - map_theta) > 1e-5:
+        print('i:{} theta is {}, map_theta is {}'.format(i,theta, map_theta))
+    elif (phi - map_phi) > 1e-5:
+        print('i: {} phi is {}, map_phi is {}'.format(i,phi, map_phi))
+    else:
+        print("i {} has no difference".format(i))
+
+def thetaphi_2_myframe(theta,phi):
     z =np.cos(theta)*np.sin(phi)
-    x =np.cos(theta)*np.cos(phi)
-    y =np.sin(theta)
-    return numpy_2_dials( np.array([z,y,x]))
+    x =-np.cos(theta)*np.cos(phi)
+    y =-np.sin(theta)
+    return np.array([z,y,x])
 
 def dials_2_thetaphi(rotated_s1,L1=False):
     if L1 is True:
@@ -293,33 +454,50 @@ def which_face(coord,shape,theta,phi):
     # pdb.set_trace()
     return  face
 
-def dials_2_numpy(vector):
+def dials_2_myframe(vector):
     # (x',y',z') in standard vector but in numpy (z,y,x)
     # rotate the coordinate system about x'(z in numpy) for 180
     # vector =vector.astype(np.float32)
     # numpy_2_dials_1 = np.array([[np.cos(np.pi), np.sin(np.pi), 0],
     #                             [-np.sin(np.pi), np.cos(np.pi), 0],
     #                             [0, 0, 1]],dtype=np.float32)
-    numpy_2_dials_1 = np.array([[1, 0, 0],
+
+
+    # (x',y',z') in standard vector but in numpy (z,y,x)
+    # take the reflection about y'(y in numpy)
+    numpy_2_dials_0 = np.array([[1, 0, 0],
                                 [0, 0, 1],
                                 [0, 1, 0]])
-
-    back2 = numpy_2_dials_1.dot(vector)
+    # omega = np.pi
+    # numpy_2_dials_1 =np.array([[1, 0, 0],
+    #                             [0, np.cos(omega), np.sin(omega)],
+    #                             [0, -np.sin(omega), np.cos(omega)]])
+    # numpy_2_dials_1 = np.array([[1, 0, 0],
+    #                             [0, -1, 0],
+    #                             [0, 0, -1]])
+    back2 = numpy_2_dials_0.dot(vector)
 
     return  back2
 
-def numpy_2_dials(vector):
+def myframe_2_dials(vector):
     # (x',y',z') in standard vector but in numpy (z,y,x)
     # rotate the coordinate system about x'(z in numpy) for 180
     # vector =vector.astype(np.float32)
     # numpy_2_dials_1 = np.array([[np.cos(np.pi), np.sin(np.pi), 0],
     #                             [-np.sin(np.pi), np.cos(np.pi), 0],
     #                             [0, 0, 1]],dtype=np.float32)
-    numpy_2_dials_1 = np.array([[1, 0, 0],
+    numpy_2_dials_1 = np.linalg.inv(np.array([[1, 0, 0],
                                 [0, 0, 1],
-                                [0, 1, 0]]).T
-
+                                [0, 1, 0]]))
+    # omega = -np.pi
+    # numpy_2_dials_1 =np.array([[1, 0, 0],
+    #                             [0, np.cos(omega), np.sin(omega)],
+    #                             [0, -np.sin(omega), np.cos(omega)]])
+    # numpy_2_dials_2 = np.array([[0, 0, 1],
+    #                             [0, 1, 0],
+    #                             [1, 0, 0]]) #swap x and z
     back2 = numpy_2_dials_1.dot(vector)
+
 
     return  back2
 
@@ -965,11 +1143,17 @@ def cal_coord(theta ,phi,coord,face,shape,label_list,full_iteration=False):
             potential_coord = (int(  (new_z)),
                            int(  (new_y)),
                            int(  (new_x)))
-
+            va_count = 0
             if full_iteration is False :
                 if label_list[potential_coord] == 0 :
                     break
-
+            # else:
+            #     if label_list[potential_coord] == 0 :
+            #         va_count += 1
+            #     else:
+            #         va_count = 0
+            #     if va_count > 10:
+            #         break
             if increment == 0:
                 pass
             elif label_list[potential_coord] != label_list[path_2[increment - 1]]:
@@ -992,6 +1176,7 @@ def cal_coord(theta ,phi,coord,face,shape,label_list,full_iteration=False):
                     raise RuntimeError('unexpected classes')
 
             path_2.append(potential_coord)
+            # iterate 
 
     else:
         raise RuntimeError("unexpected ray out face")
@@ -1023,37 +1208,44 @@ def cal_path_plus(path_2,voxel_size):
         # total_length = ( path_ray[-1][1] - path_ray[0][1] )/ (np.sin(np.abs(omega)))
     # if len(path_2[0])==1:
     #     total_length=np.min(np.array(path_2[0]))
-    #     # tot
-                             
+    #     pdb.set_trace()
     # else:
 
     total_length=np.sqrt(((path_ray[-1][1]  - path_ray[0][1] ) * voxel_length_y ) ** 2 +
                          ((path_ray[-1][0]  - path_ray[0][0] ) * voxel_length_z ) ** 2 +
                          ( (path_ray[-1][2]  - path_ray[0][2] ) * voxel_length_x )** 2)
+    if len(path_ray) == 1:
+        return 0,0,0,0
+    
+    proprotion=total_length/(len(path_ray)-1)
+    # print(proprotion)
     for j, trans_index in enumerate(posi):
 
         if classes[j] == 'cr':
             if j < len(posi) - 1:
-                cr_l_2 += total_length * ( (posi[j+1]-posi[j])/len(path_ray))
+                cr_l_2 += proprotion * (posi[j+1]-posi[j])
             else:
-                cr_l_2 += total_length * ((len(path_ray)- posi[j]) / len(path_ray))
+                cr_l_2 += proprotion * (len(path_ray)- posi[j])
         elif classes[j] == 'li':
             if j < len(posi) - 1:
-                li_l_2 += total_length * ((posi[j + 1] - posi[j]) / len(path_ray))
+                li_l_2 +=  proprotion * (posi[j + 1] - posi[j]) 
+                len_li = ((posi[j + 1] - posi[j]) / len(path_ray))
             else:
-                li_l_2 += total_length * ((len(path_ray) - posi[j]) / len(path_ray))
+                li_l_2 +=  proprotion * (len(path_ray) - posi[j]) 
+                len_li = ((len(path_ray) - posi[j]) / len(path_ray))
         elif classes[j] == 'lo':
             if j < len(posi) - 1:
-                lo_l_2 += total_length * ((posi[j + 1] - posi[j]) / len(path_ray))
+                lo_l_2 +=  proprotion * (posi[j + 1] - posi[j]) 
             else:
-                lo_l_2 += total_length * ((len(path_ray) - posi[j]) / len(path_ray))
+                lo_l_2 +=  proprotion * (len(path_ray) - posi[j]) 
         elif classes[j] == 'bu':
             if j < len(posi) - 1:
-                bu_l_2 += total_length * ((posi[j + 1] - posi[j]) / len(path_ray))
+                bu_l_2 +=  proprotion *(posi[j + 1] - posi[j]) 
             else:
-                bu_l_2 += total_length * ((len(path_ray) - posi[j]) / len(path_ray))
+                bu_l_2 +=  proprotion * (len(path_ray) - posi[j])
         else:
             pass
+    # pdb.set_trace()
     #     # if classes[j] == 'cr':
     #     #     if j < len(posi) - 1:
     #     #         cr_l_2_total= np.abs(path_ray[posi[j+1] - 1][1] - coord[1]) + 0.5
@@ -1143,6 +1335,9 @@ def cal_path_plus(path_2,voxel_size):
     #         else:
     #             pass
     # can add the other class path
+    # if len(path_2[0])==1:
+    #     total_length=np.min(np.array(path_2[0]))
+    #     pdb.set_trace()
     return li_l_2, lo_l_2, cr_l_2,bu_l_2
 
 
@@ -1156,17 +1351,17 @@ def cal_rate(numbers,coefficients,exp=True ):
         li_l_2, lo_l_2, cr_l_2, bu_l_2 = numbers
         li_l_1, lo_l_1, cr_l_1, bu_l_1= 0,0,0,0
     if exp:
-        abs = np.exp(-((mu_li * (li_l_1  + li_l_2) +
+        absorp = np.exp(-((mu_li * (li_l_1  + li_l_2) +
                      mu_lo * (lo_l_1  + lo_l_2) +
                      mu_cr * (cr_l_1 + cr_l_2) +
                          mu_bu * (bu_l_1+ bu_l_2) )
                     ))
     else:
-        abs = ((mu_li * (li_l_1  + li_l_2) +
+        absorp = ((mu_li * (li_l_1  + li_l_2) +
                      mu_lo * (lo_l_1  + lo_l_2) +
                      mu_cr * (cr_l_1 + cr_l_2) +
                          mu_bu * (bu_l_1+ bu_l_2) ))
-    return  abs
+    return  absorp
 
 def cal_rate_single(numbers,coefficients,exp=True ):
     mu_li, mu_lo, mu_cr,mu_bu = coefficients
@@ -1218,6 +1413,7 @@ def cube_face ( ray_origin , ray_direction , cube_size , L1 = False ) :
       the vector to the intersection point.
       t = (plane_distance - np.dot(vector_origin, plane_normal)) /
          np.dot(vector, plane_normal)
+        then the  minimum non-negative t is the normal of the face and that's what we want
     Args:
         ray_origin (tuple): the origin of the ray, as a tuple of (x, y, z) coordinates
         ray_direction (tuple): the direction of the ray, as a unit vector tuple of (x, y, z) coordinates
@@ -1410,8 +1606,7 @@ def cal_path2(path_2,coord,label_list,rate_list,omega):
     #             pass
     #
     # posi=[]
-    #
-    # # the hypothesis is that all components only appear once, not repeated
+    #    # # the hypothesis is that all components only appear once, not repeated
     #
     # classes=[]
     # for k,element in enumerate(path_ray):
@@ -1499,3 +1694,28 @@ def cal_path2(path_2,coord,label_list,rate_list,omega):
 
     # can add the other class path
     return li_l_2,lo_l_2,cr_l_2
+
+def python_2_c_3d(label_list):
+            # this is a one 1d conversion
+            # z, y, x = label_list.shape
+            # label_list_ctype = (ct.c_int8 * z * y * x)()
+            # for i in range(z):
+            #     for j in range(y):
+            #         for k in range(x):
+            #             label_list_ctype[i][j][k] = ct.c_int8(label_list[i][j][k])
+            labelPtr = ct.POINTER(ct.c_int8)
+            labelPtrPtr = ct.POINTER(labelPtr)
+            labelPtrPtrPtr = ct.POINTER(labelPtrPtr)
+            labelPtrCube = labelPtrPtr * label_list.shape[0]
+            labelPtrMatrix = labelPtr * label_list.shape[1]
+            matrix_tuple = ()
+            for matrix in label_list:
+                array_tuple = ()
+                for row in matrix:
+                    array_tuple = array_tuple + (row.ctypes.data_as(labelPtr),)
+                matrix_ptr = ct.cast(labelPtrMatrix(
+                    *(array_tuple)), labelPtrPtr)
+                matrix_tuple = matrix_tuple + (matrix_ptr,)
+            label_list_ptr = ct.cast(labelPtrCube(
+                *(matrix_tuple)), labelPtrPtrPtr)
+            return label_list_ptr

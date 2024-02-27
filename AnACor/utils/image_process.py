@@ -89,10 +89,10 @@ class Image2Model(object):
         self.label=label
         self.crop=crop
         self.dataset= os.path.basename(self.filename).split("_")[0]
-        try:
-            self.change_names(prefix = "{}_tomobar".format(self.dataset))
-        except:
-            pass
+        # try:
+        #     self.change_names(prefix = "{}_tomobar".format(self.dataset))
+        # except:
+        #     pass
         which_pic = str(int(len(os.listdir(self.path))/2))
         if which_pic in self.dataset:
             which_pic= str(int(which_pic)+1)

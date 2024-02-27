@@ -351,13 +351,14 @@ def worker_function(t1, low,  dataset, selected_data, label_list,
                         (numbers_1 + numbers_2), coefficients)
 
                     absorp[k] = absorption
-                    if args.DEBUG:
-                        diff = (absorption - absorption_f)/absorption_f
-                        print('diff is {}'.format(diff))
-                        if diff > 0.01:
-                            pdb.set_trace()
+                    # if args.DEBUG:
+                    #     diff = (absorption - absorption_f)/absorption_f
+                    #     print('diff is {}'.format(diff))
+                    #     pdb.set_trace()
+                    #     if diff > 0.01:
+                    #         pdb.set_trace()
                 result = absorp.mean()
-
+            # pdb.set_trace()
             if args.DEBUG:
                 result_c = anacor_lib_cpu.ray_tracing_single(
                     coord_list, len(coord_list),
@@ -367,7 +368,7 @@ def worker_function(t1, low,  dataset, selected_data, label_list,
                 diff = (result_c - result)/result_c
                 print('diff is {}'.format(diff))
                 try:
-                    diff_2 = (result - absorprt.mean()) / absorprt.mean()
+                    diff_2 = (result - absorprt.mean()) / absorprt.mean() *100
 
                     print('diff_2 is {}'.format(diff_2))
                 except:

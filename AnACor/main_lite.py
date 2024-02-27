@@ -111,9 +111,13 @@ def main():
         label_list=label_list.astype(np.int8)
     refl_filename = args.refl_path
     expt_filename = args.expt_path   # only contain axes
-
+    t1 = time.time()
     coord_list = generate_sampling(label_list, dim=args.slicing, sampling_size=args.sampling_num,
                                    cr=3, auto=args.auto_sampling, method=args.sampling_method, sampling_ratio=args.sampling_ratio)
+    t2 = time.time()
+    with open(os.path.join(result_path, f'{args.sampling_method}_sampling_time.json'), 'w') as f:
+        json.dump(t2-t1, f)
+
     num_cls = np.unique(label_list).shape[0]-1
     # num_cls=4
     print("the number of classes is {}".format(num_cls))
