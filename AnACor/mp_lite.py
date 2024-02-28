@@ -216,7 +216,10 @@ def main ( ) :
     else:
         args.sampling_num=10000
 #     cluster bash file
-
+    if hasattr(args, 'partial_illumination'):
+        centre_point_x =
+    else:
+        args.partial_illumination=False
     with open( os.path.join( save_dir , "mpprocess_script.sh" ) , "w" ) as f :
 
         f.write( "#!/bin/sh\n" )

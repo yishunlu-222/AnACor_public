@@ -315,5 +315,41 @@ def set_parser():
         default=None,
         help="Flag to enable gridding with bisection (True/False)",
     )
+    parser.add_argument(
+        "--partial-illumination",
+        type=str2bool,
+        default=False,
+        help="whether to use partial illumination",
+    )
+    parser.add_argument(
+        "--centre-point-x",
+        type=int,
+        default=500,
+        help="centre point of the beam in x direction",
+    )
+    parser.add_argument(
+        "--centre-point-y",
+        type=int,
+        default=500,
+        help="centre point of the beam in y direction",
+    )
+    parser.add_argument(
+        "--centre-point-z",
+        type=int,
+        default=500,
+        help="centre point of the beam in z direction",
+    )
+    parser.add_argument(
+        "--beam-width",
+        type=int,
+        default=200,
+        help="beam width",
+    )
+    parser.add_argument(
+        "--beam-height",
+        type=int,
+        default=200,
+        help="beam height",
+    )
     args = parser.parse_args()
     return args
