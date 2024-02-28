@@ -7,7 +7,13 @@
         "stdlib.h": "c",
         "omp.h": "c",
         "testkit.h": "c",
-        "functional": "c"
+        "functional": "c",
+        "array": "c",
+        "deque": "c",
+        "string": "c",
+        "unordered_map": "c",
+        "vector": "c",
+        "initializer_list": "c"
     },
     "cmake.configureOnOpen": false
 }

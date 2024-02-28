@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include <omp.h>
 #include <sys/types.h>
+#include <time.h>
 // #include "ray_tracing.h"
 #define M_PI 3.14159265358979323846
 #define test_mod 0
@@ -378,10 +379,14 @@ double *ray_tracing_overall(int64_t low, int64_t up,
     printf("up is %d \n", up);
     double *result_list = (double *)malloc(len_result * sizeof(double));
     printf("result_list is %p \n", result_list);
-
-#pragma omp parallel for default(none) shared(label_list, coord_list, scattering_vector_list, omega_list, raw_xray, omega_axis, kp_rotation_matrix, len_result, voxel_size, coefficients, shape, full_iteration, store_paths, low, up, len_coord_list, result_list,IsExp)
+    double  start_time = omp_get_wtime();
+    
+    // start_time = clock();
+#pragma omp parallel for default(none) shared(label_list, coord_list, scattering_vector_list, omega_list, raw_xray, omega_axis, kp_rotation_matrix, len_result, voxel_size, coefficients, shape, full_iteration, store_paths, low, up, len_coord_list, result_list,IsExp,start_time)
     for (int64_t i = 0; i < len_result; i++)
     {
+        // double cpu_time_used;
+        // clock_t end_time;
         double result;
         double rotation_matrix_frame_omega[9];
         double rotation_matrix[9];
@@ -409,8 +414,11 @@ double *ray_tracing_overall(int64_t low, int64_t up,
             store_paths,IsExp);
 
         result_list[i] = result;
-        printf("[%d/%d] rotation: %.4f, absorption: %.4f\n",
-               low + i, up, omega_list[i] * 180 / M_PI, result);
+        double  end_time = omp_get_wtime();
+        double cpu_time_used = end_time - start_time;
+        printf("[%d/%d] rotation: %.4f, absorption: %.4f time spent: %.3f \n",
+               low + i, up, omega_list[i] * 180 / M_PI, result, cpu_time_used);
+
     }
 
     return result_list;

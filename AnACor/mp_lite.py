@@ -60,7 +60,7 @@ def set_parser ( ) :
     parser.add_argument(
         "--auto-sampling" ,
         type = str2bool ,
-        default = True,
+        default = False,
         help = "pixel size of tomography" ,
     )
     directory = os.getcwd( )
@@ -128,39 +128,39 @@ def main ( ) :
     if os.path.isfile(os.path.join( save_dir , 'preprocess_script.sh' )) is False:
         
         preprocess_dial_lite( args , save_dir )
-    # for file in os.listdir( save_dir ) :
-    #     if '.json' in file :
-    #         if args.full_reflection:
-    #             if 'expt' in file and 'True' in file :
-    #                 expt_path = os.path.join( save_dir , file )
-    #             if 'refl' in file and 'True' in file:
-    #                 refl_path = os.path.join( save_dir , file )
-    #         else:
-    #             if 'expt' in file and 'False' in file :
-    #                 expt_path = os.path.join( save_dir , file )
-    #             if 'refl' in file and 'False' in file:
-    #                 refl_path = os.path.join( save_dir , file )
+    for file in os.listdir( save_dir ) :
+        if '.json' in file :
+            if args.full_reflection:
+                if 'expt' in file and 'True' in file :
+                    expt_path = os.path.join( save_dir , file )
+                if 'refl' in file and 'True' in file:
+                    refl_path = os.path.join( save_dir , file )
+            else:
+                if 'expt' in file and 'False' in file :
+                    expt_path = os.path.join( save_dir , file )
+                if 'refl' in file and 'False' in file:
+                    refl_path = os.path.join( save_dir , file )
     py_pth = os.path.join( os.path.dirname( os.path.abspath( __file__ ) ) , 'main_lite.py' )
     logger = setup_logger(os.path.join(save_dir,'Logging' ,'mpprocess.log'))
     try :
         with open( expt_path ) as f2 :
             axes_data = json.load( f2 )
-        print( "experimental data is loaded... \n" )
-        logger.info( "experimental data is loaded... \n" )
+        print( f"experimental data is found at {expt_path}... \n" )
+        logger.info( f"experimental data is found at {expt_path}... \n" )
         with open( refl_path ) as f1 :
             data = json.load( f1 )
-        print( "reflection table is loaded... \n" )
-        logger.info( "reflection table is loaded... \n" )
+        print( f"reflection table is found at {refl_path}... \n" )
+        logger.info( f"reflection table is found at {refl_path}... \n" )
     except :
         try :
-
-
             with open( args.expt_path ) as f2 :
                 axes_data = json.load( f2 )
-            print( "experimental data is loaded... \n" )
+            print( "experimental data is given and loaded... \n" )
+            logger.info( "experimental data is given and loaded... \n" )
             with open( args.refl_path ) as f1 :
                 data = json.load( f1 )
-            print( "reflection table is loaded... \n" )
+            print( "reflection table is given and loaded... \n" )
+            logger.info( "reflection table is given and loaded... \n" )
         except :
             logger.error( 'no reflections or experimental files detected'
                                 'please use --refl_path --expt-filename to specify' )
@@ -250,14 +250,14 @@ def main ( ) :
             f.write( "expt_pth={}\n".format( args.expt_path ) )
         f.write( "store_dir={}\n".format(args.store_dir  ) )
         f.write( "logging_dir={}\n".format( os.path.join( save_dir , 'Logging' ) ) )
-        f.write( 'nohup /dls/science/groups/i23/yishun/dials_yishun/conda_base/bin/python -u  ${py_file}  --dataset ${dataset} '
+        f.write( f'nohup {sys.executable} -u  ${{py_file}}  --dataset ${{dataset}} '
                  '--loac ${loac} --liac ${liac} --crac ${crac}  --buac ${buac} --offset ${offset} '
                  ' --store-dir ${store_dir} --refl-path ${refl_pth} --expt-path ${expt_pth}  '
                  '--model-storepath ${model_storepath} --full-iteration ${full_iter} --num-workers ${num}  '
                  '--sampling-num ${sampling_num} --auto-sampling ${auto_sampling} --openmp ${openmp} --single-c ${single_c} '
                  ' --sampling-method ${sampling_method} --gpu ${gpu} --sampling-ratio ${sampling_ratio} '
                     ' --absorption-map ${absorption_map} '
-                 ' > ${logging_dir}/nohup_${dataset}_${counter}.out\n' )
+                 ' > ${logging_dir}/running_details_${dataset}_${counter}.out\n' )
         f.write( "echo \"${dataset} is finished\" \n" )
         # f.write( "bash dialsprocess_script.sh \n" )
     # f.close( )

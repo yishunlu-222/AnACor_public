@@ -14,14 +14,14 @@ from multiprocessing import Pool
 try:
     from utils.utils_rt import *
     from utils.utils_ib import *
-    from utils.utils_gridding import mp_create_gridding,mp_interpolation_gridding
+    from utils.utils_gridding import mp_create_gridding,mp_interpolation_gridding,loading_absorption_map    
     from utils.utils_os import stacking,python_2_c_3d,kp_rotation
     from utils.utils_mp import *
     from utils.utils_resolution import model3D_resize
 except:
     from AnACor.utils.utils_rt import *
     from AnACor.utils.utils_ib import *
-    from AnACor.utils.utils_gridding import mp_create_gridding,mp_interpolation_gridding
+    from AnACor.utils.utils_gridding import mp_create_gridding,mp_interpolation_gridding,loading_absorption_map
     from AnACor.utils.utils_os import stacking,python_2_c_3d,kp_rotation
     from AnACor.utils.utils_mp import *
     from AnACor.utils.utils_resolution import model3D_resize
@@ -56,10 +56,10 @@ def main():
     rate_list = {'li': 1, 'lo': 2, 'cr': 3, 'bu': 4}
     save_dir = os.path.join(args.store_dir, '{}_save_data'.format(dataset))
     result_path = os.path.join(save_dir, 'ResultData', 'absorption_factors')
-    refl_dir = os.path.join(save_dir, 'ResultData', 'reflections')
+    # refl_dir = os.path.join(save_dir, 'ResultData', 'reflections')
     gridding_dir = os.path.join(save_dir, 'ResultData', 'gridding')
     logging_dir = os.path.join(save_dir, 'Logging')
-    directories = [save_dir, gridding_dir, result_path, refl_dir, logging_dir]
+    directories = [save_dir, gridding_dir, result_path, logging_dir]
     logger = setup_logger(os.path.join(save_dir,'Logging' ,'running.log'))
     for directory in directories:
         create_directory(directory)
@@ -200,7 +200,7 @@ def main():
         afterfix=f'gridding_{args.sampling_ratio}_{args.gridding_theta}_{args.gridding_phi}'
         print(os.path.join(os.path.dirname( os.path.abspath(__file__)), './src/gridding_interpolation.so'))
         lib = ct.CDLL(os.path.join(os.path.dirname( os.path.abspath(__file__)), './src/gridding_interpolation.so'))
-        abs_gridding=stacking(gridding_dir,afterfix)
+        abs_gridding=loading_absorption_map(gridding_dir,'npy')
         # abs_gridding=stacking(gridding_dir,'gridding')
         
 
@@ -218,7 +218,7 @@ def main():
                              offset, full_iteration, store_paths, printing,afterfix, num_cls, args.gridding_method,num_processes)
             print('gridding map is finished and created')
             logger.info('gridding map is finished and created')
-            abs_gridding=stacking(gridding_dir,afterfix)
+            abs_gridding=loading_absorption_map(gridding_dir,'npy')
             t1 = time.time()
         print('Loading gridding map')
         logger.info('Loading gridding map')

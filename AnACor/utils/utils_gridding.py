@@ -4,7 +4,7 @@ import json
 import time
 import pdb
 import numpy as np
-
+import re
 # from dials.array_family import flex
 from ast import literal_eval
 import argparse
@@ -39,6 +39,19 @@ try:
 except:
     pass
 
+
+
+def loading_absorption_map(gridding_dir,afterfix):
+    def sorting(s):
+        return int(re.findall(r'\d+', s)[-1])
+    absorption_map_list =[name for name in os.listdir(gridding_dir) if name.endswith(afterfix)]
+    if len(absorption_map_list) == 0:
+        return None
+    absorption_map_list.sort(key=sorting)
+    for i in range(len(absorption_map_list)):
+        map = np.load(f'{gridding_dir}/{absorption_map_list[i]}')
+        overall_map = map if i == 0 else np.concatenate((overall_map,map),axis=0)
+    return overall_map
 
 def worker_function_create_gridding(
     t1,
@@ -206,10 +219,10 @@ def worker_function_create_gridding(
                     low + i, up, theta * 180 / np.pi, phi * 180 / np.pi
                 )
             )
-        # pdb.set_trace()
-    with open(f"{gridding_dir}/{dataset}_{afterfix}_{up}.json", "w") as fz:  # Pickling
-        json.dump(absorption_map, fz, indent=2)
-
+    #     # pdb.set_trace()
+    # with open(f"{gridding_dir}/{dataset}_{afterfix}_{up}.json", "w") as fz:  # Pickling
+    #     json.dump(absorption_map, fz, indent=2)
+    np.save(f"{gridding_dir}/{dataset}_{afterfix}_{up}.npy", absorption_map)
 
 def mp_create_gridding(
     t1,
@@ -609,7 +622,7 @@ def interpolation_gridding(
         ct.c_int64,
         np.ctypeslib.ndpointer(dtype=np.float64),
         np.ctypeslib.ndpointer(dtype=np.float64),
-        np.ctypeslib.ndpointer(dtype=np.float64),
+        np.ctypeslib.ndpointer(dtype=np.float32),
         ct.c_int,
         ct.c_int,
         ct.c_double,
@@ -639,7 +652,7 @@ def interpolation_gridding(
         ct.c_int, # IsExp
         np.ctypeslib.ndpointer(dtype=np.float64), #theta_list
         np.ctypeslib.ndpointer(dtype=np.float64), #phi_list
-        np.ctypeslib.ndpointer(dtype=np.float64), #gridding data
+        np.ctypeslib.ndpointer(dtype=np.float32), #gridding data
         ct.c_int64, #nx
         ct.c_int64, #ny
         ct.c_double, #theta_min
@@ -732,6 +745,7 @@ def interpolation_gridding(
             xray_direction = dials_2_myframe(xray)
 
             # grid=abs_gridding[:,:,k].flatten()
+            # pdb.set_trace()
             result = lib.nearest_neighbor_interpolate(
                 np.int64(len(coord_list)),
                 theta_list,
@@ -829,18 +843,18 @@ def interpolation_gridding(
 
             corr.append(result)
             # print( 'it spends {}'.format( t2 - t1 ) )
-            dict_corr.append(
-                {
-                    "index": low + i,
-                    "miller_index": miller_index,
-                    "intensity": intensity,
-                    "corr": result,
-                    "theta": theta * 180 / np.pi,
-                    "phi": phi * 180 / np.pi,
-                    "theta_1": theta_1 * 180 / np.pi,
-                    "phi_1": phi_1 * 180 / np.pi,
-                }
-            )
+            # dict_corr.append(
+            #     {
+            #         "index": low + i,
+            #         "miller_index": miller_index,
+            #         "intensity": intensity,
+            #         "corr": result,
+            #         "theta": theta * 180 / np.pi,
+            #         "phi": phi * 180 / np.pi,
+            #         "theta_1": theta_1 * 180 / np.pi,
+            #         "phi_1": phi_1 * 180 / np.pi,
+            #     }
+            # )
             if i % 1000 == 1:
                 with open(
                     os.path.join(
@@ -849,13 +863,7 @@ def interpolation_gridding(
                     "w",
                 ) as fz:  # Pickling
                     json.dump(corr, fz, indent=2)
-                with open(
-                    os.path.join(
-                        args.save_dir, "{}_dict_refl_{}.json".format(args.dataset, up)
-                    ),
-                    "w",
-                ) as f1:  # Pickling
-                    json.dump(dict_corr, f1, indent=2)
+
                 print("[{} /{} ]it spends {}".format(low + i, up, t2 - t1))
     
     with open(
@@ -863,11 +871,7 @@ def interpolation_gridding(
         ) as fz:  # Pickling
             json.dump(corr, fz, indent=2)
 
-    with open(
-        os.path.join(args.save_dir, "{}_dict_refl_{}.json".format(args.dataset, up)),
-        "w",
-    ) as f1:  # Pickling
-        json.dump(dict_corr, f1, indent=2)
+
     with open(
         os.path.join(args.save_dir, "{}_time_{}.json".format(args.dataset, up)), "w"
     ) as f1:  # Pickling
