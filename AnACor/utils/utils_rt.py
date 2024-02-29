@@ -1190,7 +1190,7 @@ def cal_coord(theta ,phi,coord,face,shape,label_list,full_iteration=False):
 
     return path_2,classes_posi,classes
 
-@jit(nopython=True)
+# @jit(nopython=True)
 def cal_path_plus(path_2,voxel_size):
     # pdb.set_trace()
     voxel_length_z=voxel_size[0]
@@ -1342,7 +1342,7 @@ def cal_path_plus(path_2,voxel_size):
     return li_l_2, lo_l_2, cr_l_2,bu_l_2
 
 
-@jit(nopython=True)
+# @jit(nopython=True)
 def cal_rate(numbers,coefficients,exp=True ):
     mu_li, mu_lo, mu_cr,mu_bu = coefficients
 
