@@ -13,7 +13,7 @@ double absorption(double inter_1, double inter_2)
 }
 
 
-double nearest_neighbor_custom(float *grid, int nx, int ny, double theta, double phi, double theta_min, double theta_max, double phi_min, double phi_max) {
+double nearest_neighbor_custom(double *grid, int nx, int ny, double theta, double phi, double theta_min, double theta_max, double phi_min, double phi_max) {
     // Calculate the indices for theta and phi
     double theta_step = (theta_max - theta_min) / (nx - 1);
     double phi_step = (phi_max - phi_min) / (ny - 1);
@@ -31,12 +31,12 @@ double nearest_neighbor_custom(float *grid, int nx, int ny, double theta, double
     return output;
 }
 
-double nearest_neighbor_interpolate(size_t len_coord, double *theta_list, double *phi_list, float *gridding_data, size_t nx, size_t ny, double theta_1, double phi_1, double theta, double phi, double theta_min, double theta_max, double phi_min, double phi_max) {
+double nearest_neighbor_interpolate(size_t len_coord, double *theta_list, double *phi_list, double *gridding_data, size_t nx, size_t ny, double theta_1, double phi_1, double theta, double phi, double theta_min, double theta_max, double phi_min, double phi_max) {
     size_t len_gridding_data = nx * ny;
     double result = 0;
 
     for (size_t i = 0; i < len_coord; i++) {
-        float *grid = gridding_data + i * len_gridding_data;
+        double *grid = gridding_data + i * len_gridding_data;
 
         // Find the nearest neighbors for theta and phi
         double inter_1 = nearest_neighbor_custom(grid, nx, ny, theta_1, phi_1, theta_min, theta_max, phi_min, phi_max);
@@ -50,7 +50,7 @@ double nearest_neighbor_interpolate(size_t len_coord, double *theta_list, double
 
 
 
-double interpolate(size_t len_coord, double *theta_list, double *phi_list, float *gridding_data, size_t nx, size_t ny, double theta_1, double phi_1, double theta, double phi)
+double interpolate(size_t len_coord, double *theta_list, double *phi_list, double *gridding_data, size_t nx, size_t ny, double theta_1, double phi_1, double theta, double phi)
 {
   size_t len_gridding_data = nx * ny;
   double result = 0;
@@ -59,7 +59,7 @@ double interpolate(size_t len_coord, double *theta_list, double *phi_list, float
   gsl_interp_accel *yacc = gsl_interp_accel_alloc();
   for (int i = 0; i < len_coord; i++)
   {
-    float *grid = gridding_data + (size_t)i * len_gridding_data;
+    double *grid = gridding_data + (size_t)i * len_gridding_data;
     gsl_interp2d *interp = gsl_interp2d_alloc(gsl_interp2d_bilinear, nx, ny);
     gsl_interp2d_init(interp, theta_list, phi_list, grid, nx, ny);
 
@@ -76,7 +76,7 @@ double interpolate(size_t len_coord, double *theta_list, double *phi_list, float
   return result / len_coord;
 }
 
-double interpolate_single(double *theta_list, double *phi_list, float *gridding_data, size_t nx, size_t ny, double theta_1, double phi_1)
+double interpolate_single(double *theta_list, double *phi_list, double *gridding_data, size_t nx, size_t ny, double theta_1, double phi_1)
 {
   gsl_interp2d *interp = gsl_interp2d_alloc(gsl_interp2d_bilinear, nx, ny);
 
@@ -103,7 +103,7 @@ double *nearest_neighbor_interpolate_overall(int64_t low, int64_t up,
                             const double *omega_axis, const double *kp_rotation_matrix,
                             int64_t len_result,
                             double *voxel_size, double *coefficients,
-                             int num_workers,int IsExp, double *theta_list, double *phi_list, float *gridding_data, size_t nx, size_t ny,double theta_min, double theta_max, double phi_min, double phi_max,int interpolation_method)
+                             int num_workers,int IsExp, double *theta_list, double *phi_list, double *gridding_data, size_t nx, size_t ny,double theta_min, double theta_max, double phi_min, double phi_max,int interpolation_method)
 {
     omp_set_num_threads(num_workers);
 

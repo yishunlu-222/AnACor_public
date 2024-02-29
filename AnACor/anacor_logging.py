@@ -19,7 +19,7 @@ def setup_logger(filename='./logging.log'):
     # Check if the logger already has handlers
     if not logger.handlers:
         # Create a file handler that logs to a JSON file
-        handler = logging.FileHandler(filename, mode="w+", delay=True)
+        handler = logging.FileHandler(filename, mode="w", delay=True)
         formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
         handler.setFormatter(formatter)
         logger.setLevel(logging.INFO)

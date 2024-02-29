@@ -330,25 +330,25 @@ def set_parser():
     parser.add_argument(
         "--centre-point-y",
         type=int,
-        default=500,
+        default=536,
         help="centre point of the beam in y direction",
     )
     parser.add_argument(
         "--centre-point-z",
         type=int,
-        default=500,
+        default=506,
         help="centre point of the beam in z direction",
     )
     parser.add_argument(
         "--beam-width",
         type=int,
-        default=200,
+        default=150,
         help="beam width",
     )
     parser.add_argument(
         "--beam-height",
         type=int,
-        default=200,
+        default=240,
         help="beam height",
     )
     args = parser.parse_args()

@@ -127,7 +127,8 @@ def worker_function_create_gridding(
     ]
     print("gridding method is {}".format(gridding_method))
     assert gridding_method < 3
-    absorption_map = []
+    # absorption_map = []
+    absorption_map = np.zeros((len(arr_map),len(coord_list)), dtype=np.float32)
     for i, row in enumerate(arr_map):
         if i == 0:
             print(
@@ -138,7 +139,7 @@ def worker_function_create_gridding(
         rotated_s1 = row
         theta, phi = dials_2_thetaphi((rotated_s1))
         ray_direction = dials_2_myframe(rotated_s1)
-        absorption_row = []
+        
         theta_1, phi_1 = 0, 0
         numbers_1 = (0, 0, 0, 0)
         for k, coord in enumerate(coord_list):
@@ -210,9 +211,9 @@ def worker_function_create_gridding(
                 if diff_2 > 0.01:
                     print("diff_2 is {}".format(diff_2))
                     pdb.set_trace()
-
-            absorption_row.append(np.float32(absorption))
-        absorption_map.append(absorption_row)
+            absorption_map[i][k] = np.float32(absorption)
+        #     absorption_row.append(np.float32(absorption))
+        # absorption_map.append(absorption_row)
         if printing:
             print(
                 "[{}/{}] gridding map theta: {:.4f}, phi: {:.4f}".format(
@@ -602,6 +603,7 @@ def interpolation_gridding(
             "./src/gridding_interpolation.so",
         )
     )
+    abs_gridding=abs_gridding.astype(np.float64)
     lib.interpolate.restype = ct.c_double
     # Define the argument types and return type of the function
 
@@ -622,7 +624,7 @@ def interpolation_gridding(
         ct.c_int64,
         np.ctypeslib.ndpointer(dtype=np.float64),
         np.ctypeslib.ndpointer(dtype=np.float64),
-        np.ctypeslib.ndpointer(dtype=np.float32),
+        np.ctypeslib.ndpointer(dtype=np.float64),
         ct.c_int,
         ct.c_int,
         ct.c_double,
@@ -652,7 +654,7 @@ def interpolation_gridding(
         ct.c_int, # IsExp
         np.ctypeslib.ndpointer(dtype=np.float64), #theta_list
         np.ctypeslib.ndpointer(dtype=np.float64), #phi_list
-        np.ctypeslib.ndpointer(dtype=np.float32), #gridding data
+        np.ctypeslib.ndpointer(dtype=np.float64), #gridding data
         ct.c_int64, #nx
         ct.c_int64, #ny
         ct.c_double, #theta_min

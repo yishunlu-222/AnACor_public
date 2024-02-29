@@ -91,6 +91,14 @@ def worker_function(t1, low,  dataset, selected_data, label_list,
         ct.c_int,                      # IsExp
     ]
     label_list_c = python_2_c_3d(label_list)
+
+    if args.partial_illumination:
+        centre_point_on_axis=np.array([args.centre_point_z,
+                                    args.centre_point_y, 
+                                    args.centre_point_x])
+        width =int(args.beam_width/1000/(args.pixel_size_x* 1e-3)/2)
+        height=int(args.beam_height/1000/(args.pixel_size_x* 1e-3)/2)
+        xray_region=[ centre_point_on_axis[1]-height,centre_point_on_axis[1]+height,centre_point_on_axis[0]-width,centre_point_on_axis[0]+width]   
     if args.gpu:
         try:
             anacor_lib_gpu = ct.CDLL(os.path.join(os.path.dirname(
@@ -143,7 +151,7 @@ def worker_function(t1, low,  dataset, selected_data, label_list,
             logger.info("\033[92m GPU  is used for ray tracing \033[0m")
             print("\033[92m GPU  is used for ray tracing \033[0m")
             # Initialize an empty list to hold the indices of non-zero elements.
-            nonzero_indices = []
+           
             # abc = label_list.ctypes.data_as(ct.POINTER(ct.c_int8))
             # # Iterate over the array and check each element.
             # for i in range(660*850*850):
@@ -280,8 +288,14 @@ def worker_function(t1, low,  dataset, selected_data, label_list,
 
 
                 for k, coord in enumerate(coord_list):
-                    # face_1 = which_face_2(coord, shape, theta_1, phi_1)
-                    # face_2 = which_face_2(coord, shape, theta, phi)
+                    if args.partial_illumination :
+                            pl = partial_illumination_selection(xray_region, total_rotation_matrix, coord, centre_point_on_axis)
+                            pdb.set_trace()
+                            
+                            if pl is False:
+                                continue
+                            else:
+                                pass
                     face_1 = cube_face(coord, xray_direction, shape, L1=True)
                     face_2 = cube_face(coord, ray_direction, shape)
 
@@ -376,7 +390,7 @@ def worker_function(t1, low,  dataset, selected_data, label_list,
                 pdb.set_trace()
             t2 = time.time()
             if printing:
-                print('[{}/{}] theta: {:.4f}, phi: {:.4f} , rotation: {:.4f},  absorption: {:.4f}'.format(low + i,
+                print('[{}/{}:{}] theta: {:.4f}, phi: {:.4f} , rotation: {:.4f},  absorption: {:.4f}'.format(low + i,low,
                                                                                                           low + len(
                                                                                                               selected_data),
                                                                                                           theta * 180 / np.pi,

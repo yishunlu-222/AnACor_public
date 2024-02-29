@@ -278,6 +278,7 @@ def partial_illumination_selection(xray_region, total_rotation_matrix, coord, po
     else:
         return False
 
+
 # def myframe_2_thetaphi(vector, L1=False):
 #     if L1 is True:
 #         # L1 is the incident beam and L2 is the diffracted so they are opposite
@@ -501,7 +502,7 @@ def myframe_2_dials(vector):
 
     return  back2
 
-# @jit(nopython=True)
+@jit(nopython=True)
 def cal_coord(theta ,phi,coord,face,shape,label_list,full_iteration=False):
     """
 
@@ -1189,7 +1190,7 @@ def cal_coord(theta ,phi,coord,face,shape,label_list,full_iteration=False):
 
     return path_2,classes_posi,classes
 
-
+@jit(nopython=True)
 def cal_path_plus(path_2,voxel_size):
     # pdb.set_trace()
     voxel_length_z=voxel_size[0]
@@ -1341,7 +1342,7 @@ def cal_path_plus(path_2,voxel_size):
     return li_l_2, lo_l_2, cr_l_2,bu_l_2
 
 
-
+@jit(nopython=True)
 def cal_rate(numbers,coefficients,exp=True ):
     mu_li, mu_lo, mu_cr,mu_bu = coefficients
 

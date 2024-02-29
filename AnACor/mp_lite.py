@@ -217,7 +217,10 @@ def main ( ) :
         args.sampling_num=10000
 #     cluster bash file
     if hasattr(args, 'partial_illumination'):
-        centre_point_x =
+        args.openmp=False
+        args.single_c=False
+        args.gpu=False
+        args.bisection=False
     else:
         args.partial_illumination=False
     with open( os.path.join( save_dir , "mpprocess_script.sh" ) , "w" ) as f :
@@ -237,10 +240,12 @@ def main ( ) :
         f.write( "buac={}\n".format( args.buac ) )
         f.write( "end={}\n".format( len( data ) ) )
         f.write( "py_file={}\n".format( py_pth ) )
+        f.write("partial_illumination={}\n".format(args.partial_illumination))
         f.write( "model_storepath={}\n".format( model_storepath ) )
         f.write( "full_iter={} \n".format( args.full_iter ) )
         f.write( "openmp={} \n".format( args.openmp ) )
         f.write("single_c={} \n".format( args.single_c ))
+        f.write("bisection={} \n".format( args.bisection ))
         f.write("gpu={} \n".format( args.gpu ))
         f.write("sampling_ratio={} \n".format( args.sampling_ratio ))
         f.write("sampling_num={} \n".format( args.sampling_num ))
@@ -259,7 +264,7 @@ def main ( ) :
                  '--model-storepath ${model_storepath} --full-iteration ${full_iter} --num-workers ${num}  '
                  '--sampling-num ${sampling_num} --auto-sampling ${auto_sampling} --openmp ${openmp} --single-c ${single_c} '
                  ' --sampling-method ${sampling_method} --gpu ${gpu} --sampling-ratio ${sampling_ratio} '
-                    ' --absorption-map ${absorption_map} '
+                    ' --absorption-map ${absorption_map} --bisection ${bisection} --partial-illumination ${partial_illumination} '
                  ' > ${logging_dir}/running_details_${dataset}_${counter}.out\n' )
         f.write( "echo \"${dataset} is finished\" \n" )
         # f.write( "bash dialsprocess_script.sh \n" )
