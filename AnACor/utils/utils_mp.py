@@ -19,6 +19,23 @@ except:
     from AnACor.utils.utils_os import stacking,python_2_c_3d,kp_rotation
     from AnACor.utils.utils_mp import *
 
+def process_chunk(params):
+    chunk, xray_direction, ray_direction, theta_1, phi_1, theta, phi, shape, voxel_size, coefficients, label_list = params
+    absorptions = []
+    for coord in chunk:
+        face_1 = cube_face(coord, xray_direction, shape, L1=True)
+        face_2 = cube_face(coord, ray_direction, shape)
+        path_1 = cal_coord(
+            theta_1, phi_1, coord, face_1, shape, label_list)  # 37
+        path_2 = cal_coord(
+            theta, phi, coord, face_2, shape, label_list)  # 16
+        numbers_1 = cal_path_plus(path_1, voxel_size)  # 3.5s
+        numbers_2 = cal_path_plus(path_2, voxel_size)  # 3.5s
+        absorption = cal_rate(
+            (numbers_1 + numbers_2), coefficients)
+        absorptions.append(absorption)
+    return absorptions
+
 def worker_function(t1, low,  dataset, selected_data, label_list,
                     voxel_size, coefficients, F, coord_list,
                     omega_axis, axes_data, save_dir, args,
@@ -280,10 +297,11 @@ def worker_function(t1, low,  dataset, selected_data, label_list,
                     absorptions = [absorp for sublist in absorptions_list for absorp in sublist]
                     absorptions = np.array(absorptions)
                     
-                    np.save(os.path.join(save_dir, '{}_single_distribution_{}_{}.npy'.format(dataset,low+i, args.sampling_ratio)), absorp)
+                    np.save(os.path.join(save_dir, '{}_single_distribution_{}_{}.npy'.format(dataset,low+i, args.sampling_ratio)), absorptions)
                     t2 = time.time()
                     with open(os.path.join(save_dir, "{}_time_{}.json".format(dataset, up)), "w") as f1:  # Pickling
                         json.dump(t2 - t1, f1, indent=2)
+                    pdb.set_trace()
                     import sys
                     sys.exit(0)
 

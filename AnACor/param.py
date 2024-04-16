@@ -351,5 +351,11 @@ def set_parser():
         default=240,
         help="beam height",
     )
+    parser.add_argument(
+        "--only-sampling",
+        type=str2bool,
+        default=False,
+        help="beam height",
+    )
     args = parser.parse_args()
     return args

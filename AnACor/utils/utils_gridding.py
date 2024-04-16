@@ -1,6 +1,6 @@
 import os
 import json
-
+# import psutil
 import time
 import pdb
 import numpy as np
@@ -27,6 +27,7 @@ import multiprocessing as mp
 import ctypes as ct
 from scipy.interpolate import RegularGridInterpolator
 
+
 try:
     from scipy.interpolate import (
         interp2d,
@@ -34,7 +35,7 @@ try:
         RectSphereBivariateSpline,
         SmoothSphereBivariateSpline,
     )
-    import psutil
+    
     from memory_profiler import profile
 except:
     pass
@@ -42,12 +43,18 @@ except:
 
 
 def loading_absorption_map(gridding_dir,afterfix):
-    def sorting(s):
-        return int(re.findall(r'\d+', s)[-1])
+    def sort_key(s):
+        if s:
+            try:
+                c = re.findall('(\d+)', s)[-1]
+            except:
+                c = -1
+            return int(c)
     absorption_map_list =[name for name in os.listdir(gridding_dir) if name.endswith(afterfix)]
     if len(absorption_map_list) == 0:
         return None
-    absorption_map_list.sort(key=sorting)
+    absorption_map_list.sort(key=sort_key)
+    print(absorption_map_list)
     for i in range(len(absorption_map_list)):
         map = np.load(f'{gridding_dir}/{absorption_map_list[i]}')
         overall_map = map if i == 0 else np.concatenate((overall_map,map),axis=0)
@@ -210,7 +217,7 @@ def worker_function_create_gridding(
                 diff_2 = (absorption - absorptionrt) / absorptionrt * 100
                 if diff_2 > 0.01:
                     print("diff_2 is {}".format(diff_2))
-                    pdb.set_trace()
+                     
             absorption_map[i][k] = np.float32(absorption)
         #     absorption_row.append(np.float32(absorption))
         # absorption_map.append(absorption_row)
@@ -220,7 +227,7 @@ def worker_function_create_gridding(
                     low + i, up, theta * 180 / np.pi, phi * 180 / np.pi
                 )
             )
-    #     # pdb.set_trace()
+    #     #  
     # with open(f"{gridding_dir}/{dataset}_{afterfix}_{up}.json", "w") as fz:  # Pickling
     #     json.dump(absorption_map, fz, indent=2)
     np.save(f"{gridding_dir}/{dataset}_{afterfix}_{up}.npy", absorption_map)
@@ -253,7 +260,7 @@ def mp_create_gridding(
     len_data = len(gridding_data)
     up = low + len(gridding_data)
     gridding_data = gridding_data[low:up]
-    # pdb.set_trace()
+    #  
     processes = []
     if num_processes > 1:
         each_core = int(len_data // num_processes)
@@ -307,7 +314,7 @@ def mp_create_gridding(
                 )
 
             processes.append(process)
-        # pdb.set_trace()
+        #  
         # Start all worker processes
         for process in processes:
             process.start()
@@ -376,11 +383,12 @@ def mp_interpolation_gridding(
     num_processes,
     interpolation_method="linear",afterfix=''
 ):
-    abs_gridding = np.array(abs_gridding)  # .astype(np.float32)
+     
+    # abs_gridding = np.array(abs_gridding)  # .astype(np.float32)
     try:
-        abs_gridding = abs_gridding.reshape(
-            (args.gridding_phi, args.gridding_theta, len(coord_list))
-        )
+        
+        abs_gridding = abs_gridding.reshape((args.gridding_phi, args.gridding_theta, len(coord_list)))
+        # abs_gridding = abs_gridding.reshape((args.gridding_theta , args.gridding_phi, len(coord_list)))
     except:
         print("error in reshape")
         print("recreating the gridding")
@@ -388,25 +396,31 @@ def mp_interpolation_gridding(
                              voxel_size, coefficients,coord_list,
                              gridding_dir, args,
                              offset, full_iteration, store_paths, printing,afterfix, num_cls, args.gridding_method,num_processes)
-        abs_gridding=stacking(gridding_dir,afterfix)
-    #
+        abs_gridding=loading_absorption_map(gridding_dir,'npy').astype(np.float64)
+        abs_gridding = abs_gridding.reshape((args.gridding_phi, args.gridding_theta, len(coord_list)))
     # theta_list = np.linspace(-180 , 180 ,
     #                          args.gridding_theta, endpoint=False) / 180 * np.pi
     # phi_list = np.linspace(-90 , 90 ,
     #                        args.gridding_phi , endpoint=False) / 180 * np.pi
-    # pdb.set_trace()
+    #  
+    # theta_extra_padding_num = int(np.round((abs_gridding.shape[1] // 12) / 2))
+    # phi_extra_padding_num = int(np.round(abs_gridding.shape[0] // 12 / 2))
     theta_extra_padding_num = int(np.round((abs_gridding.shape[1] // 6) / 2))
     phi_extra_padding_num = int(np.round(abs_gridding.shape[0] // 6 / 2))
     # add to top  and bottom
     bot_rows = abs_gridding[:, -theta_extra_padding_num:, :]
     top_rows = abs_gridding[:, :theta_extra_padding_num, :]
     abs_gridding = np.concatenate((bot_rows, abs_gridding, top_rows), axis=1)
+    del bot_rows, top_rows
+    gc.collect()
     # add to left and right
     right_cols = abs_gridding[-phi_extra_padding_num:, :, :]
     left_cols = abs_gridding[:phi_extra_padding_num, :, :]
     abs_gridding = np.concatenate((right_cols, abs_gridding, left_cols), axis=0)
-
+    del right_cols, left_cols
+    gc.collect()
     abs_gridding = np.transpose(abs_gridding, (2, 0, 1))
+
     # abs_gridding = np.transpose(abs_gridding, (1, 0, 2))
     len_theta = int(args.gridding_theta + theta_extra_padding_num * 2)
     len_phi = int(args.gridding_phi + phi_extra_padding_num * 2)
@@ -425,103 +439,8 @@ def mp_interpolation_gridding(
         / 180
         * np.pi
     )
-    # theta_list =theta_list.astype(np.float32)
-    # phi_list =phi_list.astype(np.float32)
-    # interpolation_functions=[]
-    # for k in range(len(coord_list)):
-    #     interpolation_functions.append(create_interpolation_gridding( phi_list, theta_list,abs_gridding[k, :, :],interpolation_method))
-    # interpolation_functions=np.array(interpolation_functions)
-    # del abs_gridding
-    # shm = shared_memory.SharedMemory(create=True, size=abs_gridding.nbytes)
-    # shared_gridding = np.ndarray(
-    #     abs_gridding.shape, dtype=abs_gridding.dtype, buffer=shm.buf
-    # )
 
-    # Copy data to the shared array
-    # np.copyto(shared_gridding, abs_gridding)
-    # shared_gridding = sharedctypes.RawArray('d', abs_gridding.size)
-    # shared_gridding_np = np.frombuffer(shared_gridding, dtype=abs_gridding.dtype).reshape(abs_gridding.shape)
-    # np.copyto(shared_gridding, abs_gridding)
-    # pdb.set_trace()
 
-    len_data = len(selected_data)
-    # processes = []
-    # if num_processes > 1:
-    #     each_core = int(len_data // num_processes)
-    #     for i in range(num_processes):
-    #         # Create a new process and pass it the data copy and result queue
-    #         if i != num_processes - 1:
-    #             process = mp.Process(
-    #                 target=interpolation_gridding,
-    #                 args=(
-    #                     t1,
-    #                     low + i * each_core,
-    #                     selected_data[i * each_core : (i + 1) * each_core],
-    #                     label_list,
-    #                     voxel_size,
-    #                     coefficients,
-    #                     F,
-    #                     coord_list,
-    #                     omega_axis,
-    #                     axes_data,
-    #                     gridding_dir,
-    #                     args,
-    #                     offset,
-    #                     full_iteration,
-    #                     store_paths,
-    #                     printing,
-    #                     num_cls,
-    #                     interpolation_method,
-    #                     phi_list,
-    #                     theta_list,
-    #                     abs_gridding,
-    #                     len_theta,
-    #                     len_phi,
-    #                 ),
-    #             )
-
-    #         else:
-    #             process = mp.Process(
-    #                 target=interpolation_gridding,
-    #                 args=(
-    #                     t1,
-    #                     low + i * each_core,
-    #                     selected_data[i * each_core :],
-    #                     label_list,
-    #                     voxel_size,
-    #                     coefficients,
-    #                     F,
-    #                     coord_list,
-    #                     omega_axis,
-    #                     axes_data,
-    #                     gridding_dir,
-    #                     args,
-    #                     offset,
-    #                     full_iteration,
-    #                     store_paths,
-    #                     printing,
-    #                     num_cls,
-    #                     interpolation_method,
-    #                     phi_list,
-    #                     theta_list,
-    #                     abs_gridding,
-    #                     len_theta,
-    #                     len_phi,
-    #                 ),
-    #             )
-
-    #         processes.append(process)
-    #     # pdb.set_trace()
-    #     # Start all worker processes
-    #     for process in processes:
-    #         process.start()
-
-    #     # Wait for all worker processes to finish
-    #     for process in processes:
-    #         process.join()
-        # shm.close()
-        # shm.unlink()
-    # else:
     interpolation_gridding(
             t1,
             low,
@@ -579,7 +498,7 @@ def interpolation_gridding(
     shape=None,
 ):
     # existing_shm = shared_memory.SharedMemory(name=shared_gridding.name)
-    # pdb.set_trace()
+    #  
     # abs_gridding = np.ndarray(shape, dtype=dtype, buffer=existing_shm.buf)
 
     # abs_gridding = np.frombuffer(shared_gridding, dtype=np.float64).reshape(len(coord_list),len_phi, len_theta)
@@ -603,7 +522,7 @@ def interpolation_gridding(
             "./src/gridding_interpolation.so",
         )
     )
-    abs_gridding=abs_gridding.astype(np.float64)
+
     lib.interpolate.restype = ct.c_double
     # Define the argument types and return type of the function
 
@@ -676,6 +595,7 @@ def interpolation_gridding(
         ct.c_double,
         ct.c_double,
     ]
+
     if args.openmp:
         for i, row in enumerate(selected_data):
             intensity = float(row["intensity.sum.value"])
@@ -690,8 +610,10 @@ def interpolation_gridding(
 
         arr_scattering = np.array(arr_scattering)
         arr_omega = np.array(arr_omega)
+       
         print(
                 "\033[92m Openmp/C with {} cores is used for ray tracing \033[0m".format(args.num_workers))
+        
         result_list = lib.nearest_neighbor_interpolate_overall(low,
                                                                 up,
                                                                 coord_list,
@@ -747,7 +669,7 @@ def interpolation_gridding(
             xray_direction = dials_2_myframe(xray)
 
             # grid=abs_gridding[:,:,k].flatten()
-            # pdb.set_trace()
+            #  
             result = lib.nearest_neighbor_interpolate(
                 np.int64(len(coord_list)),
                 theta_list,
@@ -812,10 +734,10 @@ def interpolation_gridding(
                 # inter_2 =interpolation_functions[k](np.array([ phi,theta]))
                 # try:
 
-                # pdb.set_trace()
+                #  
                 # except:
                 #     print('error in c')
-                #     pdb.set_trace()
+                #      
                 # inter_2 = interpolation_v1(
                 #     theta, phi, theta_list, phi_list, abs_gridding[k, :, :])
 
@@ -826,11 +748,11 @@ def interpolation_gridding(
                 if diff_2 > 1:
                     print("diff_2 is {}".format(diff_2))
 
-                    pdb.set_trace()
+                     
 
             # if i == 1000:
             #     print('time spent {}'.format(t2 - t1))
-            #     pdb.set_trace()
+            #      
             if printing:
                 print(
                     "[{}/{}] theta: {:.4f}, phi: {:.4f} , time: {:.4f},  absorption: {:.4f}".format(
@@ -882,6 +804,7 @@ def interpolation_gridding(
 
 
 def memorylog():
+    import psutil
     process = psutil.Process()
     mem_info = process.memory_info()
     print(f"Memory usage: {mem_info.rss / 1024 / 1024} MB")
@@ -935,7 +858,7 @@ def unit_test_sphere_transform(detector_gridding, theta_grid, phi_grid):
             i_index = np.argmin(np.abs(theta_grid_2 - theta_2), axis=0)[0]
             ap_2 = ap2[i_index][j_index]
             df.append(np.abs(ap_2 - ap_1))
-    # pdb.set_trace()
+    #  
 
 
 def spheretransformation(absorption_map):

@@ -215,6 +215,10 @@ def main ( ) :
             pass
     else:
         args.sampling_num=10000
+    if hasattr(args, 'bisection'):
+            pass
+    else:
+        args.bisection=False
 #     cluster bash file
     if hasattr(args, 'partial_illumination'):
         args.openmp=False

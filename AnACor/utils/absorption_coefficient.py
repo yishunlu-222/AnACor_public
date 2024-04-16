@@ -651,10 +651,10 @@ class AbsorptionCoefficient( object ) :
             afterfix = len( os.listdir( self.tomo_img_path ) ) / 180
 
             fileindex = int( angle * afterfix )
-            if fileindex == 0 :
-                pass
-            else:
-                fileindex -= 1
+            # if fileindex == 0 :
+            #     pass
+            # else:
+            #     fileindex -= 1
             print("the fileindex is {}".format(fileindex))
             for f in os.listdir( self.tomo_img_path ) :
                 index = int( re.findall( r'\d+' , f )[-1] )

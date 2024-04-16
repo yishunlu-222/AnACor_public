@@ -1735,6 +1735,10 @@ void ray_tracing_gpu_single(int rotated_s1_size, int rotated_xray_size, size_t h
 		d_label_list = NULL;
 	}
 
+	size_t free_mem, total_mem;
+	cudaMemGetInfo(&free_mem, &total_mem);
+	printf("GPU memory allocation is finished\n");
+	printf("--> GPU info: Device has %0.3f MB of total memory, which %0.3f MB is available.\n", ((float)total_mem) / (1024.0 * 1024.0), (float)free_mem / (1024.0 * 1024.0));
 	//---------> Memory copy and preparation
 	GpuTimer timer;
 	float memory_time = 0;
@@ -2174,19 +2178,27 @@ int ray_tracing_gpu_overall_kernel(size_t low, size_t up,
 	size_t increments_size_overall = 36 * sizeof(float) * h_len_result;
 	printf("len_coord_list %d \n", h_len_coord_list);
 	printf("h_len_result %d \n", h_len_result);
+
 	size_t total_memory_required_bytes = increments_size_overall + angle_size_overall + face_size + angle_size + increments_size + absorption_size + cube_size + ray_classes_size + coord_list_size + ray_directions_size + result_size + scattering_vector_list_size + omega_list_size + raw_xray_size + omega_axis_size + kp_rotation_matrix_size + rotated_s1_size + rotated_xray_size;
+
+	size_t memory_required_bytes_3dmodel =   face_size + angle_size + increments_size + absorption_size + cube_size + ray_classes_size + coord_list_size + ray_directions_size  + raw_xray_size + omega_axis_size + kp_rotation_matrix_size ;
 
 	// printf("total_memory_required_bytes %f \n", total_memory_required_bytes);
 	printf("--> DEBUG: Total memory required %0.3f MB.\n", (double)total_memory_required_bytes / (1024.0 * 1024.0));
+	printf("--> DEBUG: Memory for setting 3D model %0.3f MB.\n", (double)memory_required_bytes_3dmodel / (1024.0 * 1024.0));
 	
 	if (total_memory_required_bytes > free_mem)
 	{
-		printf("--> DEBUG: Total memory required %0.3f MB.\n", (double)
-																	   total_memory_required_bytes /
-																   (1024.0 * 1024.0));
+		// printf("--> DEBUG: Total memory required %0.3f MB.\n", (double)
+		// 															   total_memory_required_bytes /
+		// 														   (1024.0 * 1024.0));
 
 		// return (1);
-		n_chunks = (total_memory_required_bytes + free_mem - 1) / free_mem;
+		// n_chunks = (total_memory_required_bytes + free_mem - 1) / free_mem;
+		// chunk_size = h_len_result / n_chunks;
+		// last_chunk_size = h_len_result - (n_chunks - 1) * chunk_size;
+		size_t unallocated_memory = free_mem - memory_required_bytes_3dmodel;
+		n_chunks = (total_memory_required_bytes + unallocated_memory - 1) / unallocated_memory;
 		chunk_size = h_len_result / n_chunks;
 		last_chunk_size = h_len_result - (n_chunks - 1) * chunk_size;
 		printf(" Not enough memory! Input data is splitted into %d equal chunks with each of %d.\n", n_chunks, chunk_size);

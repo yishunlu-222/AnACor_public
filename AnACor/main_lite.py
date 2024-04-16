@@ -14,7 +14,7 @@ from multiprocessing import Pool
 try:
     from utils.utils_rt import *
     from utils.utils_ib import *
-    from utils.utils_gridding import mp_create_gridding,mp_interpolation_gridding,loading_absorption_map    
+    from utils.utils_gridding import mp_create_gridding,mp_interpolation_gridding,loading_absorption_map 
     from utils.utils_os import stacking,python_2_c_3d,kp_rotation
     from utils.utils_mp import *
     from utils.utils_resolution import model3D_resize
@@ -117,7 +117,27 @@ def main():
     t2 = time.time()
     with open(os.path.join(result_path, f'{args.sampling_method}_sampling_time.json'), 'w') as f:
         json.dump(t2-t1, f)
-
+    if args.only_sampling is True:
+        import sys
+        import gc
+        gc.collect()
+        gc.disable()
+        t=0
+        # for i in range(10):
+        #     coord_list = generate_sampling(label_list, dim=args.slicing, sampling_size=args.sampling_num,
+        #                                 cr=3, auto=args.auto_sampling, method=args.sampling_method, sampling_ratio=args.sampling_ratio)
+        # #warm up
+        for i in range(10):
+            t1 = time.time()
+            coord_list = generate_sampling(label_list, dim=args.slicing, sampling_size=args.sampling_num,
+                                        cr=3, auto=args.auto_sampling, method=args.sampling_method, sampling_ratio=args.sampling_ratio)
+            
+            t2 = time.time()
+            t+=t2-t1
+        gc.enable()
+        with open(os.path.join(result_path, f'{args.sampling_method}_mean_sampling_time.json'), 'w') as f:
+            json.dump(t/10, f)
+        sys.exit()
     num_cls = np.unique(label_list).shape[0]-1
     # num_cls=4
     print("the number of classes is {}".format(num_cls))
@@ -195,12 +215,15 @@ def main():
     if args.DEBUG:
         printing = True
         num_processes = 1
-
+    # pdb.set_trace()
     if args.gridding is True:
         afterfix=f'gridding_{args.sampling_ratio}_{args.gridding_theta}_{args.gridding_phi}'
         print(os.path.join(os.path.dirname( os.path.abspath(__file__)), './src/gridding_interpolation.so'))
         lib = ct.CDLL(os.path.join(os.path.dirname( os.path.abspath(__file__)), './src/gridding_interpolation.so'))
-        abs_gridding=loading_absorption_map(gridding_dir,'npy')
+        try:
+          abs_gridding=loading_absorption_map(gridding_dir,'npy').astype(np.float64)
+        except:
+          abs_gridding=None
         # abs_gridding=stacking(gridding_dir,'gridding')
         
 
@@ -218,7 +241,9 @@ def main():
                              offset, full_iteration, store_paths, printing,afterfix, num_cls, args.gridding_method,num_processes)
             print('gridding map is finished and created')
             logger.info('gridding map is finished and created')
-            abs_gridding=loading_absorption_map(gridding_dir,'npy')
+            
+            abs_gridding=loading_absorption_map(gridding_dir,'npy').astype(np.float64)
+            
             t1 = time.time()
         print('Loading gridding map')
         logger.info('Loading gridding map')

@@ -372,6 +372,13 @@ def main ( ) :
             args.padding = list(args.padding)
         else:
             args.padding = None
+        if hasattr(args, 'kernel_square'):
+            
+            args.kernel_square = tuple(args.kernel_square)
+            print(f"kernel square for morphological transformation is {args.kernel_square}")
+        else:
+            args.kernel_square = (5 , 5) 
+        # pdb.set_trace()
         try:
             coefficient_model = RunAbsorptionCoefficient( args.rawimg_path , model_storepath ,
                                                      coe_li= args.coe_li ,
@@ -385,7 +392,7 @@ def main ( ) :
                                                                                "absorption_coefficient" ) ,
                                                       offset = args.coefficient_orientation ,
                                                       angle = coefficient_viewing ,
-                                                      kernel_square = (5 , 5) ,
+                                                      kernel_square = args.kernel_square ,
                                                       full = False , thresholding = args.coefficient_thresholding,
                                                       flat_fielded=args.flat_field_name,base=args.abs_base_cls, crop=args.crop,padding=args.padding)
             coefficient_model.run( )
