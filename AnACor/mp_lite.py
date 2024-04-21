@@ -57,12 +57,7 @@ def set_parser ( ) :
         default='default_mpprocess_input.yaml',
         help = "the path of the input file of all the flags" ,
     )
-    parser.add_argument(
-        "--auto-sampling" ,
-        type = str2bool ,
-        default = False,
-        help = "pixel size of tomography" ,
-    )
+
     directory = os.getcwd( )
     global ar
     ar = parser.parse_args( )
@@ -211,10 +206,10 @@ def main ( ) :
     else:
         args.absorption_map=False
 
-    if hasattr(args, 'sampling_num'):
-            pass
-    else:
-        args.sampling_num=10000
+    # if hasattr(args, 'sampling_num'):
+    #         pass
+    # else:
+    #     args.sampling_num=10000
     if hasattr(args, 'bisection'):
             pass
     else:
@@ -235,7 +230,6 @@ def main ( ) :
         # f.write("module load python/3.9 \n")
         f.write( "num={}\n".format( args.num_cores ) )
         f.write( "sampling_method={}\n".format( args.sampling_method ) )
-        f.write( "auto_sampling={}\n".format( args.auto_sampling) )
         f.write( "dataset={}\n".format( args.dataset ) )
         f.write( "offset={}\n".format( args.offset ) )
         f.write( "crac={}\n".format( args.crac ) )
@@ -252,7 +246,7 @@ def main ( ) :
         f.write("bisection={} \n".format( args.bisection ))
         f.write("gpu={} \n".format( args.gpu ))
         f.write("sampling_ratio={} \n".format( args.sampling_ratio ))
-        f.write("sampling_num={} \n".format( args.sampling_num ))
+        # f.write("sampling_num={} \n".format( args.sampling_num ))
         f.write("absorption_map={} \n".format( args.absorption_map ))
         try :
             f.write( "refl_pth={}\n".format( refl_path ) )
@@ -266,7 +260,7 @@ def main ( ) :
                  '--loac ${loac} --liac ${liac} --crac ${crac}  --buac ${buac} --offset ${offset} '
                  ' --store-dir ${store_dir} --refl-path ${refl_pth} --expt-path ${expt_pth}  '
                  '--model-storepath ${model_storepath} --full-iteration ${full_iter} --num-workers ${num}  '
-                 '--sampling-num ${sampling_num} --auto-sampling ${auto_sampling} --openmp ${openmp} --single-c ${single_c} '
+                 '--sampling-num ${sampling_num}  --openmp ${openmp} --single-c ${single_c} '
                  ' --sampling-method ${sampling_method} --gpu ${gpu} --sampling-ratio ${sampling_ratio} '
                     ' --absorption-map ${absorption_map} --bisection ${bisection} --partial-illumination ${partial_illumination} '
                  ' > ${logging_dir}/running_details_${dataset}_${counter}.out\n' )

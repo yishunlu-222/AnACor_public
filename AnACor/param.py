@@ -156,15 +156,15 @@ def set_parser():
     parser.add_argument(
         "--sampling-num",
         type=int,
-        default=5000,
+        default=-1,
         help="Number of samples for crystal point calculation",
     )
-    parser.add_argument(
-        "--auto-sampling",
-        type=str2bool,
-        default=True,
-        help="Flag to automatically determine sampling number (True/False)",
-    )
+    # parser.add_argument(
+    #     "--auto-sampling",
+    #     type=str2bool,
+    #     default=True,
+    #     help="Flag to automatically determine sampling number (True/False)",
+    # )
     parser.add_argument(
         "--full-iteration",
         type=int,

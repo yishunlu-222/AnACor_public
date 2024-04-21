@@ -24,7 +24,7 @@ def create_probability_distribution(coords, centroid):
     probabilities /= probabilities.sum()  # Normalize to sum to 1
     return probabilities
 
-def generate_sampling(label_list, cr=3, dim='z', sampling_size=5000, auto=True,method='even',sampling_ratio=None,kmeans_cluster=1000):
+def generate_sampling(label_list, cr=3, dim='z', sampling_size=5000,method='even',sampling_ratio=None):
     """
     Probability Sampling: Every member of the population has a known (non-zero) probability of being selected. This includes:
     ###

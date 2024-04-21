@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "testkit.h": "c",
+        "stdint.h": "c"
+    }
+}

@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include <sys/resource.h>
 #include "ray_tracing.h"
-
+#define va_threshold 50
 ThetaPhi dials_2_thetaphi_22(double rotated_s1[3], int64_t L1)
 {
     ThetaPhi result;
@@ -482,7 +482,7 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
                 else{
                     va_counter = 0;
                 }
-                if (va_counter > 20)
+                if (va_counter > va_threshold)
                 {
                     break;
                 }
@@ -588,7 +588,7 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
                     else{
                         va_counter = 0;
                     }
-                    if (va_counter > 20)
+                    if (va_counter > va_threshold)
                     {
                         break;
                     }
@@ -682,7 +682,7 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
                     else{
                         va_counter = 0;
                     }
-                    if (va_counter > 20)
+                    if (va_counter > va_threshold)
                     {
                         break;
                     }
@@ -776,7 +776,7 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
                     else{
                         va_counter = 0;
                     }
-                    if (va_counter > 20)
+                    if (va_counter > va_threshold)
                     {
                         break;
                     }
@@ -869,7 +869,7 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
                     else{
                         va_counter = 0;
                     }
-                    if (va_counter > 20)
+                    if (va_counter > va_threshold)
                     {
                         break;
                     }
@@ -953,7 +953,7 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
                     else{
                         va_counter = 0;
                     }
-                    if (va_counter > 20)
+                    if (va_counter > va_threshold)
                     {
                         break;
                     }
@@ -1031,7 +1031,7 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
                     else{
                         va_counter = 0;
                     }
-                    if (va_counter > 20)
+                    if (va_counter > va_threshold)
                     {
                         break;
                     }
@@ -1166,7 +1166,7 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
                     else{
                         va_counter = 0;
                     }
-                    if (va_counter > 20)
+                    if (va_counter > va_threshold)
                     {
                         break;
                     }
@@ -1250,7 +1250,7 @@ Path2_c cal_coord(double theta, double phi, int64_t *coord, int64_t face,
                     else{
                         va_counter = 0;
                     }
-                    if (va_counter > 20)
+                    if (va_counter > va_threshold)
                     {
                         break;
                     }

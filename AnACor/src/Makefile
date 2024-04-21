@@ -82,7 +82,7 @@ testkit_d.o: $(pth)testkit.c
 
 
 sharedlibrary_gpu: ray_tracing_c.o  ray_tracing_gpu.o 
-	$(NVCC) $(NVCCFLAGS) -shared -o ray_tracing_gpu.so  ray_tracing_c.o  ray_tracing_gpu.o  
+	$(NVCC) $(NVCCFLAGS) -shared -o ray_tracing_gpu_${ARCH}.so  ray_tracing_c.o  ray_tracing_gpu.o  
 
 ray_tracing_c.o: ray_tracing_gpu.c 
 		g++  -c ray_tracing_gpu.c $(GCC_OPTS) -o  ray_tracing_c.o  

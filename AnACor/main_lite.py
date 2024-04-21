@@ -112,8 +112,9 @@ def main():
     refl_filename = args.refl_path
     expt_filename = args.expt_path   # only contain axes
     t1 = time.time()
+
     coord_list = generate_sampling(label_list, dim=args.slicing, sampling_size=args.sampling_num,
-                                   cr=3, auto=args.auto_sampling, method=args.sampling_method, sampling_ratio=args.sampling_ratio)
+                                   cr=3,  method=args.sampling_method, sampling_ratio=args.sampling_ratio)
     t2 = time.time()
     with open(os.path.join(result_path, f'{args.sampling_method}_sampling_time.json'), 'w') as f:
         json.dump(t2-t1, f)
@@ -130,7 +131,7 @@ def main():
         for i in range(10):
             t1 = time.time()
             coord_list = generate_sampling(label_list, dim=args.slicing, sampling_size=args.sampling_num,
-                                        cr=3, auto=args.auto_sampling, method=args.sampling_method, sampling_ratio=args.sampling_ratio)
+                                        cr=3,  method=args.sampling_method, sampling_ratio=args.sampling_ratio)
             
             t2 = time.time()
             t+=t2-t1
@@ -330,7 +331,7 @@ def main():
         except Exception as e:
             logger.error("The absorption factor calculation is failed")
             logger.error(e)
-            raise RuntimeError("The absorption coefficient calculation is failed")
+            raise RuntimeError("The absorption factor calculation is failed")
 
 
 
