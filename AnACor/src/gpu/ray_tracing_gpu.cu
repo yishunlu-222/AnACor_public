@@ -2220,7 +2220,8 @@ int ray_tracing_gpu_overall_kernel(size_t low, size_t up,
 		size_t unallocated_memory = free_mem - memory_required_bytes_3dmodel;
 		n_chunks = (total_memory_required_bytes + unallocated_memory - 1) / unallocated_memory;
 		chunk_size = h_len_result / n_chunks;
-		last_chunk_size = h_len_result - (n_chunks - 1) * chunk_size;
+		last_chunk_size = h_len_result - (n_chunks ) * chunk_size;
+		n_chunks +=1;
 		printf(" Not enough memory! Input data is splitted into %d equal chunks with each of %d.\n", n_chunks, chunk_size);
 	}
 	else
