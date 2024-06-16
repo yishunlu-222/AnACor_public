@@ -23,6 +23,13 @@ def str2bool ( v ) :
     else :
         raise argparse.ArgumentTypeError( 'Boolean value expected.' )
 
+import os
+import requests
+import json
+
+
+
+
 def preprocess_dial_lite ( args , save_dir ) :
     # from dials.util.filter_reflections import *
     import subprocess
@@ -93,6 +100,62 @@ def set_parser ( ) :
     args = parser.parse_args( )
 
     return args
+
+def submit_job_slurm(hour, minute, second, num_cores, save_dir,logger,dataset,user, token):
+    slurm_api_url = "https://slurm-rest.diamond.ac.uk:8443/slurm/v0.0.38/job/submit"
+    headers = {
+        "X-SLURM-USER-NAME": user,
+        "X-SLURM-USER-TOKEN": token,
+        "Content-Type": "application/json",
+    }
+    
+    job_script = os.path.join(save_dir, "mpprocess_script.sh")
+    stdout_log = os.path.join(save_dir, "Logging/mp_lite_output.log")
+    stderr_log = os.path.join(save_dir, "Logging/mp_lite_error.log")
+
+    job_params = {
+        "job": {
+            "name": f"AnACor_{dataset}",
+            "ntasks": 1,
+            "nodes": 1,
+            "cpus_per_task": num_cores,
+            "partition": "cs05r",  # Adjust this as needed
+            "current_working_directory": save_dir,
+            "standard_input": "/dev/null",
+            "standard_output": stdout_log,
+            "standard_error": stderr_log,
+            "environment": {
+            # "PATH": os.getenv("PATH"),
+                  "PATH": "/dls_sw/apps/GPhL/autoPROC/20240123/autoPROC/bin/linux64:/dls_sw/apps/GPhL/autoPROC/20240123/autoPROC/ruby/linux64/bin:/dls_sw/apps/gnuplot/4.6.3/bin:/dls_sw/apps/wxGTK/2.9.2.4/64/bin:/dls_sw/apps/adxv/1.9.13:/dls_sw/apps/dials/dials-v3-18-1/build/bin:/dls_sw/epics/R3.14.12.7/base/bin/linux-x86_64:/dls_sw/epics/R3.14.12.7/extensions/bin/linux-x86_64:/dls_sw/prod/tools/RHEL7-x86_64/defaults/bin:/dls_sw/apps/cuda/11.2/bin:/dls_sw/apps/mx/bin:/dls_sw/apps/xdsstat/2013-03-01:/dls_sw/apps/XDS/etc:/dls_sw/apps/XDS/20230630-extra:/dls_sw/apps/XDS/20230630:/dls_sw/apps/ccp4/8.0.019/arp_warp_8.0/bin/bin-x86_64-Linux:/dls_sw/apps/ccp4/8.0.019/ccp4-8.0/etc:/dls_sw/apps/ccp4/8.0.019/ccp4-8.0/bin:/dls_sw/apps/python/anaconda/4.6.14/64/envs/r-3.6/bin:/usr/share/Modules/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/var/cfengine/bin:/home/i23user/bin:/home/i23user/bin/XZuiichi:/home/i23user/bin/Sagasu:/home/i23user/bin/Sagasu:/home/i23user/bin:/home/i23user/bin/XZuiichi:/home/i23user/bin/Sagasu:/home/i23user/bin/Sagasu",
+      "LD_LIBRARY_PATH": "/lib/:/lib64/:/usr/local/lib"
+            }
+        },
+        "script": f"#!/bin/bash\n echo 'testing'" # \n bash {job_script}"
+        
+    }
+    
+    response = requests.post(slurm_api_url, headers=headers, data=json.dumps(job_params))
+    
+    if response.status_code == 200:
+        print("Job submitted successfully. Response: %s", response.json())
+        logger.info("Job submitted successfully. Response: %s", response.json())
+    else:
+        print("Failed to submit job. Status code: %d", response.status_code)
+        logger.error("Failed to submit job. Status code: %d", response.status_code)
+        print("Response: %s", response.text)
+        logger.error("Response: %s", response.text)
+    
+def get_slurm_token():
+    user = os.getenv("USER")
+    result = subprocess.run(["ssh", "wilson", "scontrol token lifespan=259200"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    output = result.stdout
+    token = None
+    for line in output.split("\n"):
+        if line.startswith("SLURM_JWT"):
+            token = line.split("=")[1].strip()
+    return user, token
+
+
 
 
 def main ( ) :
@@ -309,29 +372,38 @@ def main ( ) :
                 f.write( "{} \n".format( args.mtz2sca_dependancy ) )
                 f.write( "mtz2sca {}_merged_acsh.mtz   \n".format( dataset ) )
                 f.write( "mtz2sca {}_merged_ac.mtz   \n".format( dataset ) )
+        f.close( )
+        """new slurm cluster command"""
+        
+        user, token = get_slurm_token()
+        submit_job_slurm(args.hour, args.minute, args.second, args.num_cores, save_dir,logger=logger,dataset=args.dataset,user=user, token=token)
+        
+        """new slurm cluster command"""
+
+"""old sge cluster command"""
+    # cluster_command = "qsub -S /bin/sh -l h_rt={0}:{1}:{2} -pe smp {3}  -o {5} -e {6} {4}".format(
+    #     str( args.hour ).zfill( 2 ) ,
+    #     str( args.minute ).zfill( 2 ) ,
+    #     str( args.second ).zfill( 2 ) ,
+    #     args.num_cores ,
+    #     os.path.join( save_dir , "mpprocess_script.sh" ) ,
+    #     os.path.join( save_dir , "Logging/mp_lite_output.log" ) ,
+    #     os.path.join( save_dir , "Logging/mp_lite_error.log" ) )
+
+    # logger.info( "submitting job to cluster..." )
+    # if args.hpc_dependancies is not None :
+    #     all_command = [args.hpc_dependancies] + [cluster_command]
+    # else :
+    #     all_command = cluster_command
+    # command = ""
+    # for c in all_command :
+    #     command += c + " " + ";" + " "
+
+    # result = subprocess.run( command , shell = True , stdout = subprocess.PIPE , stderr = subprocess.PIPE )
 
 
 
 
-    cluster_command = "qsub -S /bin/sh -l h_rt={0}:{1}:{2} -pe smp {3}  -o {5} -e {6} {4}".format(
-        str( args.hour ).zfill( 2 ) ,
-        str( args.minute ).zfill( 2 ) ,
-        str( args.second ).zfill( 2 ) ,
-        args.num_cores ,
-        os.path.join( save_dir , "mpprocess_script.sh" ) ,
-        os.path.join( save_dir , "Logging/mp_lite_output.log" ) ,
-        os.path.join( save_dir , "Logging/mp_lite_error.log" ) )
-
-    logger.info( "submitting job to cluster..." )
-    if args.hpc_dependancies is not None :
-        all_command = [args.hpc_dependancies] + [cluster_command]
-    else :
-        all_command = cluster_command
-    command = ""
-    for c in all_command :
-        command += c + " " + ";" + " "
-
-    result = subprocess.run( command , shell = True , stdout = subprocess.PIPE , stderr = subprocess.PIPE )
     # result = subprocess.run( ["qsub ","-S","","","h_rt={}:{}:{}".format(args.time[0],args.time[1],args.time[2]),
     #                           "-pe","smp", "{}".format(args.num_cores),
     #                           os.path.join(save_dir,"mpprocess_script.sh"),
@@ -339,16 +411,15 @@ def main ( ) :
     #                           "-e",os.path.join(save_dir,"Logging"),
     #                           ],
     #                          shell = True , stdout = subprocess.PIPE , stderr = subprocess.PIPE )
-    print( result.returncode )
-    # pdb.set_trace( )
-    # logger.info( result.returncode  )
-    # logger.info( result.stdout.decode( ) )
-    # logger.info( result.stderr.decode( ) )
-    print( result.stdout.decode( ) )
+    # print( result.returncode )
+    # # pdb.set_trace( )
+    # # logger.info( result.returncode  )
+    # # logger.info( result.stdout.decode( ) )
+    # # logger.info( result.stderr.decode( ) )
+    # print( result.stdout.decode( ) )
     
-    print( result.stderr.decode( ) )
-
-    
+    # print( result.stderr.decode( ) )
+"""old sge cluster command"""
 
 if __name__ == '__main__' :
     main( )

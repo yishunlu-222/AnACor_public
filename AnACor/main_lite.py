@@ -89,7 +89,7 @@ def main():
     # algorithm.run()
     voxel_size = np.array([args.pixel_size_z * 1e-3,
                            args.pixel_size_y * 1e-3,
-                           args.pixel_size_x * 1e-3])
+                           args.pixel_size_x * 1e-3]) #um
     label_list = np.load(args.model_storepath)
     if args.resolution_factor is not None:
 
@@ -112,9 +112,20 @@ def main():
     refl_filename = args.refl_path
     expt_filename = args.expt_path   # only contain axes
     t1 = time.time()
-
-    coord_list = generate_sampling(label_list, dim=args.slicing, sampling_size=args.sampling_num,
+    if args.load_sampling is True:
+        print('loading sampling list')
+        logger.info('loading sampling list')
+        coord_list = np.load(os.path.join(result_path, f'coord_list_{args.sampling_method}_{args.sampling_ratio}.npy'))
+    else:
+        print('generating sampling list')
+        logger.info('generating sampling list')
+        coord_list = generate_sampling(label_list, dim=args.slicing, sampling_size=args.sampling_num,
                                    cr=3,  method=args.sampling_method, sampling_ratio=args.sampling_ratio)
+    if args.sampling_method == 'stratified' and args.load_sampling is False:
+        print('saving sampling list')
+        logger.info('saving sampling list')
+        np.save(os.path.join(result_path, f'coord_list_stratified_{args.sampling_ratio}.npy'), coord_list)
+        
     t2 = time.time()
     with open(os.path.join(result_path, f'{args.sampling_method}_sampling_time.json'), 'w') as f:
         json.dump(t2-t1, f)
@@ -148,7 +159,7 @@ def main():
     """tomography setup """
     # pixel_size = args.pixel_size * 1e-3  # it means how large for a pixel of tomobar in real life
 
-    mu_li = args.liac*1e3    # (unit in mm-1) 16010
+    mu_li = args.liac*1e3    # (unit in um-1) 16010
     mu_lo = args.loac*1e3
     mu_cr = args.crac*1e3
     mu_bu = args.buac*1e3
